@@ -1,15 +1,15 @@
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke matmul \
 // RUN:   -arg-value="dense<[[1.0, 0.0, 1.0], [1.0, 1.0, 1.0]]> : tensor<2x3xf32>" \
 // RUN:   -arg-value="dense<[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]> : tensor<3x2xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke matmul \
 // RUN:   -arg-value="dense<0.0> : tensor<2x3xf32>" \
 // RUN:   -arg-value="dense<0.0> : tensor<3x2xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=ZEROS
 
 // Basic correctness check:

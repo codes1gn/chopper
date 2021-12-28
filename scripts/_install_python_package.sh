@@ -12,7 +12,7 @@ echo "top dir = "$top_dir_realpath
 cd ${top_dir_realpath}
 
 # uninstall bad installations
-yes|pip3 uninstall cancer
+yes|pip3 uninstall chopper
 yes|pip3 uninstall pymlir
 
 # invoke setup.py to build wheel installation pkg

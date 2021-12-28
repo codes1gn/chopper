@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s | cancer-opt | FileCheck %s
+// RUN: chopper-opt <%s | chopper-opt | FileCheck %s
 
 // CHECK-LABEL: @alloc_memref
 func @alloc_memref(%arg0: tensor<?xindex>) {

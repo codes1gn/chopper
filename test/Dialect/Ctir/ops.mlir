@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s | cancer-opt | FileCheck %s
+// RUN: chopper-opt <%s | chopper-opt | FileCheck %s
 
 // CHECK-LABEL: @broadcast_to
 func @broadcast_to(%arg0: tensor<?xf32>, %arg1: tensor<?xindex>) -> tensor<?x?xf32> {

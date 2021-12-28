@@ -1,5 +1,5 @@
-// RUN: cancer-opt <%s -pass-pipeline=atir-refback-lowering-pipeline | FileCheck %s --dump-input=fail
-// RUN: cancer-opt <%s -pass-pipeline=atir-refback-lowering-pipeline{optimize} | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s -pass-pipeline=atir-refback-lowering-pipeline | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s -pass-pipeline=atir-refback-lowering-pipeline{optimize} | FileCheck %s --dump-input=fail
 
 // -----
 // CHECK-LABEL: func @global_add

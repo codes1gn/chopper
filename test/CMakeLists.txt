@@ -5,19 +5,19 @@ configure_lit_site_cfg(
         ${CMAKE_CURRENT_SOURCE_DIR}/lit.cfg.py
 )
 
-set(CANCER_TEST_DEPENDS
+set(CHOPPER_TEST_DEPENDS
         FileCheck count not
-        cancer-opt
-        cancer-translate
-        cancer-compiler-runmlir
-        cancer-compiler-runmlir-capi
-        cancer_compiler_module
+        chopper-opt
+        chopper-translate
+        chopper-compiler-runmlir
+        chopper-compiler-runmlir-capi
+        chopper_compiler_module
         )
 
-add_lit_testsuite(check-cancer "Running the cancer regression tests"
+add_lit_testsuite(check-chopper "Running the chopper regression tests"
         ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${CANCER_TEST_DEPENDS}
+        DEPENDS ${CHOPPER_TEST_DEPENDS}
         )
-set_target_properties(check-cancer PROPERTIES FOLDER "Tests")
+set_target_properties(check-chopper PROPERTIES FOLDER "Tests")
 
-add_lit_testsuites(CANCER ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS ${CANCER_TEST_DEPENDS})
+add_lit_testsuites(CHOPPER ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS ${CHOPPER_TEST_DEPENDS})

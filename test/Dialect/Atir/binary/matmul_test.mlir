@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s | FileCheck %s --dump-input=fail
 
 // CHECK-LABEL: func @matmul_legal_unknown
 func @matmul_legal_unknown(%arg0: tensor<?x?xf32>, %arg1: tensor<?x?xf32>) -> tensor<?x?xf32> {

@@ -1,5 +1,5 @@
-// RUN: cancer-opt <%s -pass-pipeline=atir-refback-lowering-pipeline | FileCheck %s --dump-input=fail
-// RUN: cancer-opt <%s -pass-pipeline=atir-refback-lowering-pipeline{optimize} | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s -pass-pipeline=atir-refback-lowering-pipeline | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s -pass-pipeline=atir-refback-lowering-pipeline{optimize} | FileCheck %s --dump-input=fail
 
 // This is the simplest case, which is easy to stare at for debugging
 // purposes.

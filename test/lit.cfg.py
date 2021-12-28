@@ -16,7 +16,7 @@ from lit.llvm.subst import FindTool
 # Configuration file for the 'lit' test runner.
 
 # name: The name of this test suite.
-config.name = "CANCER"
+config.name = "CHOPPER"
 
 config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
 
@@ -27,7 +27,7 @@ config.suffixes = [".mlir", ".pymlir"]
 config.test_source_root = os.path.dirname(__file__)
 
 # test_exec_root: The root path where tests should be run.
-config.test_exec_root = os.path.join(config.cancer_obj_root, "test")
+config.test_exec_root = os.path.join(config.chopper_obj_root, "test")
 
 config.substitutions.append(("%PATH%", config.environment["PATH"]))
 config.substitutions.append(("%shlibext", config.llvm_shlib_ext))
@@ -45,8 +45,8 @@ config.excludes = ["Inputs", "Examples", "CMakeLists.txt", "README.txt", "LICENS
 config.test_source_root = os.path.dirname(__file__)
 
 # test_exec_root: The root path where tests should be run.
-config.test_exec_root = os.path.join(config.cancer_obj_root, "test")
-config.cancer_tools_dir = os.path.join(config.cancer_obj_root, "bin")
+config.test_exec_root = os.path.join(config.chopper_obj_root, "test")
+config.chopper_tools_dir = os.path.join(config.chopper_obj_root, "bin")
 config.iree_tools_dir = os.path.join(config.iree_obj_root, "bin")
 config.iree_env1 = os.path.join(config.iree_obj_root, "bindings/python")
 config.iree_env2 = os.path.join(config.iree_obj_root, "compiler-api/python_package")
@@ -55,19 +55,19 @@ config.iree_env2 = os.path.join(config.iree_obj_root, "compiler-api/python_packa
 llvm_config.with_environment("PATH", config.llvm_tools_dir, append_path=True)
 
 
-config.cancer_runtime_shlib = os.path.join(
-    config.cancer_obj_root, "lib", "libCANCERCompilerRuntimeShlib" + config.llvm_shlib_ext
+config.chopper_runtime_shlib = os.path.join(
+    config.chopper_obj_root, "lib", "libCHOPPERCompilerRuntimeShlib" + config.llvm_shlib_ext
 )
 
-tool_dirs = [config.iree_tools_dir, config.cancer_tools_dir, config.llvm_tools_dir]
+tool_dirs = [config.iree_tools_dir, config.chopper_tools_dir, config.llvm_tools_dir]
 tools = [
-    "cancer-opt",
-    "cancer-translate",
-    "cancer-compiler-runmlir",
+    "chopper-opt",
+    "chopper-translate",
+    "chopper-compiler-runmlir",
     "iree-opt",
     "iree-run-module",
     "iree-run-mlir",
-    ToolSubst("%cancer_runtime_shlib", config.cancer_runtime_shlib),
+    ToolSubst("%chopper_runtime_shlib", config.chopper_runtime_shlib),
 ]
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)

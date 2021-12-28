@@ -1,4 +1,4 @@
-function(cancer_detect_pybind11_install)
+function(chopper_detect_pybind11_install)
   if(pybind11_DIR)
     message(STATUS "Using explicit pybind11 cmake directory: ${pybind11_DIR} (-Dpybind11_DIR to change)")
   else()

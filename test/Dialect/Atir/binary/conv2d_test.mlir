@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s | FileCheck %s
+// RUN: chopper-opt <%s | FileCheck %s
 
 
 // CHECK-LABEL: func @conv_2d_legal_unknown

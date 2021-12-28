@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s -convert-atir-to-linalg | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s -convert-atir-to-linalg | FileCheck %s --dump-input=fail
 
 // CHECK-LABEL:   func @atir_matmul(
 // CHECK-SAME:                     %[[LHS:.*]]: tensor<?x?xf32>,

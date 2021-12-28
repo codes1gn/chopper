@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s -split-input-file -verify-diagnostics
+// RUN: chopper-opt <%s -split-input-file -verify-diagnostics
 
 refbackrt.module_metadata {
   // expected-error @+1 {{must reference a valid func}}

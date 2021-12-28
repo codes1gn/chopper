@@ -1,27 +1,27 @@
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke max \
 // RUN:   -arg-value="dense<[1.0]> : tensor<1xf32>" \
 // RUN:   -arg-value="dense<[3.0]> : tensor<1xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=MAX
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke mul \
 // RUN:   -arg-value="dense<[1.0, 2.0]> : tensor<2xf32>" \
 // RUN:   -arg-value="dense<[3.0, 4.0]> : tensor<2xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=MUL
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke exp \
 // RUN:   -arg-value="dense<[0.0, 1.0]> : tensor<2xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=EXP
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke tanh \
 // RUN:   -arg-value="dense<[0.0, 1.0]> : tensor<2xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=TANH
 
 // These ops share a lot of code paths. So we don't test the exact

@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s -split-input-file -convert-atir-to-tosa | FileCheck %s --dump-input=fail --check-prefix=PCHECK
+// RUN: chopper-opt <%s -split-input-file -convert-atir-to-tosa | FileCheck %s --dump-input=fail --check-prefix=PCHECK
 
 
 //tosa.Tanh not accepting 0D tensor

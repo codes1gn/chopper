@@ -1,7 +1,7 @@
 """ Tests pyMLIR on examples that use the Toy dialect. """
 import os
 
-from cancer_frontend.python import PythonRunner
+from chopper_frontend.python import PythonRunner
 from typing import Callable
 
 # TODO

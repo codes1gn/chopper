@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s | cancer-opt | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s | chopper-opt | FileCheck %s --dump-input=fail
 
 // CHECK: refbackrt.module_metadata
 refbackrt.module_metadata {

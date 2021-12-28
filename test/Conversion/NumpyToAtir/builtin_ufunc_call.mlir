@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s -convert-numpy-to-atir | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s -convert-numpy-to-atir | FileCheck %s --dump-input=fail
 
 
 // CHECK-LABEL: func @unknownBuiltinUfunc

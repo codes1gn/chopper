@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s | FileCheck %s --dump-input=fail
 
 
 // CHECK-LABEL: func @atir_tanh_test_scalar_noret

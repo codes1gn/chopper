@@ -1,4 +1,4 @@
-// RUN: cancer-opt -split-input-file %s | cancer-opt | FileCheck --dump-input=fail %s
+// RUN: chopper-opt -split-input-file %s | chopper-opt | FileCheck --dump-input=fail %s
 
 // -----
 // CHECK-LABEL: @builtin_ufunc

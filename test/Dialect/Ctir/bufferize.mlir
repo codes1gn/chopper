@@ -1,4 +1,4 @@
-// RUN: cancer-opt -ctir-bufferize <%s | FileCheck %s
+// RUN: chopper-opt -ctir-bufferize <%s | FileCheck %s
 
 // CHECK-LABEL:   func @ctir_broadcast_to(
 // CHECK-SAME:                           %[[TENSOR:.*]]: tensor<?xf32>,

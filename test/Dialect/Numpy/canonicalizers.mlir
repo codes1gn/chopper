@@ -1,4 +1,4 @@
-// RUN: cancer-opt -split-input-file %s -canonicalize | FileCheck --dump-input=fail %s
+// RUN: chopper-opt -split-input-file %s -canonicalize | FileCheck --dump-input=fail %s
 
 // CHECK-LABEL: func @elideCreateRedundantArrayFromTensor
 func @elideCreateRedundantArrayFromTensor() -> tensor<2xf64> {

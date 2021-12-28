@@ -1,4 +1,4 @@
-// RUN: cancer-opt -split-input-file %s -verify-diagnostics -allow-unregistered-dialect -numpy-public-functions-to-tensor | FileCheck --dump-input=fail %s
+// RUN: chopper-opt -split-input-file %s -verify-diagnostics -allow-unregistered-dialect -numpy-public-functions-to-tensor | FileCheck --dump-input=fail %s
 
 // CHECK-LABEL: legalConversion
 module @legalConversion {

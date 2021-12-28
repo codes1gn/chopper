@@ -1,8 +1,8 @@
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke broadcast \
 // RUN:   -arg-value="dense<[[1.0], [10.0]]> : tensor<2x1xf32>" \
 // RUN:   -arg-value="dense<[[3.0, 4.0]]> : tensor<1x2xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s
 
 //   2x1     1x2       2x2

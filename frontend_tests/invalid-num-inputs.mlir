@@ -1,6 +1,6 @@
-// RUN: not cancer-compiler-runmlir %s \
+// RUN: not chopper-compiler-runmlir %s \
 // RUN:   -invoke requires_one_input \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s
 
 // CHECK: invoking 'requires_one_input': expected 1 inputs

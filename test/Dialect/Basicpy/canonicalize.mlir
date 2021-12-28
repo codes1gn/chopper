@@ -1,4 +1,4 @@
-// RUN: cancer-opt -split-input-file %s | cancer-opt -canonicalize | FileCheck --dump-input=fail %s
+// RUN: chopper-opt -split-input-file %s | chopper-opt -canonicalize | FileCheck --dump-input=fail %s
 
 // CHECK-LABEL: func @unknown_cast_elide
 func @unknown_cast_elide(%arg0 : i32) -> i32 {

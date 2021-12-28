@@ -1,50 +1,50 @@
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke conv_2d_nchw \
 // RUN:   -arg-value="dense<0.0> : tensor<2x1x1x1xf32>" \
 // RUN:   -arg-value="dense<0.0> : tensor<1x1x1x1xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=BATCH
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke conv_2d_nchw \
 // RUN:   -arg-value="dense<0.0> : tensor<1x2x1x1xf32>" \
 // RUN:   -arg-value="dense<0.0> : tensor<2x2x1x1xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=SAME_CHANNELS
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke conv_2d_nchw \
 // RUN:   -arg-value="dense<0.0> : tensor<1x2x1x1xf32>" \
 // RUN:   -arg-value="dense<0.0> : tensor<1x2x1x1xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=DIFFERENT_CHANNELS
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke conv_2d_nchw \
 // RUN:   -arg-value="dense<0.0> : tensor<1x1x2x2xf32>" \
 // RUN:   -arg-value="dense<0.0> : tensor<1x1x1x1xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=TINY_SQUARE
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke conv_2d_nchw \
 // RUN:   -arg-value="dense<0.0> : tensor<1x1x32x32xf32>" \
 // RUN:   -arg-value="dense<0.0> : tensor<1x1x32x32xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=HUGE_SQUARE
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke conv_2d_nchw \
 // RUN:   -arg-value="dense<0.0> : tensor<1x1x2x2xf32>" \
 // RUN:   -arg-value="dense<0.0> : tensor<1x1x0x0xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=ZERO_KH_KW
 
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke conv_2d_nchw \
 // RUN:   -arg-value="dense<0.0> : tensor<1x1x0x0xf32>" \
 // RUN:   -arg-value="dense<0.0> : tensor<1x1x0x0xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=ZERO_H_W
 
 // BATCH: output #0: dense<0.000000e+00> : tensor<2x1x1x1xf32>

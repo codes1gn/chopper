@@ -2,7 +2,7 @@
 Pass And Transforms
 ==============================
 
-CANCERConversionPasses
+CHOPPERConversionPasses
 ==============================
 
 .. raw:: html
@@ -73,7 +73,7 @@ Transforms
 ``-basicpy-type-inference``: Performs function level type inference
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-CANCERNumpyTransforms
+CHOPPERNumpyTransforms
 ==============================
 
 .. raw:: html
@@ -111,7 +111,7 @@ otherwise resolve shapes, and is currently mainly useful to convert
 rank/dtype-erased function boundaries to ranked, dtyped code for
 compiler backends.
 
-CANCERTCFTransforms
+CHOPPERTCFTransforms
 ==============================
 
 .. raw:: html
@@ -121,7 +121,7 @@ CANCERTCFTransforms
 ``-tcf-shape-refinement``: Refines shapes of tensors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-CANCERTCPTransforms
+CHOPPERTCPTransforms
 ==============================
 
 .. raw:: html

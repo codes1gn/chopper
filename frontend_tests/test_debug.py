@@ -1,7 +1,7 @@
 """ Tests pyMLIR on examples that use the Toy dialect. """
 import os
 
-from cancer_frontend.python import PythonRunner
+from chopper_frontend.python import PythonRunner
 
 DEBUG_MLIR_INPUTS = [
     "return_op_without_operand.mlir",

@@ -14,11 +14,11 @@ if(POLICY CMP0077)
 endif()
 
 # set backend option, use refjit
-option(BUILD_CANCER_REFJIT "Enables the reference JIT backend." ON)
-option(CANCER_BUILD_CANCER_DYLIB "Enables shared build of NPCOMP dylib (depends on LLVM/MLIR dylib support)" ON)
+option(BUILD_CHOPPER_REFJIT "Enables the reference JIT backend." ON)
+option(CHOPPER_BUILD_CHOPPER_DYLIB "Enables shared build of NPCOMP dylib (depends on LLVM/MLIR dylib support)" ON)
 
 # build project as standalone structure, use mlir and llvm as external lib
-project(cancer LANGUAGES CXX C)
+project(chopper LANGUAGES CXX C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ standard to conform to")
 
@@ -45,21 +45,21 @@ include(AddLLVM)
 include(AddMLIR)
 include(HandleLLVMOptions)
 include(EnvFuncs)
-include(AddCancer)
-include(CancerPython)
+include(AddChopper)
+include(ChopperPython)
 
-set(CANCER_BUILT_STANDALONE 1)
-set(CANCER_TABLEGEN_ARGS "")
+set(CHOPPER_BUILT_STANDALONE 1)
+set(CHOPPER_TABLEGEN_ARGS "")
 
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${MLIR_INCLUDE_DIRS})
-include_directories(${PROJECT_SOURCE_DIR}/cancer-compiler-src/include)
-include_directories(${PROJECT_BINARY_DIR}/cancer-compiler-src/include)
+include_directories(${PROJECT_SOURCE_DIR}/chopper-compiler-src/include)
+include_directories(${PROJECT_BINARY_DIR}/chopper-compiler-src/include)
 link_directories(${LLVM_BUILD_LIBRARY_DIR})
 add_definitions(${LLVM_DEFINITIONS})
 
 # look for python env
-set(CANCER_PYTHON_BINDINGS_VERSION_LOCKED 1 CACHE BOOL
+set(CHOPPER_PYTHON_BINDINGS_VERSION_LOCKED 1 CACHE BOOL
     ¦  "Links to specific python libraries, resolving all symbols.")
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 message(STATUS "Found python include dirs: ${Python_INCLUDE_DIRS}")
@@ -70,8 +70,8 @@ message(STATUS "Found python libraries: ${Python_LIBRARIES}")
 # build subcomponents
 add_subdirectory(external/pybind11)
 add_subdirectory(test)
-add_subdirectory(cancer-compiler-src)
+add_subdirectory(chopper-compiler-src)
 
-# add cancer-compiler utils
-add_subdirectory(cancer-compiler)
+# add chopper-compiler utils
+add_subdirectory(chopper-compiler)
 

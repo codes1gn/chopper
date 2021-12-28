@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# from Cancer.cancer import python
+# from Chopper.chopper import python
 import os
 import sys
 import subprocess
@@ -24,7 +24,7 @@ class CMakeExtension(Extension):
 
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
-        self._build_cancer_extension_module(ext)
+        self._build_chopper_extension_module(ext)
         self._attach_iree_compiler(ext)
         self._attach_iree_runtime(ext)
 
@@ -33,7 +33,7 @@ class CMakeBuild(build_ext):
         if not build_dir.endswith(os.path.sep):
             build_dir += os.path.sep
 
-        new_dir = build_dir +"cancer/iree"
+        new_dir = build_dir +"chopper/iree"
 
         mkdir_cmd_str = "mkdir -p " + new_dir
         subprocess.call(
@@ -52,7 +52,7 @@ class CMakeBuild(build_ext):
         if not build_dir.endswith(os.path.sep):
             build_dir += os.path.sep
 
-        new_dir = build_dir +"cancer/iree"
+        new_dir = build_dir +"chopper/iree"
 
         mkdir_cmd_str = "mkdir -p " + new_dir
         subprocess.call(
@@ -66,7 +66,7 @@ class CMakeBuild(build_ext):
             shell=True,
         )
 
-    def _build_cancer_extension_module(self, ext):
+    def _build_chopper_extension_module(self, ext):
         cmake_generator = "-GNinja"
 
         build_dir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
@@ -96,7 +96,7 @@ class CMakeBuild(build_ext):
         # build_args += ["-j8"]
         # build_args += ["--verbose"]
         # build_args += ["--clean-first"]
-        build_args += ["--target", "cancer_compiler_module"]
+        build_args += ["--target", "chopper_compiler_module"]
 
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp)
 
@@ -107,17 +107,17 @@ class CMakeBuild(build_ext):
         subprocess.check_call(
             [
                 "copy",
-                os.getcwd() + "/build/cancer-compiler/cancer-compiler-module/*.so",
+                os.getcwd() + "/build/chopper-compiler/chopper-compiler-module/*.so",
                 build_dir,
             ],
             cwd=self.build_temp,
         )
 
         """
-        command_str = "cp " + os.getcwd() + "/build/cancer-compiler/cancer-compiler-module/*.so" + " " + build_dir
+        command_str = "cp " + os.getcwd() + "/build/chopper-compiler/chopper-compiler-module/*.so" + " " + build_dir
         print("copy command = ", command_str)
         subprocess.call(
-            "cp " + os.getcwd() + "/build/cancer-compiler/cancer-compiler-module/*.so" + " " + build_dir,
+            "cp " + os.getcwd() + "/build/chopper-compiler/chopper-compiler-module/*.so" + " " + build_dir,
             shell=True,
         )
 
@@ -125,14 +125,14 @@ class CMakeBuild(build_ext):
 # The information here can also be placed in setup.cfg - better separation of
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
-    name="cancer",
+    name="chopper",
     version="0.2.0",
     author="Albert Shi, Tianyu Jiang",
     author_email="codefisheng@gmail.com",
     description="Composite AI Compiler Experiment Platform",
     long_description="",
     ext_modules=[
-        CMakeExtension("cancer_compiler_module"),
+        CMakeExtension("chopper_compiler_module"),
     ],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
@@ -140,7 +140,7 @@ setup(
     python_requires=">=3.6.12",
     entry_points={
         # "console_scripts": [
-        #     "cancer_runner=cancer.bin.cancer_runner:main",
+        #     "chopper_runner=chopper.bin.chopper_runner:main",
         # ]
     },
 )

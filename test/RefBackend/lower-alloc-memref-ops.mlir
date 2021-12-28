@@ -1,4 +1,4 @@
-// RUN: cancer-opt -split-input-file -lower-alloc-memref-ops <%s | FileCheck %s
+// RUN: chopper-opt -split-input-file -lower-alloc-memref-ops <%s | FileCheck %s
 
 // CHECK-LABEL: func @basic
 func @basic(%arg0: tensor<?xindex>) -> memref<?xf32> {

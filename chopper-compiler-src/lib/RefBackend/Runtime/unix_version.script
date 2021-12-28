@@ -1,0 +1,5 @@
+{
+  global: __chopper_compiler_rt_*;
+  local: *;
+};
+

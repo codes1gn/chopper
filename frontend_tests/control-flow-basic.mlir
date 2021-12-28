@@ -1,7 +1,7 @@
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke pow2 \
 // RUN:   -arg-value="dense<8.0> : tensor<f32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s
 
 // 2^8 == 256

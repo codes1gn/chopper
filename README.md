@@ -6,11 +6,11 @@
 
 # Introduction: Composite AI Compiler Experiment Platform
 
-The Composite AI Compiler Experiment Platform (Cancer) built with composite modularized frontend, midware and runtime backend. It builds with more flexible ways that allows you register new breed of frontend/backend implementations and compare with each other. It also relies on MLIR to provide fruitful manifolds and toolchains that allows you play with the IR design of the compiler part, the architecture is shown below.
+The Composite AI Compiler Experiment Platform (Chopper) built with composite modularized frontend, midware and runtime backend. It builds with more flexible ways that allows you register new breed of frontend/backend implementations and compare with each other. It also relies on MLIR to provide fruitful manifolds and toolchains that allows you play with the IR design of the compiler part, the architecture is shown below.
 
 <div align=center>
 
-![Cancer architecture](docs/source/artifacts/Cancer_Architecture.png)
+![Chopper architecture](docs/source/artifacts/Chopper_Architecture.png)
 
 </div>
 
@@ -23,7 +23,7 @@ This projects also refers to the idea and implementations of some similar works,
 3. Swift for Tensorflow: https://github.com/tensorflow/swift
 4. MLIR.jl: https://github.com/vchuravy/MLIR.jl
 
-## Build Cancer
+## Build Chopper
 
 It support the a simple `python-like` installation with setuptools. This will install the standalone python modules into your OS envs.
 
@@ -48,31 +48,31 @@ git submodule update
 
 After cloning is complete, llvm-project, pybind11 and pymlir will appear in the external directory.
 
-<font color=Blue>**STEP2**</font> Build the Cancer, in order to build project successfully, the LLVM+MLIR must be build successfully first, here provide the complete build script as follow.
+<font color=Blue>**STEP2**</font> Build the Chopper, in order to build project successfully, the LLVM+MLIR must be build successfully first, here provide the complete build script as follow.
 
 ```shell
-cd Cancer/
+cd Chopper/
 bash script/build_and_install.sh
 ```
 
 After build successfully, please check contents as follow.
 
-- There executable binaries that included `cancer-opt`/`cancer-translate`/`cancer-compiler-runmlir`will be successfully generated in `Cancer/build/bin/` directory;
+- There executable binaries that included `chopper-opt`/`chopper-translate`/`chopper-compiler-runmlir`will be successfully generated in `Chopper/build/bin/` directory;
 
-- The static library named `cancer-compiler-runmlir-capi` will be successfully generated in `Cancer/build/lib/` directory;
+- The static library named `chopper-compiler-runmlir-capi` will be successfully generated in `Chopper/build/lib/` directory;
 
-- The `mlir-doc` documentation that according to `.td` table declarations will be successfully generated in `Cancer/build/docs` directory.
+- The `mlir-doc` documentation that according to `.td` table declarations will be successfully generated in `Chopper/build/docs` directory.
 
 <!-- * use `scripts/build_python_pkg.sh` to build the python wheel distribution package. -->
 
-More detailly, build **LLVM + MLIR** and **Cancer** seperately as shown below.
+More detailly, build **LLVM + MLIR** and **Chopper** seperately as shown below.
 
 ### Build LLVM + MLIR
 
 If not familiar with building MLIR based on LLVM, please refer [here](https://mlir.llvm.org/getting_started/). Now build LLVM + MLIR as follow.
 
 ```sh
-# top_dir_realpath="path/to/Cancer"
+# top_dir_realpath="path/to/Chopper"
 mkdir ${top_dir_realpath}/mlir_build
 cd ${top_dir_realpath}/mlir_build
 mkdir -p ${top_dir_realpath}/mlir_build/install_dir
@@ -99,14 +99,14 @@ cmake -G Ninja \
 - Make sure to pass `-DLLVM_INSTALL_UTILS=ON` when building LLVM with CMake in order to install `FileCheck` to the chosen installation prefix.
   More easily, use `pip install filecheck && ln -s ${which filecheck} /usr/bin/FileCheck` to given the executable path of filecheck to cmake.
 
-### Build Cancer
+### Build Chopper
 
-The prerequisite for a successful Cancer build is to ensure the successful LLVM + MLIR build. This setup assumes that you have built LLVM and MLIR in `$BUILD_DIR` and installed them to `$PREFIX`. To build Cancer as follow.
+The prerequisite for a successful Chopper build is to ensure the successful LLVM + MLIR build. This setup assumes that you have built LLVM and MLIR in `$BUILD_DIR` and installed them to `$PREFIX`. To build Chopper as follow.
 
 ```sh
 mkdir build && cd build
 cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit -DCMAKE_BUILD_TYPE=DEBUG
-cmake --build . --target <cancer-runner/cancer-opt/cancer-translate>
+cmake --build . --target <chopper-runner/chopper-opt/chopper-translate>
 ```
 
 To build the documentation from the TableGen description of the dialect operations, please run
@@ -115,9 +115,9 @@ To build the documentation from the TableGen description of the dialect operatio
 cmake --build . --target mlir-doc
 ```
 
-## Cancer Frontend
+## Chopper Frontend
 
-Cancer is a multi-frontend design with preferred support for `native python` and `numpy+scipy`, And strive to design the frontend as uniformly functional expression as possible. The **Frontend Technology Route** is shown below.
+Chopper is a multi-frontend design with preferred support for `native python` and `numpy+scipy`, And strive to design the frontend as uniformly functional expression as possible. The **Frontend Technology Route** is shown below.
 
 <div align=center>
 
@@ -130,7 +130,7 @@ Let's try using `native python` firstly to implement front-end functionality, as
 **STEP1**: Build and install python package
 
 ```sh
-cd Cancer/
+cd Chopper/
 bash scripts/_build_python_package.sh
 bash scripts/_install_python_package.sh
 ```

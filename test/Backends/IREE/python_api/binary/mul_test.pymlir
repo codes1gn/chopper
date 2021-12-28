@@ -1,8 +1,8 @@
 # RUN: python %s 2>&1 | FileCheck %s -dump-input=always --check-prefix=CHECK-DYLIB
 # RUN: python %s 2>&1 | FileCheck %s -dump-input=always --check-prefix=CHECK-VULKAN
 
-import cancer.iree.compiler as ireecc
-import cancer.iree.runtime as ireert
+import chopper.iree.compiler as ireecc
+import chopper.iree.runtime as ireert
 
 import numpy as np
 

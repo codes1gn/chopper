@@ -1,10 +1,10 @@
-// RUN: cancer-opt -restricted-canonicalize=included-dialects=std <%s -split-input-file \
+// RUN: chopper-opt -restricted-canonicalize=included-dialects=std <%s -split-input-file \
 // RUN:   | FileCheck %s --check-prefix=STDONLY --dump-input=fail
-// RUN: cancer-opt -restricted-canonicalize=included-dialects=shape <%s -split-input-file \
+// RUN: chopper-opt -restricted-canonicalize=included-dialects=shape <%s -split-input-file \
 // RUN:   | FileCheck %s --check-prefix=SHAPEONLY --dump-input=fail
-// RUN: cancer-opt -restricted-canonicalize=included-dialects=std,shape <%s -split-input-file \
+// RUN: chopper-opt -restricted-canonicalize=included-dialects=std,shape <%s -split-input-file \
 // RUN:   | FileCheck %s --check-prefix=STDANDSHAPE --dump-input=fail
-// RUN: not --crash cancer-opt -restricted-canonicalize=included-dialects=notreal2,notreal1 <%s -split-input-file 2>&1 \
+// RUN: not --crash chopper-opt -restricted-canonicalize=included-dialects=notreal2,notreal1 <%s -split-input-file 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=ERROR --dump-input=fail
 
 // ERROR: restricted-canonicalize: unknown dialects: notreal1, notreal2

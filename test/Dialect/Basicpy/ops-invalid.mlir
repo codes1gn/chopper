@@ -1,4 +1,4 @@
-// RUN: cancer-opt -split-input-file -verify-diagnostics %s
+// RUN: chopper-opt -split-input-file -verify-diagnostics %s
 
 func @numeric_constant_string_attr() {
   // expected-error @+1 {{op requires 'value' to be an integer constant}}

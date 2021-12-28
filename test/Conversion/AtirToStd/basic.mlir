@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s -convert-atir-to-std | FileCheck %s
+// RUN: chopper-opt <%s -convert-atir-to-std | FileCheck %s
 
 // CHECK-LABEL:   func @unary_ops(
 // CHECK-SAME:                    %[[ARG:.*]]: tensor<?xf32>) -> tensor<?xf32> {

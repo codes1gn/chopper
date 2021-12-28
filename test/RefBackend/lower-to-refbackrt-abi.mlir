@@ -1,4 +1,4 @@
-// RUN: cancer-opt -lower-to-refbackrt-abi -split-input-file -verify-diagnostics <%s | FileCheck %s --dump-input=fail
+// RUN: chopper-opt -lower-to-refbackrt-abi -split-input-file -verify-diagnostics <%s | FileCheck %s --dump-input=fail
 
 // Test module metadata.
 

@@ -1,4 +1,4 @@
-// RUN: cancer-opt -split-input-file -verify-diagnostics %s | cancer-opt -canonicalize | FileCheck --dump-input=fail %s
+// RUN: chopper-opt -split-input-file -verify-diagnostics %s | chopper-opt -canonicalize | FileCheck --dump-input=fail %s
 
 //===----------------------------------------------------------------------===//
 // func_template_call

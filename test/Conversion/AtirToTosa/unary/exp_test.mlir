@@ -1,4 +1,4 @@
-// RUN: cancer-opt <%s -split-input-file -convert-atir-to-tosa | FileCheck %s --dump-input=fail
+// RUN: chopper-opt <%s -split-input-file -convert-atir-to-tosa | FileCheck %s --dump-input=fail
 
 
 // CHECK-LABEL: func @exp_conversion_test_scalar

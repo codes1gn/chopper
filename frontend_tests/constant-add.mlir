@@ -1,7 +1,7 @@
-// RUN: cancer-compiler-runmlir %s \
+// RUN: chopper-compiler-runmlir %s \
 // RUN:   -invoke constant_add \
 // RUN:   -arg-value="dense<[3.0, 5.0]> : tensor<2xf32>" \
-// RUN:   -shared-libs=%cancer_runtime_shlib 2>&1 \
+// RUN:   -shared-libs=%chopper_runtime_shlib 2>&1 \
 // RUN:   | FileCheck %s
 
 // CHECK: output #0: dense<[4.000000e+00, 7.000000e+00]> : tensor<2xf32>

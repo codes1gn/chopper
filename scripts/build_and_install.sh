@@ -22,11 +22,11 @@ cmake -G Ninja .. \
     -DCMAKE_BUILD_TYPE=DEBUG \
     -DLLVM_USE_LINKER=lld
 
-cmake --build . --target cancer-opt
-cmake --build . --target cancer-translate
-cmake --build . --target cancer-compiler-runmlir
-cmake --build . --target cancer-compiler-runmlir-capi
-cmake --build . --target cancer_compiler_module
+cmake --build . --target chopper-opt
+cmake --build . --target chopper-translate
+cmake --build . --target chopper-compiler-runmlir
+cmake --build . --target chopper-compiler-runmlir-capi
+cmake --build . --target chopper_compiler_module
 
 # build mlir doc
 cmake --build . --target mlir-doc
