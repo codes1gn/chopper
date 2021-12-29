@@ -13,8 +13,8 @@ from imp import new_module
 
 from mlir import parse_path
 from mlir import astnodes
-from chopper_frontend.scaffold.mlir_dialects import *
-from chopper_frontend.scaffold.utils import *
+from chopper.scaffold.mlir_dialects import *
+from chopper.scaffold.utils import *
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId
@@ -166,7 +166,7 @@ class PythonRunner:
         Returns:
             MlirNode: mlir astnode that generated via according python astnode 
         """
-        from chopper_frontend.pass_manager import PastToMlirPassManager
+        from chopper.pass_manager import PastToMlirPassManager
 
         pass_manager = PastToMlirPassManager()
         pass_manager.register_passes()

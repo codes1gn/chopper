@@ -1,4 +1,4 @@
-from chopper_frontend.scaffold.utils import memoized_classproperty
+from chopper.scaffold.utils import memoized_classproperty
 from .passes import IdenticalPastPass, StatementConversionPass
 
 

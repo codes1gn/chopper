@@ -21,13 +21,13 @@ config.name = "CHOPPER"
 config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
 
 # suffixes: A list of file extensions to treat as test files.
-config.suffixes = [".mlir", ".pymlir"]
+config.suffixes = [".mlir", ".py"]
 
 # test_source_root: The root path where tests are located.
 config.test_source_root = os.path.dirname(__file__)
 
 # test_exec_root: The root path where tests should be run.
-config.test_exec_root = os.path.join(config.chopper_obj_root, "test")
+config.test_exec_root = os.path.join(config.chopper_obj_root, "tests")
 
 config.substitutions.append(("%PATH%", config.environment["PATH"]))
 config.substitutions.append(("%shlibext", config.llvm_shlib_ext))
@@ -39,17 +39,15 @@ llvm_config.use_default_substitutions()
 # excludes: A list of directories to exclude from the testsuite. The 'Inputs'
 # subdirectories contain auxiliary inputs for various tests in their parent
 # directories.
-config.excludes = ["Inputs", "Examples", "CMakeLists.txt", "README.txt", "LICENSE.txt"]
+config.excludes = ["Inputs", "Examples", "CMakeLists.txt", "README.txt", "LICENSE.txt", "lit.cfg.py", "lit.site.cfg.py.in"]
 
 # test_source_root: The root path where tests are located.
 config.test_source_root = os.path.dirname(__file__)
 
 # test_exec_root: The root path where tests should be run.
-config.test_exec_root = os.path.join(config.chopper_obj_root, "test")
+config.test_exec_root = os.path.join(config.chopper_obj_root, "tests")
 config.chopper_tools_dir = os.path.join(config.chopper_obj_root, "bin")
 config.iree_tools_dir = os.path.join(config.iree_obj_root, "bin")
-config.iree_env1 = os.path.join(config.iree_obj_root, "bindings/python")
-config.iree_env2 = os.path.join(config.iree_obj_root, "compiler-api/python_package")
 
 # Tweak the PATH and PYTHONPATH to include the tools dir.
 llvm_config.with_environment("PATH", config.llvm_tools_dir, append_path=True)

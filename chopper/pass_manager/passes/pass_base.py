@@ -1,5 +1,5 @@
 from typing import Any
-from chopper_frontend.scaffold.utils import *
+from chopper.scaffold.utils import *
 
 
 class PassBase(object):

@@ -1,7 +1,7 @@
 import ast
 
-from chopper_frontend.pass_manager.transformers import IdenticalPastTransformer
-from chopper_frontend.pass_manager.passes.pass_base import PassBase
+from chopper.pass_manager.transformers import IdenticalPastTransformer
+from chopper.pass_manager.passes.pass_base import PassBase
 
 __all__ = [
     "IdenticalPastPass",

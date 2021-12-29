@@ -1,5 +1,5 @@
-from chopper_frontend.pass_manager.pass_manager_base import PassManagerBase
-from chopper_frontend.pass_manager.passes import IdenticalPastPass, StatementConversionPass
+from chopper.pass_manager.pass_manager_base import PassManagerBase
+from chopper.pass_manager.passes import IdenticalPastPass, StatementConversionPass
 
 __all__ = [
     "PastToMlirPassManager",

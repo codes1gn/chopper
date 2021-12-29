@@ -1,12 +1,12 @@
 import ast
 import astunparse
 
-from chopper_frontend.scaffold.utils import *
+from chopper.scaffold.utils import *
 from .node_visitor_base import NodeVisitorBase
 
 from mlir import astnodes
 from mlir.dialects.standard import ReturnOperation
-from chopper_frontend.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp
+from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId

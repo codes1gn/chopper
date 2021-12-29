@@ -2,13 +2,13 @@ import ast
 import astunparse
 from astunparse import printer
 
-from chopper_frontend.scaffold.utils import *
+from chopper.scaffold.utils import *
 from .node_transformer_base import NodeTransformerBase
 
 from mlir import astnodes
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimension
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
-from chopper_frontend.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp
+from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId

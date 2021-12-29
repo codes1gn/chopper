@@ -1,6 +1,6 @@
 import ast
 
-from chopper_frontend.scaffold.utils import *
+from chopper.scaffold.utils import *
 from .node_transformer_base import NodeTransformerBase
 
 __all__ = [

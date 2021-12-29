@@ -72,6 +72,6 @@ add_subdirectory(external/pybind11)
 
 # add targets for chopper projects
 add_subdirectory(src)
-add_subdirectory(test)
+add_subdirectory(tests)
 
 

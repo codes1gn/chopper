@@ -2,13 +2,13 @@ import ast
 import astunparse
 from astunparse.printer import Printer
 
-from chopper_frontend.scaffold.utils import *
+from chopper.scaffold.utils import *
 from .node_transformer_base import NodeTransformerBase
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument
 from mlir import astnodes
 from mlir.dialects.standard import *
-from chopper_frontend.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp
+from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId
@@ -55,7 +55,7 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
               self.pretty_mlir(node.mast_node))
 
         # TODO Fix body elements in function region's block
-        """ 
+        """
         Region: body (consist of a series Block)
         Need set ReturnOp Type according Assign op when Pass the Return assigned variable.
         """
@@ -79,7 +79,7 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         if not argument_type[0]:
             argument_type = [return_type]
         """
-        Set the Operation Type based on the Argument Type and Return Type at the time the function was defined  
+        Set the Operation Type based on the Argument Type and Return Type at the time the function was defined
         """
         for operation in operations:
             _OP = operation.mast_node.op
