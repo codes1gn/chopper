@@ -27,8 +27,6 @@ if __name__ == '__main__':
   else:
     _args = argslist2
 
-  # get %s from argv[0]
-  # assert(_args[1] == sys.argv[0].replace('py', '')), "{} vs {}".format(_args[1], sys.argv[0])
   _args[1] = sys.argv[0].replace('-compiler-module', '-compiler-runmlir')
   _args[1] = _args[1].replace('py', '')
 

@@ -53,8 +53,8 @@ set(CHOPPER_TABLEGEN_ARGS "")
 
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${MLIR_INCLUDE_DIRS})
-include_directories(${PROJECT_SOURCE_DIR}/chopper-compiler-src/include)
-include_directories(${PROJECT_BINARY_DIR}/chopper-compiler-src/include)
+include_directories(${PROJECT_SOURCE_DIR}/src/compiler/include)
+include_directories(${PROJECT_BINARY_DIR}/src/compiler/include)
 link_directories(${LLVM_BUILD_LIBRARY_DIR})
 add_definitions(${LLVM_DEFINITIONS})
 
@@ -67,11 +67,11 @@ message(STATUS "Found python libraries: ${Python_LIBRARIES}")
 
 
 
-# build subcomponents
+# add dependency
 add_subdirectory(external/pybind11)
-add_subdirectory(test)
-add_subdirectory(chopper-compiler-src)
 
-# add chopper-compiler utils
-add_subdirectory(chopper-compiler)
+# add targets for chopper projects
+add_subdirectory(src)
+add_subdirectory(test)
+
 
