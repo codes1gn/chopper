@@ -134,9 +134,9 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                                                op=_function,
                                                location=None)
 
-        print("\n>>>>>MLIR Node for FunctionDef:<<<<<\n",
-              self.pretty_mlir(_function_wrapper))
         setattr(node, "mast_node", _function_wrapper)
+        print("\n>>>>>MLIR Node for FunctionDef:<<<<<\n",
+              self.pretty_mlir(node.mast_node))
 
         return node
 
@@ -167,9 +167,9 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                                   location=None)
         _mlirfile = astnodes.MLIRFile(definitions=[], modules=[_module])
 
-        print("\n>>>>>MLIR Node for Module:<<<<<\n",
-              self.pretty_mlir(_mlirfile))
         setattr(node, "mast_node", _mlirfile)
+        print("\n>>>>>MLIR Node for Module:<<<<<\n",
+              self.pretty_mlir(node.mast_node))
 
         return node
 
@@ -226,9 +226,10 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         _returnop_wrapper = astnodes.Operation(result_list=None,
                                                op=_returnop,
                                                location=None)
-        print("\nMLIR Node for Return:<<<<<\n",
-              self.pretty_mlir(_returnop_wrapper))
+
         setattr(node, "mast_node", _returnop_wrapper)
+        print("\nMLIR Node for Return:<<<<<\n",
+              self.pretty_mlir(node.mast_node))
 
         return node
 
@@ -306,9 +307,10 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         _assignop_wrapper = astnodes.Operation(result_list=_result_list,
                                                op=_assignop,
                                                location=None)
-        print(">>>>>MLIR Node for AugAssign BinOp:<<<<<\n",
-              self.pretty_mlir(_assignop_wrapper))
         setattr(node, "mast_node", _assignop_wrapper)
+        print(">>>>>MLIR Node for AugAssign BinOp:<<<<<\n",
+              self.pretty_mlir(node.mast_node))
+
         return node
 
     def visit_Assign(self, node: ast.AST) -> ast.AST:
@@ -329,7 +331,35 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         print(">>>>>Python Assign Node:<<<<<\n", astunparse.dump(node))
 
         _type = None
-        if isinstance(node.value, ast.Constant):
+
+        if isinstance(node.value, ast.Num):
+            if isinstance(node.value.n, float):
+                _match = 0
+                _value = node.value.n
+
+                # _type = astnodes.FloatType(MlirType.f32)
+                _type = None
+
+                _assignop = ConstantOperation(match=_match,
+                                              value=_value,
+                                              type=_type)
+
+                _result_list = list()
+
+                _value = node.targets[0].id
+                _SsaId = MlirSsaId(value=_value, op_no=None)
+                _result_list.append(astnodes.OpResult(value=_SsaId,
+                                                      count=None))
+
+                _assignop_wrapper = astnodes.Operation(
+                    result_list=_result_list, op=_assignop, location=None)
+                print(">>>>>MLIR Node for Assign:<<<<<\n",
+                      self.pretty_mlir(_assignop_wrapper))
+                setattr(node, "mast_node", _assignop_wrapper)
+            else:
+                assert 0, "found non-float value, not supported"
+
+        elif isinstance(node.value, ast.Constant):
             if isinstance(node.value.value, float):
                 _match = 0
                 _value = node.value.value
@@ -353,8 +383,10 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 print(">>>>>MLIR Node for Assign:<<<<<\n",
                       self.pretty_mlir(_assignop_wrapper))
                 setattr(node, "mast_node", _assignop_wrapper)
+            else:
+                assert 0, "found non-float value, not supported"
 
-        if isinstance(node.value, ast.BinOp):
+        elif isinstance(node.value, ast.BinOp):
             _namespace = 'tcf'
             _name = None
             # TODO: Other binary op
@@ -435,6 +467,9 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             print(">>>>>MLIR Node for Assign BinOp:<<<<<\n",
                   self.pretty_mlir(_assignop_wrapper))
             setattr(node, "mast_node", _assignop_wrapper)
+
+        else:
+            assert 0, 'found unsupported form of rhs operator'
 
         return node
 

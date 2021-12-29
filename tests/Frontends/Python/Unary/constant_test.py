@@ -1,4 +1,4 @@
-# RUN: python <%s | FileCheck %s -dump-input=fail
+# RUN: python %s 2>&1 | FileCheck %s -dump-input=fail
 
 """ Tests pyMLIR on examples that use the Toy dialect. """
 import os
@@ -16,21 +16,21 @@ def analyse(the_func: Callable) -> None:
     print(PythonRunner.dump_mlir(mlast))
 
 
-def test_constant():
-
-    # define test function
-    def constant1():
+if __name__ == "__main__":
+    # TODO(albert) remove these invalid case, they can pass frontend convertion but fail at compiler checks
+    """
+    def constant_test_1():
         return
 
-    def constant2() -> float:
+    def constant_test_2() -> float:
         return 1.0
+    """
 
-    def constant3() -> float:
-        arg0 = 1.0
+    def constant_test() -> float:
+        arg0 = 1.4
         return arg0
 
-    analyse(constant3)
-
-
-if __name__ == "__main__":
-    test_constant()
+    analyse(constant_test)
+    # CHECK: func @constant_test -> f32 {
+    # CHECK-NEXT: %arg0 = constant 1.4 : f32
+    # CHECK-NEXT: return %arg0 : f32

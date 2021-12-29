@@ -1,4 +1,4 @@
-# RUN: python <%s | FileCheck %s -dump-input=fail
+# RUN: python %s 2>&1 | FileCheck %s -dump-input=fail
 
 """ Tests pyMLIR on examples that use the Toy dialect. """
 import os
@@ -18,7 +18,7 @@ def analyse(the_func: Callable) -> None:
     print(PythonRunner.dump_mlir(mlast))
 
 
-def test_binary():
+if __name__ == "__main__":
 
     # TODO: Add OP
     cunt = 0
@@ -448,12 +448,13 @@ def test_binary():
         res = np.array(arg0) // np.array(arg1)
         return res
     
-    analyse(floordiv_scalar0)
-    analyse(floordiv_scalar1)
-    analyse(floordiv_scalar2)
-    analyse(floordiv_scalar3)
-    analyse(listfloordiv0)
+    #analyse(floordiv_scalar0)
+    # analyse(floordiv_scalar1)
+    #analyse(floordiv_scalar2)
+    #analyse(floordiv_scalar3)
+    #analyse(listfloordiv0)
+
     analyse(listfloordiv1)
-    
-if __name__ == "__main__":
-    test_binary()
+    # CHECK: func @listfloordiv1(%arg0: tensor<?x?xf32>, %arg1: tensor<?x?xf32>) -> tensor<?x?xf32> {
+    # CHECK-NEXT: tcf.floordiv
+    # CHECK-NEXT: return %res : tensor<?x?xf32>

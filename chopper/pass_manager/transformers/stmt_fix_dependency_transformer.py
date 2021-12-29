@@ -81,9 +81,11 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         """
         Set the Operation Type based on the Argument Type and Return Type at the time the function was defined
         """
+        # TODO(albert), eliminate this hardcoded of type constraints
         for operation in operations:
             _OP = operation.mast_node.op
             if isinstance(_OP, ReturnOperation):
+                print(_OP)
                 for i in range(len(operation.mast_node.op.types)):
                     _OP.types[i] = return_type
             if isinstance(_OP, ConstantOperation):
@@ -120,10 +122,10 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
 
     def visit_Module(self, node: ast.AST) -> ast.AST:
         """Method that constructs the Module in python_native dialect
-        
+
         Module is the tops of python native ast, should traverses all nodes in Module,
-        the final MLIR astnode is constructs according to the mast_node attribute of each node. 
-        
+        the final MLIR astnode is constructs according to the mast_node attribute of each node.
+
 
         Args:
             node (ast.AST): python native astnode with all mast_node attributions.
