@@ -1,3 +1,4 @@
+#!/bin/sh
 
 script_path=`dirname $0`
 script_realpath=`realpath $script_path`
@@ -6,8 +7,7 @@ top_dir_path=$script_path"/.."
 top_dir_realpath=`realpath $top_dir_path`
 echo "top dir = "$top_dir_realpath
 
-sh ${top_dir_realpath}/scripts/_install_python_package.sh
+sh ${top_dir_realpath}/scripts/_build_dependencies.sh
+sh ${top_dir_realpath}/scripts/_build_iree.sh
+sh ${top_dir_realpath}/scripts/_build_chopper.sh
 
-cd ${top_dir_realpath}
-
-python frontend_tests/test_mlir.py
