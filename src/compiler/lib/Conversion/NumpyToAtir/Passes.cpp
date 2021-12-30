@@ -9,9 +9,9 @@
 #include "Conversion/NumpyToAtir/Passes.h"
 
 #include "../PassDetail.h"
-#include "Dialect/Numpy/IR/NumpyOps.h"
 #include "Dialect/Atir/IR/AtirDialect.h"
 #include "Dialect/Atir/IR/AtirOps.h"
+#include "Dialect/Numpy/IR/NumpyOps.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
 using namespace mlir;
@@ -55,7 +55,7 @@ class ConvertNumpyToAtir : public ConvertNumpyToAtirBase<ConvertNumpyToAtir> {
     // change OwningRewritePatternList into RewritePatternSet
     RewritePatternSet patterns(context);
     patterns.add<ConvertBinaryBuiltinUfuncCallOp<atir::AddOp>>(context,
-                                                                 "numpy.add");
+                                                               "numpy.add");
     (void)applyPatternsAndFoldGreedily(func, std::move(patterns));
   }
 };

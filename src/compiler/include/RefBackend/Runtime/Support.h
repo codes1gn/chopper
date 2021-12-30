@@ -31,7 +31,7 @@ public:
     return std::memcmp(ptr, other.ptr, length) == 0;
   }
 
-  const char* str() { return ptr; }
+  const char *str() { return ptr; }
 
 private:
   const char *ptr;

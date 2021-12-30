@@ -8,14 +8,14 @@
 
 #include "PassDetail.h"
 
+#include "Dialect/Numpy/IR/NumpyDialect.h"
+#include "Dialect/Numpy/IR/NumpyOps.h"
+#include "Dialect/Numpy/Transforms/Passes.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "Dialect/Numpy/IR/NumpyDialect.h"
-#include "Dialect/Numpy/IR/NumpyOps.h"
-#include "Dialect/Numpy/Transforms/Passes.h"
 
 using namespace mlir;
 using namespace mlir::CHOPPER;

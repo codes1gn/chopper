@@ -13,8 +13,8 @@
 
 #include "Capi/chopper-compiler-runmlir-capi.h"
 
-#include "ChopperInit.h"
 #include "Capi/InitLLVM.h"
+#include "ChopperInit.h"
 #include "RefBackend/JITHelpers/JITModule.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/AsmState.h"
@@ -36,8 +36,7 @@ static Error make_string_error(const Twine &message) {
                                        llvm::inconvertibleErrorCode());
 }
 
-static Expected<refbackrt::RtValue>
-convertAttrToTensor(Attribute attr) {
+static Expected<refbackrt::RtValue> convertAttrToTensor(Attribute attr) {
   auto type = attr.getType().dyn_cast<RankedTensorType>();
   if (!type)
     return make_string_error("unhandled argument type; must be a tensor type");
@@ -62,8 +61,9 @@ convertAttrToTensor(Attribute attr) {
 
 static Expected<float> convertAttrToFloat(Attribute attr) {
   auto type = attr.getType().dyn_cast<FloatType>();
-  if(!type)
-    return make_string_error("converting arg from attr to float that is not a FloatType");
+  if (!type)
+    return make_string_error(
+        "converting arg from attr to float that is not a FloatType");
   auto floatAttr = attr.dyn_cast<FloatAttr>();
   return floatAttr.getValue().convertToFloat();
 }
@@ -116,18 +116,18 @@ getCorrespondingMLIRTensorType(refbackrt::Tensor &tensor, Builder &builder) {
 static Attribute convertToMLIRAttribute(const refbackrt::RtValue &value,
                                         Builder &builder) {
   if (value.isTensor()) {
-    auto& tensor = *(value.toTensor());
+    auto &tensor = *(value.toTensor());
     RankedTensorType type = getCorrespondingMLIRTensorType(tensor, builder);
     switch (tensor.getElementType()) {
-      case refbackrt::ElementType::F32: {
-        SmallVector<float, 100> values;
-        auto *basePtr = tensor.getData<float>();
-        for (int i = 0, e = type.getNumElements(); i < e; i++)
-          values.push_back(basePtr[i]);
-        return DenseFPElementsAttr::get(type, values);
-      }
-      default:
-        llvm_unreachable("unsupported element type");
+    case refbackrt::ElementType::F32: {
+      SmallVector<float, 100> values;
+      auto *basePtr = tensor.getData<float>();
+      for (int i = 0, e = type.getNumElements(); i < e; i++)
+        values.push_back(basePtr[i]);
+      return DenseFPElementsAttr::get(type, values);
+    }
+    default:
+      llvm_unreachable("unsupported element type");
     }
   } else if (value.isFloat()) {
     return builder.getF32FloatAttr(value.toFloat());
@@ -135,7 +135,8 @@ static Attribute convertToMLIRAttribute(const refbackrt::RtValue &value,
   llvm_unreachable("unsupported type");
 }
 
-static void printOutput(const refbackrt::RtValue &value, llvm::raw_ostream &os) {
+static void printOutput(const refbackrt::RtValue &value,
+                        llvm::raw_ostream &os) {
   MLIRContext context;
   Builder builder(&context);
   auto attr = convertToMLIRAttribute(value, builder);
@@ -229,7 +230,8 @@ int chopperrun(int argc, char **argv) {
   mlir::registerAsmPrinterCLOptions();
   mlir::registerPassManagerCLOptions();
   Options options;
-  llvm::cl::ParseCommandLineOptions(argc, argv, "chopper compile+run utility\n");
+  llvm::cl::ParseCommandLineOptions(argc, argv,
+                                    "chopper compile+run utility\n");
 
   SmallVector<StringRef, 6> sharedLibs(options.sharedLibs.begin(),
                                        options.sharedLibs.end());

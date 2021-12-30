@@ -9,15 +9,15 @@
 #include "Conversion/AtirToStd/AtirToStd.h"
 
 #include "../PassDetail.h"
+#include "Dialect/Atir/IR/AtirOps.h"
+#include "Dialect/Ctir/IR/CtirDialect.h"
+#include "Dialect/Ctir/IR/CtirOps.h"
 #include "mlir/Dialect/Math/IR/Math.h"
 #include "mlir/Dialect/Shape/IR/Shape.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Dialect/Traits.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "Dialect/Atir/IR/AtirOps.h"
-#include "Dialect/Ctir/IR/CtirDialect.h"
-#include "Dialect/Ctir/IR/CtirOps.h"
 
 using namespace mlir;
 using namespace mlir::CHOPPER;
@@ -136,7 +136,8 @@ namespace {
 class ConvertAtirToStd : public ConvertAtirToStdBase<ConvertAtirToStd> {
 public:
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<math::MathDialect, shape::ShapeDialect, ctir::CtirDialect>();
+    registry
+        .insert<math::MathDialect, shape::ShapeDialect, ctir::CtirDialect>();
   }
 
   void runOnOperation() override {

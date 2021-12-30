@@ -348,7 +348,8 @@ createFuncDescriptorArray(ArrayRef<refbackrt::FuncMetadataOp> funcMetadatas,
   // Create global output descriptors
   for (auto funcMetadata : funcMetadatas) {
     std::string llvmOutputSymbolName =
-        (Twine("__chopper_output_descriptors_") + funcMetadata.funcName()).str();
+        (Twine("__chopper_output_descriptors_") + funcMetadata.funcName())
+            .str();
     auto outputDescriptorTy = getOutputDescriptorTy(builder.getContext());
     auto outputDescriptorArrayTy =
         LLVMArrayType::get(outputDescriptorTy, funcMetadata.numOutputs());
@@ -733,6 +734,7 @@ class LowerToLLVM : public LowerToLLVMBase<LowerToLLVM> {
 };
 } // namespace
 
-std::unique_ptr<OperationPass<ModuleOp>> mlir::CHOPPER::createLowerToLLVMPass() {
+std::unique_ptr<OperationPass<ModuleOp>>
+mlir::CHOPPER::createLowerToLLVMPass() {
   return std::make_unique<LowerToLLVM>();
 }

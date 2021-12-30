@@ -96,8 +96,9 @@ public:
 };
 
 /// An unknown type that could be any supported python type.
-class UnknownType : public Type::TypeBase<UnknownType, Type, TypeStorage,
-                                          CHOPPERTypingTypeMapInterface::Trait> {
+class UnknownType
+    : public Type::TypeBase<UnknownType, Type, TypeStorage,
+                            CHOPPERTypingTypeMapInterface::Trait> {
 public:
   using Base::Base;
   static UnknownType get(MLIRContext *context) { return Base::get(context); }

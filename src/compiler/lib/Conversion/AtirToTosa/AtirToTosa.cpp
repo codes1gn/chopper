@@ -10,9 +10,9 @@
 
 #include "../PassDetail.h"
 #include "Dialect/Atir/IR/AtirOps.h"
-#include "mlir/Dialect/Tosa/IR/TosaOps.h"
 #include "mlir/Dialect/Math/IR/Math.h"
 #include "mlir/Dialect/Shape/IR/Shape.h"
+#include "mlir/Dialect/Tosa/IR/TosaOps.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Dialect/Traits.h"
@@ -21,8 +21,6 @@
 
 using namespace mlir;
 using namespace mlir::CHOPPER;
-
-
 
 namespace {
 class ConvertExpOp : public OpRewritePattern<atir::ExpOp> {
@@ -33,11 +31,13 @@ public:
     // way 2, explicit replace with replaceOp
     auto loc = op->getLoc();
     auto elementTy = op->getOperand(0).getType();
-    auto tosa_exp = rewriter.create<tosa::ExpOp>(loc, elementTy, op->getOperand(0));
+    auto tosa_exp =
+        rewriter.create<tosa::ExpOp>(loc, elementTy, op->getOperand(0));
     rewriter.replaceOp(op, tosa_exp.getResult());
 
     // way 1, use replaceOpWithNewOp
-    // rewriter.replaceOpWithNewOp<tosa::ExpOp>(op, elementTy, op->getOperand(0));
+    // rewriter.replaceOpWithNewOp<tosa::ExpOp>(op, elementTy,
+    // op->getOperand(0));
 
     return success();
   }
@@ -51,11 +51,13 @@ public:
     // way 2, explicit replace with replaceOp
     auto loc = op->getLoc();
     auto elementTy = op->getOperand(0).getType();
-    auto tosa_tanh = rewriter.create<tosa::TanhOp>(loc, elementTy, op->getOperand(0));
+    auto tosa_tanh =
+        rewriter.create<tosa::TanhOp>(loc, elementTy, op->getOperand(0));
     rewriter.replaceOp(op, tosa_tanh.getResult());
 
     // way 1, use replaceOpWithNewOp
-    // rewriter.replaceOpWithNewOp<tosa::TanhOp>(op, elementTy, op->getOperand(0));
+    // rewriter.replaceOpWithNewOp<tosa::TanhOp>(op, elementTy,
+    // op->getOperand(0));
 
     return success();
   }
@@ -66,7 +68,8 @@ namespace {
 class ConvertAtirToTosa : public ConvertAtirToTosaBase<ConvertAtirToTosa> {
 public:
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<shape::ShapeDialect, tosa::TosaDialect, math::MathDialect>();
+    registry
+        .insert<shape::ShapeDialect, tosa::TosaDialect, math::MathDialect>();
   }
 
   void runOnOperation() override {

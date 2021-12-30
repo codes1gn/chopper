@@ -8,12 +8,12 @@
 
 #include "Conversion/Passes.h"
 
-#include "Conversion/BasicpyToStd/Passes.h"
-#include "Conversion/NumpyToAtir/Passes.h"
+#include "Conversion/AtirToCtir/AtirToCtir.h"
 #include "Conversion/AtirToLinalg/AtirToLinalg.h"
 #include "Conversion/AtirToStd/AtirToStd.h"
-#include "Conversion/AtirToCtir/AtirToCtir.h"
 #include "Conversion/AtirToTosa/AtirToTosa.h"
+#include "Conversion/BasicpyToStd/Passes.h"
+#include "Conversion/NumpyToAtir/Passes.h"
 
 //===----------------------------------------------------------------------===//
 // Pass registration

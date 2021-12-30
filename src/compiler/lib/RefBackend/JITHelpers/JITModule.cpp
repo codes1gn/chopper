@@ -9,9 +9,9 @@
 #include "RefBackend/JITHelpers/JITModule.h"
 #include "RefBackend/RefBackend.h"
 // fix jit module reference
-#include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
 #include "mlir/ExecutionEngine/CRunnerUtils.h"
 #include "mlir/ExecutionEngine/OptUtils.h"
+#include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
 
 using namespace refback;
 using namespace mlir;
@@ -143,4 +143,3 @@ JITModule::invoke(llvm::StringRef functionName,
       toRefbackrt(llvm::makeMutableArrayRef(outputs.data(), outputs.size())));
   return outputs;
 }
-

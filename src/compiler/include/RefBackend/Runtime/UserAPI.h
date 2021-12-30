@@ -174,7 +174,7 @@ private:
 // The tag determines the type, and the payload represents the stored
 // contents of an object. If an object is not trivially destructible,
 // then it must be refcounted and must have a refCount.
-#define CHOPPER_FORALL_PRIM_TAGS(_)                                             \
+#define CHOPPER_FORALL_PRIM_TAGS(_)                                            \
   _(None)                                                                      \
   _(Bool)                                                                      \
   _(Int)                                                                       \
@@ -183,8 +183,8 @@ private:
 
 #define CHOPPER_FORALL_REF_TAGS(_) _(Tensor)
 
-#define CHOPPER_FORALL_TAGS(_)                                                  \
-  CHOPPER_FORALL_PRIM_TAGS(_)                                                   \
+#define CHOPPER_FORALL_TAGS(_)                                                 \
+  CHOPPER_FORALL_PRIM_TAGS(_)                                                  \
   CHOPPER_FORALL_REF_TAGS(_)
 
 struct RtValue final {

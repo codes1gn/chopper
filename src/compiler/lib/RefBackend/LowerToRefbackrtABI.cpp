@@ -26,7 +26,7 @@ using namespace mlir::CHOPPER;
 // a maximum rank for each input shape such that shapes are padded
 // out to kMaxRank at the ABI boundary. That way we can represent
 // shapes using a traditional DenseElementsAttr.
-// 
+//
 // NOTE: When changing this parameter, also change the same `kMaxRank`
 // parameter in `lib/RefBackend/LowerToLLVM.cpp` so that the LLVM lowering
 // stays consistent.

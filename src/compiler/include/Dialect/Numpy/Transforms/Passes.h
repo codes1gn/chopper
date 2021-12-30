@@ -21,7 +21,6 @@ std::unique_ptr<OperationPass<ModuleOp>> createPublicFunctionsToTensorPass();
 std::unique_ptr<OperationPass<FuncOp>> createArrayToTensorPass();
 std::unique_ptr<OperationPass<ModuleOp>> createRefinePublicReturnPass();
 
-
 } // namespace Numpy
 
 /// Registers all Numpy transformation passes.

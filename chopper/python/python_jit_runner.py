@@ -86,6 +86,7 @@ class PythonRunner:
         """
         Initializes the PythonRunner
         """
+
     @classmethod
     def dump_mlir(cls, _ast: MlirNode) -> str:
         """dump mlir string.
@@ -107,7 +108,7 @@ class PythonRunner:
         dump_str += ColorPalette.ENDC
         dump_str += "\n*******************\n"
         return dump_str
-    
+
     @classmethod
     def dump_python(cls, _ast: ast.AST) -> str:
         """dump python ast and corresponding source code.
@@ -147,7 +148,7 @@ class PythonRunner:
 
         Returns:
             ast.AST: python astnode.
-        """        
+        """
         code_file = inspect.getsourcefile(func)
         code_lines, start_lineno = inspect.getsourcelines(func)
         code = "".join(code_lines)
@@ -171,5 +172,5 @@ class PythonRunner:
         pass_manager = PastToMlirPassManager()
         pass_manager.register_passes()
         pass_manager.run(pyast)
-        
+
         return pyast.mast_node

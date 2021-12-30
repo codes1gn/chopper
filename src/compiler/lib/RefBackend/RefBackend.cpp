@@ -45,13 +45,13 @@
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "mlir/Transforms/Passes.h"
 
+#include "Conversion/AtirToCtir/AtirToCtir.h"
 #include "Conversion/AtirToLinalg/AtirToLinalg.h"
 #include "Conversion/AtirToStd/AtirToStd.h"
-#include "Conversion/AtirToCtir/AtirToCtir.h"
-#include "Dialect/Refback/IR/RefbackOps.h"
 #include "Dialect/Ctir/IR/CtirDialect.h"
 #include "Dialect/Ctir/IR/CtirOps.h"
 #include "Dialect/Ctir/Transforms/Passes.h"
+#include "Dialect/Refback/IR/RefbackOps.h"
 
 using namespace mlir;
 using namespace mlir::CHOPPER;
@@ -108,7 +108,8 @@ public:
         dynamicExtents.push_back(extent);
       }
     }
-    rewriter.replaceOpWithNewOp<memref::AllocOp>(op, memrefType, dynamicExtents);
+    rewriter.replaceOpWithNewOp<memref::AllocOp>(op, memrefType,
+                                                 dynamicExtents);
     return success();
   }
 };

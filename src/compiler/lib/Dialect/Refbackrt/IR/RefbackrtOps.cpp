@@ -7,11 +7,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Refbackrt/IR/RefbackrtOps.h"
+#include "Dialect/Refbackrt/IR/RefbackrtDialect.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/SymbolTable.h"
 #include "mlir/IR/TypeUtilities.h"
-#include "Dialect/Refbackrt/IR/RefbackrtDialect.h"
 
 using namespace mlir;
 using namespace mlir::CHOPPER::refbackrt;
@@ -57,12 +57,14 @@ static LogicalResult verify(FuncMetadataOp op) {
 
   if (op.numInputs() > 0) {
     if (op.numInputs() != op.inputArgTypes()->size()) {
-      return op.emitError() << "number of inputTypes must match number of inputs";
+      return op.emitError()
+             << "number of inputTypes must match number of inputs";
     }
   }
   if (op.numOutputs() > 0) {
     if (op.numOutputs() != op.outputArgTypes()->size())
-      return op.emitError() << "number of outputTypes must match number of outputs";
+      return op.emitError()
+             << "number of outputTypes must match number of outputs";
   }
   return success();
 }

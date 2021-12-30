@@ -40,7 +40,7 @@ struct InputDescriptor {
   ABIElementType elementType;
 
   std::int32_t rank;
-  std::int32_t* extents;
+  std::int32_t *extents;
 
   // TODO(brycearden): Change to bool at ABI boundary
   // std::int32_t isStatic;
@@ -51,10 +51,10 @@ struct OutputDescriptor {
   ABIElementType elementType;
 
   std::int32_t rank;
-  std::int32_t* extents;
+  std::int32_t *extents;
 
   // TODO(brycearden): Change to bool at ABI boundary
-  //std::int32_t isStatic;
+  // std::int32_t isStatic;
 };
 
 struct FuncDescriptor {

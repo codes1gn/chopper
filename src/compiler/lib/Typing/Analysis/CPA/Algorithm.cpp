@@ -86,7 +86,8 @@ GreedyTypeNodeVarResolver::unionCandidateTypes(const ValueTypeSet &candidates) {
     return nullptr;
   }
   if (candidates.size() != 1) {
-    (void)mlir::emitOptionalError(loc, "ambiguous candidate types were identified");
+    (void)mlir::emitOptionalError(loc,
+                                  "ambiguous candidate types were identified");
     return nullptr;
   }
 

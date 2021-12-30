@@ -1,4 +1,5 @@
-/*===-- chopper-c/InitLLVM.h - C API for initializing LLVM  --------*- C -*-===*\
+/*===-- chopper-c/InitLLVM.h - C API for initializing LLVM  --------*- C
+-*-===*\
 |*                                                                            *|
 |* Part of the LLVM Project, under the Apache License v2.0 with LLVM          *|
 |* Exceptions.                                                                *|

@@ -21,7 +21,8 @@ using namespace mlir::CHOPPER::atir;
 
 namespace {
 
-class ShapeRefinementPass : public AtirShapeRefinementBase<ShapeRefinementPass> {
+class ShapeRefinementPass
+    : public AtirShapeRefinementBase<ShapeRefinementPass> {
   void runOnOperation() override {
     auto func = getOperation();
     // TODO: Implement for real.
@@ -30,8 +31,7 @@ class ShapeRefinementPass : public AtirShapeRefinementBase<ShapeRefinementPass> 
       auto rhsType = addOp.rhs().getType();
       if (lhsType == rhsType) {
         addOp.result().setType(lhsType);
-      }
-      else {
+      } else {
         addOp.emitError() << "args has different shape";
       }
     });
