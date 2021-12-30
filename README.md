@@ -10,7 +10,7 @@ The Composite AI Compiler Experiment Platform (Chopper) built with composite mod
 
 <div align=center>
 
-![Chopper architecture](docs/source/artifacts/Chopper_Architecture.png)
+![Chopper architecture](docs/source/Artifacts/Cancer_Architecture.png)
 
 </div>
 
