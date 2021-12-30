@@ -8,7 +8,7 @@ from .node_transformer_base import NodeTransformerBase
 from mlir import astnodes
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimension
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
-from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp
+from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId
@@ -329,10 +329,34 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         print(self.__str__(),
               "Map transformer::handling visit_Assign on node.\n")
         print(">>>>>Python Assign Node:<<<<<\n", astunparse.dump(node))
+        print(type(node.value))
+        def mapping_Assign_Call(_node: ast.AST) -> ast.AST:
+            assert _node.value.func.attr == 'exp', "assign an unsupported call"
+            _SsaId_operand = MlirSsaId(value=node.value.args[0].id,
+                                    op_no=None)
+
+            # TODO(albert) this is a temporal transfer, use f32 for hardcoded
+            _ret_type = astnodes.FloatType(MlirType.f32)
+            _assignop = TCF_ExpOp(match=0, operand=_SsaId_operand, type=_ret_type)
+
+            _result_list = list()
+            _result_list.append(
+                astnodes.OpResult(value=MlirSsaId(value=node.targets[0].id,
+                                                  op_no=None),
+                                  count=None))
+            _assignop_wrapper = astnodes.Operation(result_list=_result_list,
+                                                   op=_assignop,
+                                                   location=None)
+
+            setattr(_node, "mast_node", _assignop_wrapper)
+            return _node
 
         _type = None
 
-        if isinstance(node.value, ast.Num):
+        if isinstance(node.value, ast.Call):
+            node = mapping_Assign_Call(node)
+
+        elif isinstance(node.value, ast.Num):
             if isinstance(node.value.n, float):
                 _match = 0
                 _value = node.value.n
@@ -470,6 +494,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
         else:
             assert 0, 'found unsupported form of rhs operator'
+        print(">>>>>Converted MLIR Node:<<<<<\n",
+                  self.pretty_mlir(node.mast_node))
 
         return node
 
