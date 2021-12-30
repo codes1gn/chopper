@@ -26,7 +26,7 @@ if __name__ == "__main__":
     atir = PythonRunner.convert_python_to_mlir(pyast)
     print('------ MLIR SRC ------')
     # CHECK: --- MLIR SRC ---
-    # CHECK: %ret = tcf.exp %arg0 : f32
+    # CHECK: %ret = atir.exp %arg0 : f32
     print(PythonRunner.dump_mlir(atir))
 
     # ref

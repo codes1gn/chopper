@@ -9,6 +9,7 @@ from mlir import astnodes
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimension
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
+from chopper.scaffold.mlir_dialects.dialect_atir import ATIR_ExpOp
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId
@@ -337,7 +338,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
             # TODO(albert) this is a temporal transfer, use f32 for hardcoded
             _ret_type = astnodes.FloatType(MlirType.f32)
-            _assignop = TCF_ExpOp(match=0, operand=_SsaId_operand, type=_ret_type)
+            _assignop = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=_ret_type)
 
             _result_list = list()
             _result_list.append(
