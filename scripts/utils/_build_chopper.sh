@@ -24,7 +24,10 @@ cmake -G Ninja .. \
 cmake --build . --target chopper-opt
 cmake --build . --target chopper-translate
 cmake --build . --target chopper-compiler-runmlir
+
+# build apis
 cmake --build . --target chopper-compiler-runmlir-capi
+cmake --build . --target chopper-opt-capi
 
 # build compiler
 cmake --build . --target chopper_compiler
