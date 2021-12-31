@@ -455,6 +455,6 @@ if __name__ == "__main__":
     #analyse(listfloordiv0)
 
     analyse(listfloordiv1)
-    # CHECK: func @listfloordiv1(%arg0: tensor<?x?xf32>, %arg1: tensor<?x?xf32>) -> tensor<?x?xf32> {
+    # CHECK: func @listfloordiv1(%arg0: tensor<?xf32>, %arg1: tensor<?xf32>) -> tensor<?xf32> {
     # CHECK-NEXT: tcf.floordiv
-    # CHECK-NEXT: return %res : tensor<?x?xf32>
+    # CHECK-NEXT: return %res : tensor<?xf32>

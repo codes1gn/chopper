@@ -9,7 +9,7 @@ from mlir import astnodes
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimension
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
-from chopper.scaffold.mlir_dialects.dialect_atir import ATIR_ExpOp
+from chopper.scaffold.mlir_dialects.dialect_atir import ATIR_ExpOp, UnitTensorType
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId
@@ -56,39 +56,47 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         _block = astnodes.Block(label=None, body=[None])
         _region = astnodes.Region(body=[_block])
         _name = astnodes.SymbolRefId(value=node.name)
-        _args = None
+        _args = []
+        # only handles arguments > 0
         if len(node.args.args) > 0:
-            _args = []
             func_args = node.args.args
             for arg in func_args:
-                #TODO obtain args type
+                # case 1, arguments is float type
                 if hasattr(arg.annotation,
                            'id') and arg.annotation.id == 'float':
+                    _type = UnitTensorType(
+                        element_type=astnodes.FloatType(MlirType.f32)
+                    )
                     _args.append(
-                        NamedArgument(name=MlirSsaId(value=arg.arg,
-                                                     op_no=None),
-                                      type=astnodes.FloatType(MlirType.f32)))
+                        NamedArgument(
+                            name=MlirSsaId(
+                                value=arg.arg,
+                                op_no=None
+                            ),
+                            type=_type
+                        )
+                    )
+                # case 2, arguments is list type
                 elif hasattr(arg.annotation,
                              'id') and arg.annotation.id == 'list':
                     # TODO: list -> <?xf32> <?x?xf32> <?x?x?f32>
                     _type = astnodes.RankedTensorType(
                         dimensions=[
-                            Dimension(value=None),
                             Dimension(value=None)
                         ],
                         element_type=astnodes.FloatType(MlirType.f32))
                     _args.append(
-                        NamedArgument(name=MlirSsaId(value=arg.arg,
-                                                     op_no=None),
-                                      type=_type))
+                    NamedArgument(name=MlirSsaId(value=arg.arg,
+                                                 op_no=None),
+                                  type=_type))
                 elif isinstance(arg.annotation, ast.Subscript) and isinstance(
                         arg.annotation.slice,
                         ast.Index) and arg.annotation.value.id == "List":
                     # TODO: List[float] -> <?xf32> <?x?xf32> <?x?x?f32>
-                    if arg.annotation.slice.value.id == 'float':  # TODO: Other type, only support float now
+                    if arg.annotation.slice.value.id == 'float':  
+                        # TODO: Other type, only support float now
                         _type = astnodes.RankedTensorType(
                             dimensions=[
-                                Dimension(value=None),
                                 Dimension(value=None)
                             ],
                             element_type=astnodes.FloatType(MlirType.f32))
@@ -96,17 +104,44 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                             NamedArgument(name=MlirSsaId(value=arg.arg,
                                                          op_no=None),
                                           type=_type))
+                # use pattern match to replace if-elif-else branching, since misplace 
+                # the sequence of each block may result in failed catching
+                elif isinstance(arg, ast.arg):
+                    _type = UnitTensorType(
+                        element_type=astnodes.FloatType(MlirType.f32)
+                    )
+                    _args.append(NamedArgument(
+                        name=MlirSsaId(
+                            value=arg.arg,
+                            op_no=None
+                            ),
+                        type=_type
+                        )
+                    )
                 else:
                     #TODO: Other type
+                    assert 0, "not supported scenario, please check the inputs"
                     pass
+        else:
+            # handle zero arguments
+            _args.append(
+                    NamedArgument(
+                        )
+                    )
+
         _result_type = None
         if node.returns:
             if hasattr(node.returns, 'id') and node.returns.id == 'float':
-                _result_type = astnodes.FloatType(MlirType.f32)
+                # TODO(albert) workaround to tensor, should be f32 in future , and do convertion in compiler
+                _type = UnitTensorType(
+                    element_type=astnodes.FloatType(MlirType.f32)
+                )
+                _result_type = _type
             elif hasattr(node.returns, 'id') and node.returns.id == 'list':
                 _result_type = astnodes.RankedTensorType(
-                    dimensions=[Dimension(value=None),
-                                Dimension(value=None)],
+                    dimensions=[
+                        Dimension(value=None)
+                    ],
                     element_type=astnodes.FloatType(MlirType.f32))
             elif isinstance(arg.annotation, ast.Subscript) and isinstance(
                     arg.annotation.slice,
@@ -114,7 +149,6 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 if arg.annotation.slice.value.id == 'float':  # TODO: Other type, only support float now
                     _result_type = astnodes.RankedTensorType(
                         dimensions=[
-                            Dimension(value=None),
                             Dimension(value=None)
                         ],
                         element_type=astnodes.FloatType(MlirType.f32))
@@ -337,8 +371,10 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                                     op_no=None)
 
             # TODO(albert) this is a temporal transfer, use f32 for hardcoded
-            _ret_type = astnodes.FloatType(MlirType.f32)
-            _assignop = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=_ret_type)
+            _type = UnitTensorType(
+                element_type=astnodes.FloatType(MlirType.f32)
+            )
+            _assignop = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=_type)
 
             _result_list = list()
             _result_list.append(

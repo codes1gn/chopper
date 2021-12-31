@@ -7,13 +7,6 @@ from chopper.python import PythonRunner
 from typing import Callable
 
 
-def analyse(the_func: Callable) -> None:
-
-    # TODO wrapper this logics into functions
-    pyast = PythonRunner.parse_python(the_func)
-    print(PythonRunner.dump_python(pyast))
-    mlast = PythonRunner.convert_python_to_mlir(pyast)
-    print(PythonRunner.dump_mlir(mlast))
 
 
 if __name__ == "__main__":
@@ -26,11 +19,25 @@ if __name__ == "__main__":
         return 1.0
     """
 
-    def constant_test() -> float:
-        arg0 = 1.4
-        return arg0
+    # TODO(albert) support zero arguments call
+    def constant_test(arg0) -> float:
+        ret = 1.4
+        return ret
 
-    analyse(constant_test)
-    # CHECK: func @constant_test -> f32 {
-    # CHECK-NEXT: %arg0 = constant 1.4 : f32
-    # CHECK-NEXT: return %arg0 : f32
+    expected_mlir_text = """
+    module {
+      func @constant_test(%arg0: tensor<f32>) -> tensor<f32> {
+        %ret = constant dense<1.4> : tensor<f32>
+        return %ret : tensor<f32>
+      }
+    }
+    """
+
+    pyast = PythonRunner.parse_python(constant_test)
+    atir = PythonRunner.convert_python_to_mlir(pyast)
+    print(PythonRunner.dump_mlir(atir))
+    # TODO(albert), not pass the new settings
+
+    # CHECK: func @constant_test(%arg0: tensor<f32>) -> tensor<f32> {
+    # CHECK-NEXT: %ret = constant 1.4 : tensor<f32>
+    # CHECK-NEXT: return %ret : tensor<f32>

@@ -6,20 +6,33 @@ import sys
 from mlir import parse_string
 from dataclasses import dataclass
 import mlir.astnodes as mast
-from mlir.astnodes import Node, dump_or_value
-from mlir.dialect import Dialect, DialectOp, DialectType, UnaryOperation, BinaryOperation, is_op
+from mlir.astnodes import Node, dump_or_value, TensorType, Dimension, \
+        FloatType, IntegerType, ComplexType, VectorType
+from mlir.dialect import Dialect, DialectOp, DialectType, UnaryOperation, \
+        BinaryOperation, is_op
 
 from typing import Union, Optional, List
 
 Literal = Union[mast.StringLiteral, float, int, bool]
 SsaUse = Union[mast.SsaId, Literal]
 
-##############################################################################
-# Dialect Types
 
 __all__ = [
     "DIALECT_ATIR",
 ]
+
+
+##############################################################################
+# Dialect Types
+
+
+# this workaround tensortype is to replace the scalar types
+@dataclass
+class UnitTensorType(TensorType):
+    element_type: Union[IntegerType, FloatType, ComplexType, VectorType]
+
+    def dump(self, indent: int = 0) -> str:
+        return 'tensor<%s>' % (self.element_type.dump(indent))
 
 ##############################################################################
 # Dialect Operations

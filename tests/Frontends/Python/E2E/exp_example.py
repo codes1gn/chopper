@@ -18,6 +18,15 @@ if __name__ == "__main__":
         ret = math.exp(arg0)
         return ret
 
+    expected_mlir_text = """
+    module {
+      func @exp_trial_run(%arg0: tensor<f32>) -> tensor<f32> {
+        %ret = atir.exp %arg0 : tensor<f32>
+        return %ret : tensor<f32>
+      }
+    }
+    """
+
     pyast = PythonRunner.parse_python(exp_trial_run)
     print('------ Python SRC ------')
     # CHECK: --- Python SRC ---
@@ -26,7 +35,9 @@ if __name__ == "__main__":
     atir = PythonRunner.convert_python_to_mlir(pyast)
     print('------ MLIR SRC ------')
     # CHECK: --- MLIR SRC ---
-    # CHECK: %ret = atir.exp %arg0 : f32
+    # CHECK: func @exp_trial_run(%arg0: tensor<f32>) -> tensor<f32> {
+    # CHECK: %ret = atir.exp %arg0 : tensor<f32>
+    # CHECK: return %ret : tensor<f32>
     print(PythonRunner.dump_mlir(atir))
 
     # ref

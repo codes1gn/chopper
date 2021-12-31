@@ -11,7 +11,7 @@ import astunparse
 from typing import Callable
 from imp import new_module
 
-from mlir import parse_path
+from mlir import parse_path, parse_string
 from mlir import astnodes
 from chopper.scaffold.mlir_dialects import *
 from chopper.scaffold.utils import *
@@ -138,6 +138,14 @@ class PythonRunner:
         :param
         """
         return parse_path(code_path, dialects=CHOPPER_DIALECTS)
+
+    @classmethod
+    def parse_textual_mlir(cls, text: str) -> MlirNode:
+        """
+        Parses the code by providing its path
+        :param
+        """
+        return parse_string(text, dialects=CHOPPER_DIALECTS)
 
     @classmethod
     def parse_python(cls, func: Callable) -> ast.AST:
