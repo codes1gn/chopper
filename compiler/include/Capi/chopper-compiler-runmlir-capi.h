@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 int load_and_execute(int argc, char **argv);
+int compile(int argc, char **argv);
 
 #ifdef __cplusplus
 }

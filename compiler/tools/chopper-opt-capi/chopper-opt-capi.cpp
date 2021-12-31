@@ -25,6 +25,7 @@
 // #include "Dialect/Basicpy/IR/BasicpyDialect.h"
 // TODO should we use global register???
 #include "ChopperInit.h"
+#include "Capi/chopper-compiler-runmlir-capi.h"
 
 static llvm::cl::opt<bool> splitInputFile(
     "split-input-file",
@@ -56,7 +57,7 @@ static llvm::cl::opt<bool> allowUnregisteredDialects(
     llvm::cl::desc("Allow operation with no registered dialects"),
     llvm::cl::init(false));
 
-int main(int argc, char **argv) {
+int compile(int argc, char **argv) {
 
   mlir::DialectRegistry registry;
 

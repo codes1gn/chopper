@@ -24,10 +24,10 @@ message(STATUS "CHOPPER Conversion libs: ${chopper_conversion_libs}")
 
 
 
-# TODO(albert) use chopper_compiler as target name for resolve python 
+# TODO(albert) use chopper_compiler as target name for resolve python
 # slash issue
 pybind11_add_module(chopper_compiler chopper-compiler.cpp)
-# add_library(chopper_compiler ${CHOPPER_PYEXT_LINK_MODE} 
+# add_library(chopper_compiler ${CHOPPER_PYEXT_LINK_MODE}
 #     chopper-compiler.cpp
 # )
 
@@ -56,6 +56,7 @@ target_link_libraries(chopper_compiler
     CHOPPERSHLIB
 
     chopper-compiler-runmlir-capi
+    chopper-opt-capi
     ${CHOPPER_PYEXT_LIBADD}
   )
 chopper_python_target_compile_options(chopper_compiler)

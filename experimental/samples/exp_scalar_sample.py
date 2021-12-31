@@ -9,14 +9,14 @@ from typing import Callable
 import math
 
 # refback python module
-import chopper_compiler_module
+import chopper_compiler
 
 def launch_and_execute(ir: str, target: str, _input: float) -> float:
     if target == "refbackend":
         # TODO
         # 1. support text
         # 2. make value rets
-        _ = chopper_compiler_module.load_and_execute([
+        _ = chopper_compiler.load_and_execute([
                 "placeholder",
                 "/root/project/chopper/tests/Compiler/chopper-compiler-runmlir/identity.mlir",
                 "-invoke",
@@ -47,7 +47,9 @@ if __name__ == "__main__":
     # 1. dump_mlir is not pure dump, but show verbose
     # 2. supporting dataflow style prog, like convert_python_to_mlir().dump()
     pyast = PythonRunner.parse_python(exp_trial_run)
+    print(PythonRunner.dump_python(pyast))
     atir = PythonRunner.convert_python_to_mlir(pyast)
+    print(PythonRunner.dump_mlir(atir))
     textual_atir = atir.dump()
     print(textual_atir)
     assert textual_atir == expected_textual_atir, "Conversion in frontend not match expected"

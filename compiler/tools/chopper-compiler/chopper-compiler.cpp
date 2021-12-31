@@ -23,6 +23,7 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(chopper_compiler, m) {
+  // module documentation
   m.doc() = R"pbdoc(
         Pybind11 example plugin
         -----------------------
@@ -34,6 +35,8 @@ PYBIND11_MODULE(chopper_compiler, m) {
 
            load_and_execute
     )pbdoc";
+
+  // register load_and_execute method
   m.def(
       // TODO, change interface
       "load_and_execute",
@@ -46,7 +49,8 @@ PYBIND11_MODULE(chopper_compiler, m) {
         return load_and_execute(cstrs.size(), cstrs.data());
       },
       R"pbdoc(
-          Run mlir
-          python module
+          method<compile> the input textual IR into the output textual IR
         )pbdoc");
+
+  // register compile method
 }
