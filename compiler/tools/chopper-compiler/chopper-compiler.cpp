@@ -22,12 +22,12 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(chopper_compiler_module, m) {
+PYBIND11_MODULE(chopper_compiler, m) {
   m.doc() = R"pbdoc(
         Pybind11 example plugin
         -----------------------
 
-        .. currentmodule:: chopper_compiler_module
+        .. currentmodule:: chopper_compiler
 
         .. autosummary::
            :toctree: _generate

@@ -20,11 +20,14 @@ cmake -G Ninja .. \
     -DCMAKE_BUILD_TYPE=DEBUG \
     -DLLVM_USE_LINKER=lld
 
+# build util-tools
 cmake --build . --target chopper-opt
 cmake --build . --target chopper-translate
 cmake --build . --target chopper-compiler-runmlir
 cmake --build . --target chopper-compiler-runmlir-capi
-cmake --build . --target chopper_compiler_module
+
+# build compiler
+cmake --build . --target chopper_compiler
 
 # build mlir doc
 cmake --build . --target mlir-doc

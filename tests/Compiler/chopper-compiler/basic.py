@@ -11,7 +11,7 @@
 
 
 import sys
-import chopper_compiler_module
+import chopper_compiler
 
 # TODO(albert) make this none hardcode of path
 argslist = ['placeholder', 'placeholder', '-invoke', 'basic', '-arg-value=dense<[1.0]> : tensor<1xf32>', '-shared-libs=']
@@ -26,11 +26,11 @@ if __name__ == '__main__':
   else:
     _args = argslist2
 
-  _args[1] = sys.argv[0].replace('-compiler-module', '-compiler-runmlir')
+  _args[1] = sys.argv[0].replace('-compiler', '-compiler-runmlir')
   _args[1] = _args[1].replace('py', 'mlir')
 
   _args[5] += sys.argv[2]
 
   # execution
-  chopper_compiler_module.load_and_execute(_args)
+  chopper_compiler.load_and_execute(_args)
 

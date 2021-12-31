@@ -96,7 +96,7 @@ class CMakeBuild(build_ext):
         # build_args += ["-j8"]
         # build_args += ["--verbose"]
         # build_args += ["--clean-first"]
-        build_args += ["--target", "chopper_compiler_module"]
+        build_args += ["--target", "chopper_compiler"]
 
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp)
 
@@ -107,17 +107,17 @@ class CMakeBuild(build_ext):
         subprocess.check_call(
             [
                 "copy",
-                os.getcwd() + "/build/compiler/tools/chopper-compiler-module/*.so",
+                os.getcwd() + "/build/compiler/tools/chopper-compiler/*.so",
                 build_dir,
             ],
             cwd=self.build_temp,
         )
 
         """
-        command_str = "cp " + os.getcwd() + "/build/compiler/tools/chopper-compiler-module/*.so" + " " + build_dir
+        command_str = "cp " + os.getcwd() + "/build/compiler/tools/chopper-compiler/*.so" + " " + build_dir
         print("copy command = ", command_str)
         subprocess.call(
-            "cp " + os.getcwd() + "/build/compiler/tools/chopper-compiler-module/*.so" + " " + build_dir,
+            "cp " + os.getcwd() + "/build/compiler/tools/chopper-compiler/*.so" + " " + build_dir,
             shell=True,
         )
 
@@ -132,7 +132,7 @@ setup(
     description="Composite AI Compiler Experiment Platform",
     long_description="",
     ext_modules=[
-        CMakeExtension("chopper_compiler_module"),
+        CMakeExtension("chopper_compiler"),
     ],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,

@@ -24,32 +24,32 @@ message(STATUS "CHOPPER Conversion libs: ${chopper_conversion_libs}")
 
 
 
-# TODO(albert) use chopper_compiler_module as target name for resolve python 
+# TODO(albert) use chopper_compiler as target name for resolve python 
 # slash issue
-pybind11_add_module(chopper_compiler_module chopper-compiler.cpp)
-# add_library(chopper_compiler_module ${CHOPPER_PYEXT_LINK_MODE} 
+pybind11_add_module(chopper_compiler chopper-compiler.cpp)
+# add_library(chopper_compiler ${CHOPPER_PYEXT_LINK_MODE} 
 #     chopper-compiler.cpp
 # )
 
 # EXAMPLE_VERSION_INFO is defined by setup.py and passed into the C++ code as a
 # define (VERSION_INFO) here.
-# target_compile_definitions(chopper_compiler_module PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
+# target_compile_definitions(chopper_compiler PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
 
-set_target_properties(chopper_compiler_module PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+set_target_properties(chopper_compiler PROPERTIES LIBRARY_OUTPUT_DIRECTORY
                       "${CMAKE_CURRENT_BINARY_DIR}")
-set_target_properties(chopper_compiler_module PROPERTIES OUTPUT_NAME chopper_compiler_module)
-set_target_properties(chopper_compiler_module PROPERTIES PREFIX
+set_target_properties(chopper_compiler PROPERTIES OUTPUT_NAME chopper_compiler)
+set_target_properties(chopper_compiler PROPERTIES PREFIX
                       "${PYTHON_MODULE_PREFIX}")
-set_target_properties(chopper_compiler_module PROPERTIES SUFFIX
+set_target_properties(chopper_compiler PROPERTIES SUFFIX
                       "${PYTHON_MODULE_EXTENSION}")
 
 message(STATUS "CHOPPERSHLIB is ${CHOPPERSHLIB}")
 # pybind requires binding code to be compiled with -fvisibility=hidden
 # Better code can be generated if the entire project compiles that way, but
 # that is not enforced here.
-set_target_properties(chopper_compiler_module PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+set_target_properties(chopper_compiler PROPERTIES CXX_VISIBILITY_PRESET "hidden")
 
-target_link_libraries(chopper_compiler_module
+target_link_libraries(chopper_compiler
   PRIVATE
     # Transitive dep on the shared library links most things from there.
     # Shared library deps first ensure we get most of what we need from libraries.
@@ -58,6 +58,6 @@ target_link_libraries(chopper_compiler_module
     chopper-compiler-runmlir-capi
     ${CHOPPER_PYEXT_LIBADD}
   )
-chopper_python_target_compile_options(chopper_compiler_module)
+chopper_python_target_compile_options(chopper_compiler)
 
-mlir_check_all_link_libraries(chopper_compiler_module)
+mlir_check_all_link_libraries(chopper_compiler)

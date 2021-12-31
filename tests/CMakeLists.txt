@@ -11,7 +11,7 @@ set(CHOPPER_TEST_DEPENDS
         chopper-translate
         chopper-compiler-runmlir
         chopper-compiler-runmlir-capi
-        chopper_compiler_module
+        chopper_compiler
         )
 
 add_lit_testsuite(check-chopper "Running the chopper regression tests"

@@ -9,13 +9,13 @@ def _load_extension():
 
     flags = sys.getdlopenflags()
     sys.setdlopenflags(flags | ctypes.RTLD_GLOBAL)
-    import chopper_compiler_module
+    import chopper_compiler
 
     sys.setdlopenflags(flags)
 
     # import mlir
     # mlir._cext.globals.append_dialect_search_prefix("npcomp.dialects")
-    return chopper_compiler_module
+    return chopper_compiler
 
 
 chopper_compiler_ext = _load_extension()
