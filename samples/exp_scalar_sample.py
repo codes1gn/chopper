@@ -16,7 +16,7 @@ def launch_and_execute(ir: str, target: str, _input: float) -> float:
         # TODO
         # 1. support text
         # 2. make value rets
-        _ = chopper_compiler_module.chopperrun([
+        _ = chopper_compiler_module.load_and_execute([
                 "placeholder",
                 "/root/project/chopper/tests/Compiler/chopper-compiler-runmlir/identity.mlir",
                 "-invoke",

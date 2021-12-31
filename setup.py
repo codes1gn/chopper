@@ -107,17 +107,17 @@ class CMakeBuild(build_ext):
         subprocess.check_call(
             [
                 "copy",
-                os.getcwd() + "/build/src/compiler/tools/chopper-compiler-module/*.so",
+                os.getcwd() + "/build/compiler/tools/chopper-compiler-module/*.so",
                 build_dir,
             ],
             cwd=self.build_temp,
         )
 
         """
-        command_str = "cp " + os.getcwd() + "/build/src/compiler/tools/chopper-compiler-module/*.so" + " " + build_dir
+        command_str = "cp " + os.getcwd() + "/build/compiler/tools/chopper-compiler-module/*.so" + " " + build_dir
         print("copy command = ", command_str)
         subprocess.call(
-            "cp " + os.getcwd() + "/build/src/compiler/tools/chopper-compiler-module/*.so" + " " + build_dir,
+            "cp " + os.getcwd() + "/build/compiler/tools/chopper-compiler-module/*.so" + " " + build_dir,
             shell=True,
         )
 

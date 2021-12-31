@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-int chopperrun(int argc, char **argv);
+int load_and_execute(int argc, char **argv);
 
 #ifdef __cplusplus
 }

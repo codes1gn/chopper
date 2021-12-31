@@ -31,19 +31,19 @@ PYBIND11_MODULE(chopper_compiler_module, m) {
 
         .. autosummary::
            :toctree: _generate
-          
-           chopperrun
+
+           load_and_execute
     )pbdoc";
   m.def(
       // TODO, change interface
-      "chopperrun",
+      "load_and_execute",
       [](std::vector<std::string> args) {
         std::vector<char *> cstrs;
         cstrs.reserve(args.size());
         for (auto &s : args) {
           cstrs.push_back(const_cast<char *>(s.c_str()));
         }
-        return chopperrun(cstrs.size(), cstrs.data());
+        return load_and_execute(cstrs.size(), cstrs.data());
       },
       R"pbdoc(
           Run mlir

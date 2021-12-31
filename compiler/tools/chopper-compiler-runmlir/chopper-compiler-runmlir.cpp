@@ -217,7 +217,7 @@ struct Options {
 };
 } // namespace
 
-int chopperrun(int argc, char **argv) {
+int load_and_execute(int argc, char **argv) {
   mlir::DialectRegistry registry;
   mlir::registerAllDialects(registry);
   mlir::registerAllPasses();
@@ -254,6 +254,6 @@ int chopperrun(int argc, char **argv) {
 
 int main(int argc, char **argv) {
   int exitCode = EXIT_SUCCESS;
-  exitCode = chopperrun(argc, argv);
+  exitCode = load_and_execute(argc, argv);
   return exitCode;
 }
