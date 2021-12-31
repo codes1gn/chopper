@@ -8,6 +8,26 @@ from typing import Callable
 
 import math
 
+# refback python module
+import chopper_compiler_module
+
+def launch_and_execute(ir: str, target: str, _input: float) -> float:
+    if target == "refbackend":
+        # TODO
+        # 1. support text
+        # 2. make value rets
+        _ = chopper_compiler_module.chopperrun([
+                "placeholder",
+                "/root/project/chopper/tests/Compiler/chopper-compiler-runmlir/identity.mlir",
+                "-invoke",
+                "identity",
+                "-arg-value=dense<1.3> : tensor<f32>",
+                "-shared-libs=/root/project/chopper/build/lib/libCHOPPERCompilerRuntimeShlib.so"
+            ])
+        print(_)
+        assert 0
+
+    return 0.0
 
 if __name__ == "__main__":
     # STEP 1: convert python function object to atir ast
@@ -32,11 +52,11 @@ if __name__ == "__main__":
     print(textual_atir)
     assert textual_atir == expected_textual_atir, "Conversion in frontend not match expected"
 
-
-
-    # STEP LAST ref
+    # STEP 2 show the reference result
     _input = 2.3
-    print("------ REF -------")
+    print("------ REF RESULTS in CPU -------")
     print(exp_trial_run(_input))
-    # CHECK: 9.9741824548
+
+    # STEP 3 run on llvm-X86 backend
+    launch_and_execute(textual_atir, 'refbackend', _input)
 

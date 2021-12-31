@@ -1,8 +1,9 @@
 # RUN: python %s 1 %chopper_runtime_shlib 2>&1 | FileCheck %s --check-prefix=CHECK-ONE
+# RUN: python %s 1 %chopper_runtime_shlib 2>&1
 #
 # RUN: python %s 2 %chopper_runtime_shlib 2>&1 | FileCheck %s --check-prefix=CHECK-TWO
 
-# CHECK-ONE: output #0: dense<2.000000e+00> : tensor<1xf32>
+# CHECK-ONE: output #0: dense<2.000010e+00> : tensor<1xf32>
 # CHECK-TWO: output #0: dense<2.600000e+00> : tensor<1xf32>
 #
 # CHECK-ONE-NOT: output #0: dense<2.600000e+00> : tensor<1xf32>
@@ -28,9 +29,11 @@ if __name__ == '__main__':
     _args = argslist2
 
   _args[1] = sys.argv[0].replace('-compiler-module', '-compiler-runmlir')
-  _args[1] = _args[1].replace('py', '')
+  _args[1] = _args[1].replace('py', 'mlir')
 
   _args[5] += sys.argv[2]
+  print('anchor')
+  print(_args)
 
   # execution
   chopper_compiler_module.chopperrun(_args)
