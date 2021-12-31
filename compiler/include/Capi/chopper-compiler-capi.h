@@ -11,8 +11,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef CHOPPER_PYRUNNER_CHOPPER_RUNNER_BACKEND_H
-#define CHOPPER_PYRUNNER_CHOPPER_RUNNER_BACKEND_H
+#ifndef CHOPPER_COMPILER_CAPI_H
+#define CHOPPER_COMPILER_CAPI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,4 +25,4 @@ int compile(int argc, char **argv);
 }
 #endif
 
-#endif // CHOPPER_PYRUNNER_CHOPPER_RUNNER_BACKEND_H
+#endif // CHOPPER_COMPILER_CAPI_H

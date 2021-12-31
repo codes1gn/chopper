@@ -24,8 +24,6 @@ def launch_and_execute(ir: str, target: str, _input: float) -> float:
                 "-arg-value=dense<1.3> : tensor<f32>",
                 "-shared-libs=/root/project/chopper/build/lib/libCHOPPERCompilerRuntimeShlib.so"
             ])
-        print(_)
-        assert 0
 
     return 0.0
 

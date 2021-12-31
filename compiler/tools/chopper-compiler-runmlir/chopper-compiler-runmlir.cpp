@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Capi/chopper-compiler-runmlir-capi.h"
+#include "Capi/chopper-compiler-capi.h"
 
 #include "Capi/InitLLVM.h"
 #include "ChopperInit.h"

@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Capi/chopper-compiler-runmlir-capi.h"
+#include "Capi/chopper-compiler-capi.h"
 
 #include <cstddef>
 #include <pybind11/pybind11.h>
