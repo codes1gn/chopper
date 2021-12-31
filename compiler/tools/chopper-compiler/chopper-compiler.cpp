@@ -34,7 +34,24 @@ PYBIND11_MODULE(chopper_compiler, m) {
            :toctree: _generate
 
            load_and_execute
+           compile
     )pbdoc";
+
+  // register compile method
+  m.def(
+      // TODO, change interface
+      "compile",
+      [](std::vector<std::string> args) {
+        std::vector<char *> cstrs;
+        cstrs.reserve(args.size());
+        for (auto &s : args) {
+          cstrs.push_back(const_cast<char *>(s.c_str()));
+        }
+        return compile(cstrs.size(), cstrs.data());
+      },
+      R"pbdoc(
+          method<compile> the input textual IR into the output textual IR
+        )pbdoc");
 
   // register load_and_execute method
   m.def(
@@ -49,8 +66,8 @@ PYBIND11_MODULE(chopper_compiler, m) {
         return load_and_execute(cstrs.size(), cstrs.data());
       },
       R"pbdoc(
-          method<compile> the input textual IR into the output textual IR
+          method<load_and_execute> execute the input textual IR on <RefBackend, X86>
         )pbdoc");
 
-  // register compile method
+
 }

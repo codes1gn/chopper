@@ -11,6 +11,15 @@ import math
 # refback python module
 import chopper_compiler
 
+
+def compile_it():
+    _args = [
+            "placeholder",
+            "tests/Backends/IREE/tosa/exp_test.mlir",
+            "-convert-atir-to-tosa"
+            ]
+    chopper_compiler.compile(_args)
+
 def launch_and_execute(ir: str, target: str, _input: float) -> float:
     if target == "refbackend":
         # TODO
@@ -25,7 +34,7 @@ def launch_and_execute(ir: str, target: str, _input: float) -> float:
                 "-shared-libs=/root/project/chopper/build/lib/libCHOPPERCompilerRuntimeShlib.so"
             ])
 
-    return 0.0
+    return _
 
 if __name__ == "__main__":
     # STEP 1: convert python function object to atir ast
@@ -58,5 +67,6 @@ if __name__ == "__main__":
     print(exp_trial_run(_input))
 
     # STEP 3 run on llvm-X86 backend
+    compile_it()
     launch_and_execute(textual_atir, 'refbackend', _input)
 

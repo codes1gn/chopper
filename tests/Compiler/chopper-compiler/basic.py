@@ -30,7 +30,15 @@ if __name__ == '__main__':
   _args[1] = _args[1].replace('py', 'mlir')
 
   _args[5] += sys.argv[2]
+  print(_args)
 
   # execution
+  _ = [
+          "placeholder",
+          "tests/Backends/IREE/tosa/exp_test.mlir",
+          "-convert-atir-to-tosa"
+        ]
+  # TODO(albert), issue, will cause crash when only calls load_and_execute; but will pass if call both, maybe remove load_and_execute
+  chopper_compiler.compile(_)
   chopper_compiler.load_and_execute(_args)
 
