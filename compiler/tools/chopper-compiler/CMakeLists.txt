@@ -26,9 +26,9 @@ message(STATUS "CHOPPER Conversion libs: ${chopper_conversion_libs}")
 
 # TODO(albert) use chopper_compiler_module as target name for resolve python 
 # slash issue
-pybind11_add_module(chopper_compiler_module chopper-compiler-module.cpp)
+pybind11_add_module(chopper_compiler_module chopper-compiler.cpp)
 # add_library(chopper_compiler_module ${CHOPPER_PYEXT_LINK_MODE} 
-#     chopper-compiler-module.cpp
+#     chopper-compiler.cpp
 # )
 
 # EXAMPLE_VERSION_INFO is defined by setup.py and passed into the C++ code as a
