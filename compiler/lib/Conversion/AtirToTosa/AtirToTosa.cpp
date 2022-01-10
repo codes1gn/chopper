@@ -62,6 +62,23 @@ public:
     return success();
   }
 };
+
+class ConvertAddOp : public OpRewritePattern<atir::AddOp> {
+public:
+  using OpRewritePattern<atir::AddOp>::OpRewritePattern;
+  LogicalResult matchAndRewrite(atir::AddOp op,
+                                PatternRewriter &rewriter) const override {
+    auto loc = op->getLoc();
+    auto lhs = op->getOperand(0);
+    auto rhs = op->getOperand(1);
+    auto elementTy = lhs.getType();
+    auto tosa_add =
+        rewriter.create<tosa::AddOp>(loc, elementTy, lhs, rhs);
+    rewriter.replaceOp(op, tosa_add.getResult());
+
+    return success();
+  }
+};
 } // namespace
 
 namespace {
@@ -85,6 +102,7 @@ public:
     RewritePatternSet patterns(context);
     patterns.add<ConvertExpOp>(context);
     patterns.add<ConvertTanhOp>(context);
+    patterns.add<ConvertAddOp>(context);
     return std::move(patterns);
   }
 };

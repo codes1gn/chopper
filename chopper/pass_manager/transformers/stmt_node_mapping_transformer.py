@@ -448,7 +448,9 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 assert 0, "found non-float value, not supported"
 
         elif isinstance(node.value, ast.BinOp):
-            _namespace = 'tcf'
+            # TODO tweak this functionality passed by hardcoded, replaced by 
+            # MAPPING ENUMS of ATIR_OPS in future
+            _namespace = 'atir'
             _name = None
             # TODO: Other binary op
             if isinstance(node.value.op, ast.Add):
