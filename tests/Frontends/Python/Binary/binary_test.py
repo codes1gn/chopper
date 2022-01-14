@@ -26,7 +26,7 @@ if __name__ == "__main__":
         var0 = 2.0
         res = arg0 + var0
         return res
-    
+
     def add_scalar1(arg0:float, arg1:float) -> float:
         res = arg0 + arg1
         return res
@@ -36,12 +36,12 @@ if __name__ == "__main__":
         var1 = 2.0
         res = var0 + var1
         return res
-    
+
     def listAdd0(arg0: list, arg1: list) -> list:
-        
+
         res = np.array(arg0) + np.array(arg1)
         return res
-    
+
     def listAdd1(arg0: List[float], arg1: List[float]) -> List[float]:
         res = np.array(arg0) + np.array(arg1)
         return res
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # analyse(listAdd1)
     # cunt +=1
     # print(f'Add pass: {cunt}')
-    
+
     # TODO: Sub OP
     cunt_sub = 0
     def sub_scalar0(arg0:float) -> float:
@@ -74,15 +74,15 @@ if __name__ == "__main__":
         var1 = 2.0
         res = var0 - var1
         return res
-    
+
     def listSub0(arg0: list, arg1: list) -> list:
         res = np.array(arg0) - np.array(arg1)
         return res
-    
+
     def listSub1(arg0: List[float], arg1: List[float]) -> List[float]:
         res = np.array(arg0) - np.array(arg1)
         return res
-    
+
     # analyse(sub_scalar0)
     # cunt_sub +=1
     # analyse(sub_scalar1)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     # analyse(listSub1)
     # cunt_sub +=1
     # print(f'cunt_sub={cunt_sub}')
-    
+
     # TODO: Mul OP
     cunt_mul= 0
     def mul_scalar0(arg0:float) -> float:
@@ -111,17 +111,15 @@ if __name__ == "__main__":
         var1 = 2.0
         res = var0 * var1
         return res
-    
+
     def listMul0(arg0: list, arg1: list) -> list:
         res = np.array(arg0) * np.array(arg1)
         return res
-    
+
     def listMul1(arg0: List[float], arg1: List[float]) -> List[float]:
         res = np.array(arg0) * np.array(arg1)
         # res = arg0 * arg1
         return res
-    
-    
     # analyse(mul_scalar0)
     # cunt_mul +=1
     # analyse(mul_scalar1)
@@ -133,10 +131,10 @@ if __name__ == "__main__":
     # analyse(listMul1)
     # cunt_mul +=1
     # print(f'cunt_mul={cunt_mul}')
-    
-    
-    # TODO: Mat OP    
-     
+
+
+    # TODO: Mat OP
+
     def listMat0(arg0: list, arg1: list) -> list:
         res = np.mat(arg0) * np.mat(arg1)
         return res
@@ -144,7 +142,7 @@ if __name__ == "__main__":
     def listMat1(arg0: List[float], arg1: List[float]) -> List[float]:
         res = np.mat(arg0) * np.mat(arg1)
         return res
-    
+
     # analyse(listMat0)
     # analyse(listMat1)
 
@@ -443,18 +441,19 @@ if __name__ == "__main__":
     def listfloordiv0(arg0: list, arg1: list) -> list:
         res = np.array(arg0) // np.array(arg1)
         return res
-    
+
     def listfloordiv1(arg0: List[float], arg1: List[float]) -> List[float]:
         res = np.array(arg0) // np.array(arg1)
         return res
-    
+
     #analyse(floordiv_scalar0)
     # analyse(floordiv_scalar1)
     #analyse(floordiv_scalar2)
     #analyse(floordiv_scalar3)
     #analyse(listfloordiv0)
 
+    # TODO(should not pass, fix customoperation by atirops then switch on this)
     analyse(listfloordiv1)
     # CHECK: func @listfloordiv1(%arg0: tensor<?xf32>, %arg1: tensor<?xf32>) -> tensor<?xf32> {
-    # CHECK-NEXT: tcf.floordiv
+    # CHECK-NEXT: atir.floordiv
     # CHECK-NEXT: return %res : tensor<?xf32>
