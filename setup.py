@@ -4,8 +4,9 @@ import os
 import sys
 import subprocess
 
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension, find_packages, find_namespace_packages
 from setuptools.command.build_ext import build_ext
+from setuptools_rust import Binding, RustExtension
 
 __TOP_DIR_PATH__ = os.path.abspath(os.path.dirname(__file__))
 if not __TOP_DIR_PATH__.endswith(os.path.sep):
@@ -41,7 +42,7 @@ class CMakeBuild(build_ext):
             shell=True,
         )
 
-        cp_cmd_str = "cp -r " + os.getcwd() + "/iree_build/compiler-api/python_package/iree/compiler" + " " + new_dir
+        cp_cmd_str = "cp -r " + os.getcwd() + "/build/iree_build/compiler-api/python_package/iree/compiler" + " " + new_dir
         subprocess.call(
             cp_cmd_str,
             shell=True,
@@ -60,7 +61,7 @@ class CMakeBuild(build_ext):
             shell=True,
         )
 
-        cp_cmd_str = "cp -r " + os.getcwd() + "/iree_build/bindings/python/iree/runtime/" + " " + new_dir
+        cp_cmd_str = "cp -r " + os.getcwd() + "/build/iree_build/bindings/python/iree/runtime/" + " " + new_dir
         subprocess.call(
             cp_cmd_str,
             shell=True,
@@ -84,9 +85,9 @@ class CMakeBuild(build_ext):
         # from Python.
         cmake_args = [
             # TODO(albert) make it none hardcode
-            "-DMLIR_DIR={}".format(__TOP_DIR_PATH__ + "mlir_build/install_dir/lib/cmake/mlir"),
+            "-DMLIR_DIR={}".format(__TOP_DIR_PATH__ + "build/mlir_build/install_dir/lib/cmake/mlir"),
             "-DPYTHON_EXECUTABLE={}".format(sys.executable),
-            "-DLLVM_EXTERNAL_LIT={}".format(__TOP_DIR_PATH__ + "mlir_build/bin/llvm-lit"),
+            "-DLLVM_EXTERNAL_LIT={}".format(__TOP_DIR_PATH__ + "build/mlir_build/bin/llvm-lit"),
             # not used on MSVC, but no harm
             "-DCMAKE_BUILD_TYPE={}".format("DEBUG"),
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(build_dir),
@@ -138,6 +139,14 @@ setup(
     zip_safe=False,
     packages=find_packages(),
     python_requires=">=3.6.12",
+    rust_extensions=[
+        RustExtension(
+            "chopper.crt.rust",
+            path="./backend-rs/chopper-runtime/Cargo.toml",
+            binding=Binding.PyO3,
+            debug=True,
+        )
+    ],
     entry_points={
         # "console_scripts": [
         #     "chopper_runner=chopper.bin.chopper_runner:main",

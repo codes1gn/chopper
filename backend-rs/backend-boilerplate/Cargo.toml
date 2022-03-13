@@ -1,0 +1,15 @@
+[package]
+name = "backend-boilerplate"
+version = "0.9.0"
+description = "backend plate for vulkan hal"
+license = "MIT OR Apache-2.0"
+workspace = "../.."
+edition = "2021"
+
+[lib]
+name = "backend_boilerplate"
+
+[dependencies]
+gfx-hal = { path = "../hal", version = "0.9" }
+raw-window-handle = "0.3"
+log = "0.4"

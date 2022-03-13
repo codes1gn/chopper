@@ -1,0 +1,19 @@
+[package]
+name = "crt-utils"
+version = "0.1.0"
+description = "Implementation details shared between gfx-rs backends <v0.10.0>"
+license = "MIT OR Apache-2.0"
+authors = ["The Gfx-rs Developers"]
+documentation = "https://docs.rs/gfx-auxil"
+workspace = "../../"
+edition = "2021"
+
+[dependencies]
+# legacy dep with packages all in same workspace, workaround by add crates from crate.io
+hal = { path = "../hal", version = "0.9", package = "gfx-hal" }
+# hal = { package = "gfx-hal", version = "0.9.0" }
+fxhash = "0.2.1"
+spirv_cross = { version = "0.23", optional = true }
+
+[lib]
+name = "crt_utils"

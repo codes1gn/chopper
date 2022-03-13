@@ -32,7 +32,7 @@ config.chopper_src_root = "@CMAKE_SOURCE_DIR@"
 config.chopper_obj_root = "@CMAKE_BINARY_DIR@"
 
 # iree config
-config.iree_obj_root = os.path.join(config.chopper_src_root, "iree_build/iree_install")
+config.iree_obj_root = os.path.join(config.chopper_src_root, "build/iree_build/iree_install")
 
 
 # Support substitution of the tools_dir with user parameters. This is

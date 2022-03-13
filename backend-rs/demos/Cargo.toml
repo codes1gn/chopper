@@ -1,0 +1,23 @@
+
+[package]
+name = "chopper-demos"
+version = "0.1.0"
+publish = false
+workspace = "../.."
+edition = "2021"
+
+
+[[bin]]
+name = "demo-standalone"
+path = "demo-standalone/main.rs"
+
+[dependencies]
+log = "0.4"
+hal = { path = "../hal", package = "gfx-hal", version = "0.9.0" }
+# hal = { package = "gfx-hal", version = "0.9.0" }
+ash = "0.32"
+auxil = { path = "../utils", package = "crt-utils", version = "0.1" }
+backend-vulkan = { path = "../backend-vulkan", package = "backend-vulkan", version = "0.9.0" }
+env_logger = "0.8"
+glsl-to-spirv = "0.1.4"
+nom = "^4.0"

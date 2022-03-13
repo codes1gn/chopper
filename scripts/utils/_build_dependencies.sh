@@ -8,9 +8,10 @@ top_dir_realpath=`realpath $top_dir_path`
 echo "top dir = "$top_dir_realpath
 
 # create mlir build path
-mkdir ${top_dir_realpath}/mlir_build
-cd ${top_dir_realpath}/mlir_build
-mkdir -p ${top_dir_realpath}/mlir_build/install_dir
+mkdir -p ${top_dir_realpath}/build
+mkdir -p ${top_dir_realpath}/build/mlir_build
+cd ${top_dir_realpath}/build/mlir_build
+mkdir -p ${top_dir_realpath}/build/mlir_build/install_dir
 
 # try to fix linker issue
 # export LDFLAGS=-fuse-ld=$(which ld.lld)
@@ -26,7 +27,7 @@ cmake -G Ninja \
     -DLLVM_ENABLE_ASSERTIONS=ON \
     -DCMAKE_C_COMPILER=clang-11 \
     -DCMAKE_CXX_COMPILER=clang++-11 \
-    -DCMAKE_INSTALL_PREFIX=${top_dir_realpath}/mlir_build/install_dir \
+    -DCMAKE_INSTALL_PREFIX=${top_dir_realpath}/build/mlir_build/install_dir \
     -DLLVM_INSTALL_UTILS=ON \
     -DLLVM_BUILD_LLVM_DYLIB=ON \
     -DLLVM_LINK_LLVM_DYLIB=ON

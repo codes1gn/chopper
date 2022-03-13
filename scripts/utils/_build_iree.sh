@@ -9,11 +9,12 @@ echo "top dir = "$top_dir_realpath
 
 # create mlir build path
 iree_source=${top_dir_realpath}/external/iree
-mkdir ${top_dir_realpath}/iree_build
-cd ${top_dir_realpath}/iree_build
-mkdir -p ${top_dir_realpath}/iree_build/iree_install
-iree_build_dir="${top_dir_realpath}/iree_build/"
-iree_install_dir="${top_dir_realpath}/iree_build/iree_install/"
+mkdir -p ${top_dir_realpath}/build
+mkdir -p ${top_dir_realpath}/build/iree_build
+cd ${top_dir_realpath}/build/iree_build
+mkdir -p ${top_dir_realpath}/build/iree_build/iree_install
+iree_build_dir="${top_dir_realpath}/build/iree_build/"
+iree_install_dir="${top_dir_realpath}/build/iree_build/iree_install/"
 
 # preliminaries
 pip3 install absl-py
