@@ -37,11 +37,11 @@ impl<'a> Session<'a> {
         println!("{}", path.display());
 
         self.device_context.register_kernels(
-            "./src/kernel/glsl_src/binary_arithmetic_f32.comp",
+            "/root/project/glsl_src/binary_arithmetic_f32.comp",
             String::from("binary_arithmetic_f32"),
         );
         self.device_context.register_kernels(
-            "./src/kernel/glsl_src/binary_arithmetic_i32.comp",
+            "/root/project/glsl_src/binary_arithmetic_i32.comp",
             String::from("binary_arithmetic_i32"),
         );
     }

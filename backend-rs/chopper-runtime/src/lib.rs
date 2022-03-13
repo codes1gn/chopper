@@ -34,8 +34,30 @@ use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 
 #[pyfunction]
-fn rust_func() -> usize {
-    14
+fn rust_func() -> () {
+    let ist = instance::DeviceInstance::new();
+    let mut ipt = interpreter::Interpreter::new(&ist);
+    // ok
+    let status = ipt.mock_operation("%8 = crt.literal.const.f32! 1.3 : f32\n");
+    let status = ipt.mock_operation("%7 = crt.literal.const.f32! 2.9 : f32\n");
+    let status = ipt.mock_operation("%1 = crt.literal.const.f32! 7.4 : f32\n");
+    assert_eq!(status.is_ok(), true);
+    let status_code = status.unwrap();
+    assert_eq!(status_code, 0);
+
+    // add
+    let status = ipt.mock_operation("%4 = crt.add.f32! %8, %7 : f32\n");
+    assert_eq!(status.is_ok(), true);
+    let status_code = status.unwrap();
+    assert_eq!(status_code, 0);
+
+    // sub
+    let status = ipt.mock_operation("%5 = crt.sub.f32! %1, %4 : f32\n");
+    assert_eq!(status.is_ok(), true);
+    let status_code = status.unwrap();
+    assert_eq!(status_code, 0);
+    println!("runned")
+    // TODO package this assert macro into utils, hide rmax_all setting from hardcode
 }
 
 #[pymodule]

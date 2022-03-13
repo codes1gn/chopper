@@ -3,4 +3,4 @@
 import chopper.crt.rust as crt
 
 print(crt.rust_func())
-# CHECK-CRT: 14
+# CHECK-CRT: runned
