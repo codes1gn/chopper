@@ -19,14 +19,15 @@ TMP_FILE_TOSA = "/tmp/tosa.0"
 _INPUT_LHS = 1.3
 _INPUT_RHS = 7.1
 
+
 def compile_it():
     _args = [
-            "placeholder",
-            TMP_FILE_ATIR,
-            "-convert-atir-to-tosa",
-            "-o",
-            TMP_FILE_TOSA,
-            ]
+        "placeholder",
+        TMP_FILE_ATIR,
+        "-convert-atir-to-tosa",
+        "-o",
+        TMP_FILE_TOSA,
+    ]
     return chopper_compiler.compile(_args)
 
 
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         ret = arg0 + arg1
         return ret
 
-    addected_textual_atir = """module {
+    expected_textual_atir = """module {
   func @add_trial_run(%arg0: tensor<f32>, %arg1: tensor<f32>) -> tensor<f32> {
     %ret = atir.add %arg0, %arg1 : (tensor<f32>, tensor<f32>) -> tensor<f32>
     return %ret : tensor<f32>
@@ -74,18 +75,14 @@ if __name__ == "__main__":
     # result = launch_and_execute(textual_atir, 'vulkan', _INPUT)
     print("vulkan backend inited")
     # test scalar on vulkan
-    binary_vulkan_scalar = ireecc.tools.compile_file(
-        TMP_FILE_TOSA,
-        input_type="tosa",
-        target_backends=["vulkan-spirv"]
-    )
+    binary_vulkan_scalar = ireecc.tools.compile_file(TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"])
     vm_module = ireert.VmModule.from_flatbuffer(binary_vulkan_scalar)
     config = ireert.Config(driver_name="vulkan")
     ctx = ireert.SystemContext(config=config)
     ctx.add_vm_module(vm_module)
     _callable = ctx.modules.module["add_trial_run"]
-    arg0 = np.array(_INPUT_LHS, dtype=np.float32) # np.array([1., 2., 3., 4.], dtype=np.float32)
-    arg1 = np.array(_INPUT_RHS, dtype=np.float32) # np.array([1., 2., 3., 4.], dtype=np.float32)
+    arg0 = np.array(_INPUT_LHS, dtype=np.float32)  # np.array([1., 2., 3., 4.], dtype=np.float32)
+    arg1 = np.array(_INPUT_RHS, dtype=np.float32)  # np.array([1., 2., 3., 4.], dtype=np.float32)
     result = _callable(arg0, arg1)
     print(result)
 
@@ -93,5 +90,3 @@ if __name__ == "__main__":
     print("------ REF RESULTS in CPU -------")
     ref_result = add_trial_run(_INPUT_LHS, _INPUT_RHS)
     print(ref_result)
-
-

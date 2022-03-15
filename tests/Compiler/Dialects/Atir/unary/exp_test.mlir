@@ -2,7 +2,8 @@
 
 
 // CHECK-LABEL: func @atir_exp_test_scalar_noret
-func @atir_exp_test_scalar_noret(%arg0: tensor<f32>) {
+//func @atir_exp_test_scalar_noret(%arg0: tensor<f32>) {
+func @atir_exp_test_scalar_noret(%arg0: tensor<f32>, %arg1: none) {
   // CHECK: atir.exp %arg0 : tensor<f32>
   %0 = atir.exp %arg0: tensor<f32>
   return

@@ -68,23 +68,23 @@ def _pretty(self: MlirNode) -> str:
 MlirNode.pretty = _pretty
 
 __all__ = [
-    "PythonRunner",
+    "TorchJitCompiler",
 ]
 
 
-class PythonRunner:
+class TorchJitCompiler:
     """
-    PythonRunner class that is a compiler supports jit functionalities for numpy DSL.
+    TorchJitCompiler class that is a compiler supports jit functionalities for numpy DSL.
 
     Returns:
-        PythonRunner: returns the instance of this class
+        TorchJitCompiler: returns the instance of this class
     """
 
     __slots__ = ["pass_manager"]
 
     def __init__(self):
         """
-        Initializes the PythonRunner
+        Initializes the TorchJitCompiler
         """
 
     @classmethod
@@ -132,23 +132,7 @@ class PythonRunner:
         return dump_str
 
     @classmethod
-    def parse_mlir(cls, code_path: str) -> MlirNode:
-        """
-        Parses the code by providing its path
-        :param
-        """
-        return parse_path(code_path, dialects=CHOPPER_DIALECTS)
-
-    @classmethod
-    def parse_textual_mlir(cls, text: str) -> MlirNode:
-        """
-        Parses the code by providing its path
-        :param
-        """
-        return parse_string(text, dialects=CHOPPER_DIALECTS)
-
-    @classmethod
-    def parse_python(cls, func: Callable) -> ast.AST:
+    def parse_callable(cls, func: Callable) -> ast.AST:
         """parse python source code to python ast node.
 
         Args:
@@ -166,14 +150,33 @@ class PythonRunner:
         return pyast
 
     @classmethod
-    def convert_python_to_mlir(cls, pyast: ast.AST) -> MlirNode:
+    def annotate_function(cls, ast_src: ast.AST, arg_annotation: ArgAnnotation) -> ast.AST:
         """The mian inference that convert python ast to mlir ast in frontend
 
         Args:
             pyast (ast.AST): python astnode
 
         Returns:
-            MlirNode: mlir astnode that generated via according python astnode 
+            ast.AST: annotated AST with function arguments typing annotation
+        """
+        from chopper.pass_manager import ArgAnnotationPassManager
+
+        pass_manager = ArgAnnotationPassManager(arg_annotation)
+        pass_manager.register_passes()
+        pass_manager.run(ast_src)
+
+        return ast_src
+
+
+    @classmethod
+    def to_mlir_dialect(cls, pyast: ast.AST) -> MlirNode:
+        """The mian inference that convert python ast to mlir ast in frontend
+
+        Args:
+            pyast (ast.AST): python astnode
+
+        Returns:
+            MlirNode: mlir astnode that generated via according python astnode
         """
         from chopper.pass_manager import PastToMlirPassManager
 

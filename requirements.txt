@@ -15,3 +15,4 @@ sphinx_markdown_tables
 # comment cmake, this may align with sw stack
 cmake>=3.15.2
 
+torch>=1.4.0

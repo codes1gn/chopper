@@ -1,5 +1,5 @@
 from chopper.scaffold.utils import memoized_classproperty
-from .passes import IdenticalPastPass, StatementConversionPass
+from .passes import *
 
 
 # lazy load the pass register
@@ -24,5 +24,6 @@ class PassRegistry(object):
         register_pass.id_cnt = 0
         register_pass(IdenticalPastPass)
         register_pass(StatementConversionPass)
+        register_pass(AnnotateCompletionPass)
         print("_pass_table == > ", _pass_table)
         return _pass_table
