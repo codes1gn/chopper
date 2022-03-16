@@ -3,6 +3,7 @@ from typing import Callable, List, Optional, Tuple, NamedTuple
 import numpy as np
 import torch
 import functools
+from torch.autograd import Function
 import chopper_compiler
 import chopper.iree.compiler as ireecc
 import chopper.iree.runtime as ireert
@@ -196,8 +197,31 @@ def backend(backend_name: str):
         @functools.wraps(_callable)
         def wrapper(*args, **kwargs):
             # REMOVE FIRST MODULE ARGS BEFORE CALLING THE COMPILED CALLABLE
-            args = [args[k + 1].detach().numpy() for k in range(len(args) - 1)]
-            return torch.tensor(_callable(*args, **kwargs))
+            # args = [args[k + 1].detach().numpy() for k in range(len(args) - 1)]
+            # ret_tensor = torch.tensor(_callable(*args, **kwargs), requires_grad=True)
+            class _Callable_Func(Function):
+                @staticmethod
+                def forward(ctx, lhs: torch.Tensor, rhs: torch.Tensor) -> torch.Tensor:
+                    print(ctx)
+                    print(lhs)
+                    print(rhs)
+                    ctx.save_for_backward(lhs, rhs)
+                    lhs_data = lhs.detach().numpy()
+                    rhs_data = rhs.detach().numpy()
+                    return torch.tensor(_callable(lhs_data, rhs_data), requires_grad=True)
+
+                @staticmethod
+                def backward(ctx, grad_output):
+                    lhs, rhs = ctx.saved_tensors
+                    return 1.1 * grad_output, 1.3 * grad_output
+
+            def new_forward(self, a, b):
+                print(self)
+                print(a)
+                print(b)
+                return _Callable_Func.apply(a, b)
+
+            return new_forward(*args, **kwargs)
 
         return wrapper
 
