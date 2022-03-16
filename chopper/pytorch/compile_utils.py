@@ -196,9 +196,7 @@ def backend(backend_name: str):
         @functools.wraps(_callable)
         def wrapper(*args, **kwargs):
             # REMOVE FIRST MODULE ARGS BEFORE CALLING THE COMPILED CALLABLE
-            print(args)
             args = [args[k + 1].detach().numpy() for k in range(len(args) - 1)]
-            print(args)
             return torch.tensor(_callable(*args, **kwargs))
 
         return wrapper
