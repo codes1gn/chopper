@@ -31,8 +31,7 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
     __slots__ = []
 
     def __init__(self):
-        """Initialize StmtFixDependencyTransformer class via inherit NodeTransformerBase.
-        """
+        """Initialize StmtFixDependencyTransformer class via inherit NodeTransformerBase."""
 
         super().__init__()
 
@@ -47,12 +46,12 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         """
 
         super().generic_visit(node)
-        print(self.__str__(),
-              "Fix Transformer::handling visit_FunctionDef on node\n")
-        print("***** Python FunctionDef Node *****\n", astunparse.dump(node))
+        # print(self.__str__(),
+        #       "Fix Transformer::handling visit_FunctionDef on node\n")
+        # print("***** Python FunctionDef Node *****\n", astunparse.dump(node))
 
-        print("***** MLIR Node fot FunctionDef *****\n",
-              self.pretty_mlir(node.mast_node))
+        # print("***** MLIR Node fot FunctionDef *****\n",
+        #       self.pretty_mlir(node.mast_node))
 
         # TODO Fix body elements in function region's block
         """
@@ -85,7 +84,6 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         for operation in operations:
             _OP = operation.mast_node.op
             if isinstance(_OP, ReturnOperation):
-                print(_OP)
                 for i in range(len(operation.mast_node.op.types)):
                     _OP.types[i] = return_type
             if isinstance(_OP, ConstantOperation):
@@ -93,15 +91,25 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
 
             if isinstance(_OP, CustomOperation):
                 # * BinOp -> add/sub/mul/matmul/div
-                if (_OP.name == 'add' or _OP.name == 'sub' or _OP.name == 'mul'
-                        or _OP.name == 'matmul' or _OP.name == 'div'
-                        or _OP.name == 'mod' or _OP.name == 'pow'
-                        or _OP.name == 'lshift' or _OP.name == 'rshift'
-                        or _OP.name == 'bitor' or _OP.name == 'bitxor'
-                        or _OP.name == 'bitand'
-                        or _OP.name == 'floordiv') and isinstance(
-                            _OP.type.argument_types, list) and isinstance(
-                                _OP.type.result_types, list):
+                if (
+                    (
+                        _OP.name == "add"
+                        or _OP.name == "sub"
+                        or _OP.name == "mul"
+                        or _OP.name == "matmul"
+                        or _OP.name == "div"
+                        or _OP.name == "mod"
+                        or _OP.name == "pow"
+                        or _OP.name == "lshift"
+                        or _OP.name == "rshift"
+                        or _OP.name == "bitor"
+                        or _OP.name == "bitxor"
+                        or _OP.name == "bitand"
+                        or _OP.name == "floordiv"
+                    )
+                    and isinstance(_OP.type.argument_types, list)
+                    and isinstance(_OP.type.result_types, list)
+                ):
                     for i in range(len(_OP.type.argument_types)):
                         _OP.type.argument_types[i] = argument_type[0]
 
@@ -111,7 +119,6 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
                     # TODO: add more BinOp type
                     pass
 
-        print("len_blocks", len(_blocks))
         if operations:
             for i in range(len(_blocks)):
                 _blocks[i].body.clear()
@@ -135,15 +142,15 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         """
 
         super().generic_visit(node)
-        print(self.__str__(), "Fix handling visit_Module on node\n",
-              astunparse.dump(node))
+        # print(self.__str__(), "Fix handling visit_Module on node\n",
+        #       astunparse.dump(node))
 
         for _module in node.mast_node.modules:
             for _block in _module.region.body:
                 for index in range(len(_block.body)):
                     _block.body[index] = node.body[index].mast_node
 
-        print(self.pretty_mlir(node.mast_node))
+        # print(self.pretty_mlir(node.mast_node))
 
         return node
 
@@ -158,13 +165,13 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         """
 
         super().generic_visit(node)
-        print(self.__str__(), "Fix handling visit_Return on node\n",
-              astunparse.dump(node))
+        # print(self.__str__(), "Fix handling visit_Return on node\n",
+        #       astunparse.dump(node))
 
         # fix returnop value
         # node.mast_node.op.values = node.value
 
-        print(self.pretty_mlir(node.mast_node))
+        # print(self.pretty_mlir(node.mast_node))
 
         return node
 

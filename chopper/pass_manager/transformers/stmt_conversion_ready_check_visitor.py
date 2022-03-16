@@ -28,8 +28,7 @@ class StmtConversionReadyCheckVisitor(NodeVisitorBase):
     __slots__ = []
 
     def __init__(self):
-        """Initialize StmtConversionReadyCheckVisitor class via inherit NodeVisitorBase.
-        """
+        """Initialize StmtConversionReadyCheckVisitor class via inherit NodeVisitorBase."""
 
         super().__init__()
 
@@ -45,8 +44,8 @@ class StmtConversionReadyCheckVisitor(NodeVisitorBase):
 
         super().generic_visit(node)
         assert node.mast_node is not None
-        print("\n##### Check FunctionDef ######\n",
-              self.pretty_mlir(node.mast_node))
+        # print("\n##### Check FunctionDef ######\n",
+        #       self.pretty_mlir(node.mast_node))
 
         return node
 
@@ -62,8 +61,8 @@ class StmtConversionReadyCheckVisitor(NodeVisitorBase):
 
         super().generic_visit(node)
         assert node.mast_node is not None
-        print("\n###### Check Module ######\n",
-              self.pretty_mlir(node.mast_node))
+        # print("\n###### Check Module ######\n",
+        #       self.pretty_mlir(node.mast_node))
 
         return node
 
@@ -79,8 +78,8 @@ class StmtConversionReadyCheckVisitor(NodeVisitorBase):
 
         super().generic_visit(node)
         assert node.mast_node is not None
-        print("\n##### Check ReturnOp #####\n",
-              self.pretty_mlir(node.mast_node))
+        # print("\n##### Check ReturnOp #####\n",
+        #       self.pretty_mlir(node.mast_node))
 
         return node
 
@@ -96,8 +95,7 @@ class StmtConversionReadyCheckVisitor(NodeVisitorBase):
 
         super().generic_visit(node)
         assert node.mast_node is not None
-        print("\n##### Check AssignOp ######\n",
-              self.pretty_mlir(node.mast_node))
+        # print("\n##### Check AssignOp ######\n", self.pretty_mlir(node.mast_node))
 
         return node
 
