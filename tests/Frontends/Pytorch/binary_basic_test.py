@@ -2,13 +2,8 @@
 
 import torch
 import numpy as np
-from typing import Callable, List
 
 from chopper.pytorch import *
-
-
-# pyast = PythonRunner.parse_python(the_func)
-# mlast = PythonRunner.convert_python_to_mlir(pyast)
 
 
 class ElementwiseBinaryModule(torch.nn.Module):
@@ -33,8 +28,6 @@ lhs_input = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=torch.float32
 rhs_input = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=torch.float32, requires_grad=True)
 label = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=torch.float32, requires_grad=True)
 
-arg0 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
-arg1 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
 heh = ElementwiseBinaryModule()
 print("create module instance")
 # ANCHOR switch if enable this compile decorator
