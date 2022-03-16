@@ -73,6 +73,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 print(_annotation)
                 if _annotation is None:
                     _type = NoneType()
+                    # HARDCODE, this is a temperal handle to avoid runtime error in type conversion by IREE Runtime
+                    continue
                 else:
                     _dtype = astnodes.FloatType(MlirType.f32)
                     _dim = [Dimension(_annotation[0][k]) for k in range(len(_annotation[0]))]

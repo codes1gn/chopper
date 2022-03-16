@@ -12,6 +12,7 @@ from chopper.scaffold.utils import *
 __all__ = [
     "annotate_arguments",
     "compile_callable",
+    "dummy_compile_callable",
 ]
 
 
@@ -108,16 +109,12 @@ def compile_callable(fn: Callable) -> Callable:
     # print("------ REF RESULTS in CPU -------")
     # ref_result = add_trial_run(_INPUT_LHS, _INPUT_RHS)
     # print(ref_result)
-    def _callable_after_args_canonicaliser(*args, **kwargs):
-        # HARDCODE, this is a temperal handle to avoid runtime error in type conversion by IREE Runtime
-        # they do not accept torch.nn.Module type
-        args = list(args)
-        if isinstance(args[0], torch.nn.Module):
-            args[0] = 0
-        # print("args = {}".format(args))
-        # print("kwargs = {}".format(kwargs))
-        return _callable(*args, **kwargs)
-
-    # return _callable_after_args_canonicaliser
     return _callable
     # return fn
+
+
+def dummy_compile_callable(fn: Callable) -> Callable:
+    def _callable_after_args_canonicaliser(*args, **kwargs):
+        return fn(*args, **kwargs)
+
+    return _callable_after_args_canonicaliser

@@ -15,6 +15,7 @@ class ElementwiseBinaryModule(torch.nn.Module):
     def __init__(self):
         super().__init__()
 
+    # @dummy_compile_callable
     @compile_callable
     @annotate_arguments(
         [
@@ -25,18 +26,28 @@ class ElementwiseBinaryModule(torch.nn.Module):
     )
     def forward(self, a, b):
         c = a + b
-        return c
+        d = a + c
+        return d
 
 
-lhs_input = torch.empty(2, 3).uniform_(0.0, 1.0)
+lhs_input = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=torch.float32, requires_grad=True)
+rhs_input = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=torch.float32, requires_grad=True)
+label = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=torch.float32, requires_grad=True)
+
 print(lhs_input)
-rhs_input = torch.empty(2, 3).uniform_(0.0, 1.0)
+
 arg0 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
 arg1 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
 heh = ElementwiseBinaryModule()
 print("init module")
-out = heh.forward(lhs_input.numpy(), arg0, arg1)
+# ANCHOR switch if enable this compile decorator
+# TODO fix func signiture first then, automate the backward()
+out = heh(arg0, arg1)
+# out = heh(lhs_input, rhs_input)
+# loss = torch.nn.functional.binary_cross_entropy_with_logits(label, out)
 print(out)
+# loss.backward()
+# print(lhs_input.grad)
 # USE __CALL__, NEED TO ADD NEW ARG
 # out = ElementwiseBinaryModule()(lhs_input, rhs_input)
 # out = ElementwiseBinaryModule().forward(lhs_input, rhs_input)
