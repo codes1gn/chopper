@@ -6,6 +6,24 @@ import numpy as np
 from chopper.pytorch import *
 
 
+class ElementwiseBinaryModule(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    @backend("IREE")
+    @annotate_arguments(
+        [
+            None,
+            ([2, 3], torch.float32),
+            ([2, 3], torch.float32),
+        ]
+    )
+    def forward(self, a, b):
+        c = a + b
+        d = a + c
+        return d
+
+
 class ElementwiseBinaryModule2(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -24,11 +42,7 @@ class ElementwiseBinaryModule2(torch.nn.Module):
         return d
 
 
-"""
-"""
-
-
-class ElementwiseBinaryModule(torch.nn.Module):
+class ElementwiseBinaryModule3(torch.nn.Module):
     def __init__(self):
         super().__init__()
 
@@ -36,8 +50,8 @@ class ElementwiseBinaryModule(torch.nn.Module):
     @annotate_arguments(
         [
             None,
-            ([2, 3], torch.float32),
-            ([2, 3], torch.float32),
+            ([3, 3], torch.float32),
+            ([3, 3], torch.float32),
         ]
     )
     def forward(self, a, b):
@@ -61,10 +75,14 @@ class HighLevelBlock(torch.nn.Module):
 lhs_input = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=torch.float32, requires_grad=True)
 rhs_input = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=torch.float32, requires_grad=True)
 
+lhs_input_3 = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], dtype=torch.float32, requires_grad=True)
+rhs_input_3 = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], dtype=torch.float32, requires_grad=True)
+
 # ANCHOR switch if enable this compile decorator
 # TODO fix func signiture first then, automate the backward()
 out = ElementwiseBinaryModule()(lhs_input, rhs_input)
 out2 = ElementwiseBinaryModule2()(lhs_input, rhs_input)
+out3 = ElementwiseBinaryModule3()(lhs_input_3, rhs_input_3)
 print("single module test passed!")
 module2 = HighLevelBlock()
 out2 = module2(lhs_input, rhs_input)

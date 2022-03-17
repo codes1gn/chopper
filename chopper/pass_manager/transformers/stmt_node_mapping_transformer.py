@@ -450,27 +450,25 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             # 2. list binart op, via numpy to implement
 
             # STEP 1 build SsaID for lhs and rhs
-            _SsaId_left = _SsaId_right = None
             if isinstance(node.value.left, ast.Call):
-                _SsaId_left = MlirSsaId(value=node.value.left.args[0].id, op_no=None)
-                _SsaId_right = MlirSsaId(value=node.value.left.args[0].id, op_no=None)
-
+                assert 0, "not support CallOp as operand of BinOp"
+                _lhs_argname = node.value.left.args[0].id
+                _rhs_argname = node.value.right.args[0].id
             else:
-                _SsaId_left = MlirSsaId(value=node.value.left.id, op_no=None)
-                _SsaId_right = MlirSsaId(value=node.value.right.id, op_no=None)
+                _lhs_argname = node.value.left.id
+                _rhs_argname = node.value.right.id
+            _SsaId_left = MlirSsaId(value=_lhs_argname, op_no=None)
+            _SsaId_right = MlirSsaId(value=_rhs_argname, op_no=None)
+            _res_argnames_list = [target.id for target in node.targets]
+            print(astunparse.dump(node.value))
 
             # STEP 2 build op arg types
-            # TODO albert hardcode remove
-            _dtype = astnodes.FloatType(MlirType.f32)
-            _dim = [Dimension(2), Dimension(3)]
-            _type = RankedTensorType(
-                dimensions=_dim,
-                element_type=_dtype,
-            )
-
-            _argument_types = [_type, _type]
-            _result_types = [_type]
-            _op_type = FunctionType(argument_types=_argument_types, result_types=_result_types)
+            # TODO make a op_builder to simplify the building process ast.AST => astnodes.Node
+            _lhs_type = global_symbol_table.query(_lhs_argname).get_type()
+            _rhs_type = global_symbol_table.query(_rhs_argname).get_type()
+            _argument_types = [_lhs_type, _lhs_type]
+            _result_types = [global_symbol_table.query(_res_argname).get_type() for _res_argname in _res_argnames_list]
+            _whole_op_type_def = FunctionType(argument_types=_argument_types, result_types=_result_types)
 
             # STEP 3 build result symbol
             _result_list = list()
@@ -482,7 +480,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     match=0,
                     operand_a=_SsaId_left,
                     operand_b=_SsaId_right,
-                    dtype=_op_type,
+                    dtype=_whole_op_type_def,
                 )
             elif isinstance(node.value.op, ast.Sub):
                 assert 0

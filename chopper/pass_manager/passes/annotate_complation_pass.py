@@ -94,6 +94,7 @@ class AnnotateCompletionPass(PassBase):
             ast.AST: the converted astnode after run the pass.
         """
 
+        print("\n====== enter AnnotateCompletionPass =====\n")
         for _solver in self.solvers:
             ast_root = _solver(self.arg_annotation).visit(ast_root)
 

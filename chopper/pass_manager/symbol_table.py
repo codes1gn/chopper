@@ -21,12 +21,22 @@ class SymbolEntry(object):
     def debug_str(self) -> str:
         return "\n    obj={},\n    name={},\n    type={}\n".format(self, self.name, self.mlirtype)
 
+    def get_name(self) -> str:
+        return self.name
+
+    def get_type(self) -> astnodes.Type:
+        return self.mlirtype
+
 
 class SymbolTable(object):
-    __slots__ = ["scoped_symbol_table"]
+    __slots__ = [
+        "scoped_symbol_table",
+        "pass_again",
+    ]
 
     def __init__(self):
         self.scoped_symbol_table = {}
+        self.pass_again = False
 
     def register_symbol(self, symbol_entry: SymbolEntry):
         self.scoped_symbol_table[symbol_entry.name] = symbol_entry
