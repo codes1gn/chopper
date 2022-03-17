@@ -68,6 +68,4 @@ PYBIND11_MODULE(chopper_compiler, m) {
       R"pbdoc(
           method<load_and_execute> execute the input textual IR on <RefBackend, X86>
         )pbdoc");
-
-
 }

@@ -72,8 +72,7 @@ public:
     auto lhs = op->getOperand(0);
     auto rhs = op->getOperand(1);
     auto elementTy = lhs.getType();
-    auto tosa_add =
-        rewriter.create<tosa::AddOp>(loc, elementTy, lhs, rhs);
+    auto tosa_add = rewriter.create<tosa::AddOp>(loc, elementTy, lhs, rhs);
     rewriter.replaceOp(op, tosa_add.getResult());
 
     return success();

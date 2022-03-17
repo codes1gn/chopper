@@ -24,8 +24,8 @@
 // #include "Dialect/Chopper/ChopperDialect.h"
 // #include "Dialect/Basicpy/IR/BasicpyDialect.h"
 // TODO should we use global register???
-#include "ChopperInit.h"
 #include "Capi/chopper-compiler-capi.h"
+#include "ChopperInit.h"
 
 namespace {
 static llvm::cl::opt<bool> splitInputFile(
@@ -57,7 +57,7 @@ static llvm::cl::opt<bool> allowUnregisteredDialects(
     "allow-unregistered-dialect",
     llvm::cl::desc("Allow operation with no registered dialects"),
     llvm::cl::init(false));
-}
+} // namespace
 
 int compile(int argc, char **argv) {
 

@@ -18,7 +18,11 @@ function find_py_sources() {
 # C/C++ sources.
 set -o xtrace
 clang-format -i \
-  $(find_cc_sources src)
+  $(find_cc_sources compiler)
 
 # Python sources.
 yapf --recursive -i "$td/chopper"
+yapf --recursive -i "$td/experimental"
+
+# Rust sources.
+cargo fmt
