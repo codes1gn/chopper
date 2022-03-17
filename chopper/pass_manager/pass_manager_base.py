@@ -22,15 +22,14 @@ class PassManagerBase(object):
     ]
 
     def __init__(self):
-        """Initialize PassManagerBase attributions.
-        """
+        """Initialize PassManagerBase attributions."""
         self._pass_vector = {}
         self._pass_id_list = []
         self._concrete_pass = []
 
     @property
     def pass_vector(self):
-        """Wrapper pass_vector as PassManagerBase instance's attribution. 
+        """Wrapper pass_vector as PassManagerBase instance's attribution.
 
         Returns:
             list : the list of pass_vector.
@@ -39,7 +38,7 @@ class PassManagerBase(object):
 
     @property
     def pass_id_list(self):
-        """Wrapper pass_id_list as PassManagerBase instance's attribution. 
+        """Wrapper pass_id_list as PassManagerBase instance's attribution.
 
         Returns:
             list : the list of pass_id_list.
@@ -48,7 +47,7 @@ class PassManagerBase(object):
 
     @property
     def concrete_pass(self):
-        """Wrapper concrete_pass as PassManagerBase instance's attribution. 
+        """Wrapper concrete_pass as PassManagerBase instance's attribution.
 
         Returns:
             list : the list of concrete_pass.
@@ -60,7 +59,7 @@ class PassManagerBase(object):
 
         Args:
             pass_class (Any): The Pass class
-        
+
         Returns:
             None.
         """

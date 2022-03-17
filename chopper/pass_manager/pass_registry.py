@@ -5,6 +5,15 @@ from .passes import *
 # lazy load the pass register
 class PassRegistry(object):
     @memoized_classproperty
+    def symbol_table(cls) -> dict:
+        """register passes into registry, will only run once
+
+        Returns:
+            dict: pass table that pass name is key and pass str(id) is value
+        """
+        _symbol_table = {}
+
+    @memoized_classproperty
     def pass_table(cls) -> dict:
         """register passes into registry, will only run once
 

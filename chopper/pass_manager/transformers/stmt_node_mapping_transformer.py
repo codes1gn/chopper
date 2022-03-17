@@ -6,6 +6,7 @@ import torch
 
 from chopper.scaffold.utils import *
 from .node_transformer_base import NodeTransformerBase
+from chopper.pass_manager.symbol_table import global_symbol_table, SymbolTable, SymbolEntry
 
 from mlir import astnodes
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimension, RankedTensorType, NoneType
@@ -73,7 +74,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 # print(_annotation)
                 if _annotation is None:
                     _type = NoneType()
-                    # HARDCODE, this is a temperal handle to avoid runtime error in type conversion by IREE Runtime
+                    # HARDCODE + WORKAROUND, this is a temperal handle to avoid runtime error in type conversion by IREE Runtime
                     continue
                 else:
                     _dtype = astnodes.FloatType(MlirType.f32)
@@ -82,11 +83,14 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         dimensions=_dim,
                         element_type=_dtype,
                     )
+                    global_symbol_table.register_symbol(SymbolEntry(arg.arg, _type))
 
                 if hasattr(arg.annotation, "id") and arg.annotation.id == "float":
+                    assert 0, "wait for tuning"
                     _args.append(NamedArgument(name=MlirSsaId(value=arg.arg, op_no=None), type=None))
                 # case 2, arguments is list type
                 elif hasattr(arg.annotation, "id") and arg.annotation.id == "list":
+                    assert 0, "wait for tuning"
                     # TODO: list -> <?xf32> <?x?xf32> <?x?x?f32>
                     _type = astnodes.RankedTensorType(
                         dimensions=[Dimension(value=None)], element_type=astnodes.FloatType(MlirType.f32)
@@ -97,6 +101,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     and isinstance(arg.annotation.slice, ast.Index)
                     and arg.annotation.value.id == "List"
                 ):
+                    assert 0, "wait for tuning"
                     # TODO: List[float] -> <?xf32> <?x?xf32> <?x?x?f32>
                     if arg.annotation.slice.value.id == "float":
                         # TODO: Other type, only support float now
@@ -113,12 +118,13 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     assert 0, "not supported scenario, please check the inputs"
                     pass
         else:
-            # handle zero arguments
+            # None Arguments still need a empty NamedArgument
             _args.append(NamedArgument())
 
         _result_type = None
         # TODO is this function return is None, keep it until all shapes are fixed
         if node.returns:
+            assert 0, "wait for tuning, support pre-annotated function-type-return"
             if hasattr(node.returns, "id") and node.returns.id == "float":
                 # TODO(albert) workaround to tensor, should be f32 in future , and do convertion in compiler
                 _type = UnitTensorType(element_type=astnodes.FloatType(MlirType.f32))
@@ -262,6 +268,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
         if isinstance(node.value, ast.Name):
             _value = node.value.id
+            # anchor
+            # _type = global_symbol_table.query(_value)
             _op_no = None
 
             _values.append(MlirSsaId(value=_value, op_no=_op_no))

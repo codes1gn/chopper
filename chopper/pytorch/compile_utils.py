@@ -12,6 +12,7 @@ import chopper.iree.runtime as ireert
 
 from .torch_jit_compiler import *
 from chopper.scaffold.utils import *
+from chopper.pass_manager.symbol_table import global_symbol_table
 
 __all__ = [
     "annotate_arguments",
@@ -60,6 +61,11 @@ def backend(backend_name: str):
         ast_source = tjcompiler.parse_callable(fn)
         print("------ PYTHON SRC -------")
         print(tjcompiler.dump_python(ast_source))
+
+        # reset symbol table
+        # TODO avoid this action here, make it lazy_load and add scope support,
+        # bind the lifetime with the whole compiler
+        global_symbol_table.reset_symbol_table()
 
         ast_source = tjcompiler.annotate_function(ast_source, fn._torch_dsl_arg_annotations)
         mlir_dialect = tjcompiler.to_mlir_dialect(ast_source)

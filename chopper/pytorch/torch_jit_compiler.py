@@ -14,6 +14,7 @@ from imp import new_module
 from mlir import parse_path, parse_string
 from mlir import astnodes
 from chopper.scaffold.mlir_dialects import *
+from chopper.pass_manager.symbol_table import global_symbol_table
 from chopper.scaffold.utils import *
 
 MlirNode = astnodes.Node
@@ -166,7 +167,6 @@ class TorchJitCompiler:
         pass_manager.run(ast_src)
 
         return ast_src
-
 
     @classmethod
     def to_mlir_dialect(cls, pyast: ast.AST) -> MlirNode:
