@@ -113,6 +113,7 @@ def backend(backend_name: str):
         tosa_file = open(TMP_FILE_TOSA, "r")
         print("------ TOSA IR -------")
         print(tosa_file.read())
+        tosa_file.close()
 
         # STAGE 3 IREE branch :: TOSA => spirv-module and executable on IREE
         print("------ RESULTS in VULKAN GPU -------")
@@ -122,6 +123,10 @@ def backend(backend_name: str):
             TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"]
         )
         vm_module = ireert.VmModule.from_flatbuffer(binary_vulkan_scalar)
+        # clean up the tmp files after all compilation done
+        subprocess.run(["rm", TMP_FILE_ATIR])
+        subprocess.run(["rm", TMP_FILE_TOSA])
+
         # TODO mock with arg0 as self, anyway this are not used
         # result = _callable(arg0, arg0, arg1)
 

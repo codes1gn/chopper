@@ -68,6 +68,8 @@ if __name__ == "__main__":
     tosa_file = open(TMP_FILE_TOSA, "r")
     print("------ TOSA IR -------")
     print(tosa_file.read())
+    # clean up the tmp files
+    subprocess.run(["rm", TMP_FILE_ATIR, TMP_FILE_TOSA])
 
     # STEP 3 run on llvm-X86 backend
     print("------ RESULTS in VULKAN GPU -------")

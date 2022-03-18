@@ -18,14 +18,15 @@ TMP_FILE_ATIR = "/tmp/atir.0"
 TMP_FILE_TOSA = "/tmp/tosa.0"
 _INPUT = 1.3
 
+
 def compile_it():
     _args = [
-            "placeholder",
-            TMP_FILE_ATIR,
-            "-convert-atir-to-tosa",
-            "-o",
-            TMP_FILE_TOSA,
-            ]
+        "placeholder",
+        TMP_FILE_ATIR,
+        "-convert-atir-to-tosa",
+        "-o",
+        TMP_FILE_TOSA,
+    ]
     return chopper_compiler.compile(_args)
 
 
@@ -67,23 +68,22 @@ if __name__ == "__main__":
     print("------ TOSA IR -------")
     print(tosa_file.read())
 
+    # clean up the tmp files
+    subprocess.run(["rm", TMP_FILE_ATIR, TMP_FILE_TOSA])
+
     # STEP 3 run on llvm-X86 backend
     print("------ RESULTS in VULKAN GPU -------")
     # TODO(albert), crash may caused by scope, that ctx of iree not freed automatically
     # result = launch_and_execute(textual_atir, 'vulkan', _INPUT)
     print("vulkan backend inited")
     # test scalar on vulkan
-    binary_vulkan_scalar = ireecc.tools.compile_file(
-        TMP_FILE_TOSA,
-        input_type="tosa",
-        target_backends=["vulkan-spirv"]
-    )
+    binary_vulkan_scalar = ireecc.tools.compile_file(TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"])
     vm_module = ireert.VmModule.from_flatbuffer(binary_vulkan_scalar)
     config = ireert.Config(driver_name="vulkan")
     ctx = ireert.SystemContext(config=config)
     ctx.add_vm_module(vm_module)
     _callable = ctx.modules.module["exp_trial_run"]
-    arg0 = np.array(_INPUT, dtype=np.float32) # np.array([1., 2., 3., 4.], dtype=np.float32)
+    arg0 = np.array(_INPUT, dtype=np.float32)  # np.array([1., 2., 3., 4.], dtype=np.float32)
     result = _callable(arg0)
     print(result)
 
@@ -91,5 +91,3 @@ if __name__ == "__main__":
     print("------ REF RESULTS in CPU -------")
     ref_result = exp_trial_run(_INPUT)
     print(ref_result)
-
-
