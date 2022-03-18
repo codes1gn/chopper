@@ -6,10 +6,8 @@ import sys
 from mlir import parse_string
 from dataclasses import dataclass
 import mlir.astnodes as mast
-from mlir.astnodes import Node, dump_or_value, TensorType, Dimension, \
-        FloatType, IntegerType, ComplexType, VectorType
-from mlir.dialect import Dialect, DialectOp, DialectType, UnaryOperation, \
-        BinaryOperation, is_op
+from mlir.astnodes import Node, dump_or_value, TensorType, Dimension, FloatType, IntegerType, ComplexType, VectorType
+from mlir.dialect import Dialect, DialectOp, DialectType, UnaryOperation, BinaryOperation, is_op
 
 from typing import Union, Optional, List
 
@@ -32,11 +30,11 @@ class UnitTensorType(TensorType):
     element_type: Union[IntegerType, FloatType, ComplexType, VectorType]
 
     def dump(self, indent: int = 0) -> str:
-        return 'tensor<%s>' % (self.element_type.dump(indent))
+        return "tensor<%s>" % (self.element_type.dump(indent))
+
 
 ##############################################################################
 # Dialect Operations
-
 
 
 @dataclass
@@ -53,6 +51,23 @@ class ATIR_AddOp(DialectOp):
     # seperated with whitespace
     _syntax_ = [
         "atir.add {operand_a.ssa_use} , {operand_b.ssa_use} : {dtype.function_type}",
+    ]
+
+
+@dataclass
+class ATIR_SubOp(DialectOp):
+    """AST node for an operation with an optional value."""
+
+    operand_a: SsaUse
+    operand_b: SsaUse
+    dtype: mast.FunctionType
+
+    _opname_ = "atir.sub"
+
+    # TODO in syntax, between string_literals and non-terminals, must be
+    # seperated with whitespace
+    _syntax_ = [
+        "atir.sub {operand_a.ssa_use} , {operand_b.ssa_use} : {dtype.function_type}",
     ]
 
 
@@ -127,7 +142,6 @@ class ATIR_TanhOp(UnaryOperation):
     _opname_ = "atir.tanh"
 
 
-
 class ATIR_ExpOp(UnaryOperation):
     _opname_ = "atir.exp"
 
@@ -137,10 +151,7 @@ class ATIR_ExpOp(UnaryOperation):
 
 DIALECT_ATIR = Dialect(
     "atir",
-    ops=[
-        m[1] for m in inspect.getmembers(sys.modules[__name__],
-                                         lambda obj: is_op(obj, __name__))
-    ],
+    ops=[m[1] for m in inspect.getmembers(sys.modules[__name__], lambda obj: is_op(obj, __name__))],
     types=[],
     preamble="",
     transformers=None,

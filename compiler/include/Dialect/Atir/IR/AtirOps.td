@@ -37,6 +37,15 @@ def Atir_AddOp : BinaryArithmeticOp<"add", [NoSideEffect]> {
   }];
 }
 
+def Atir_SubOp : BinaryArithmeticOp<"sub", [NoSideEffect]> {
+  let summary = "Substraction of two tensors.";
+  let description = [{
+    Substraction of two tensors.
+
+    Numpy-style broadcasting is allowed.
+  }];
+}
+
 def Atir_MaxOp : BinaryArithmeticOp<"max", [NoSideEffect]> {
   let summary = "Maximum of two tensors.";
   let description = [{

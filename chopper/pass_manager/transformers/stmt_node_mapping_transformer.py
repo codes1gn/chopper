@@ -12,7 +12,7 @@ from mlir import astnodes
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimension, RankedTensorType, NoneType
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
-from chopper.scaffold.mlir_dialects.dialect_atir import ATIR_AddOp, ATIR_ExpOp, UnitTensorType
+from chopper.scaffold.mlir_dialects.dialect_atir import ATIR_AddOp, ATIR_SubOp, ATIR_MulOp, ATIR_ExpOp, UnitTensorType
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId
@@ -483,9 +483,19 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     dtype=_whole_op_type_def,
                 )
             elif isinstance(node.value.op, ast.Sub):
-                assert 0
+                _op = ATIR_SubOp(
+                    match=0,
+                    operand_a=_SsaId_left,
+                    operand_b=_SsaId_right,
+                    dtype=_whole_op_type_def,
+                )
             elif isinstance(node.value.op, ast.Mult):
-                assert 0
+                _op = ATIR_MulOp(
+                    match=0,
+                    operand_a=_SsaId_left,
+                    operand_b=_SsaId_right,
+                    dtype=_whole_op_type_def,
+                )
             elif isinstance(node.value.op, ast.Div):
                 assert 0
             elif isinstance(node.value.op, ast.Mod):

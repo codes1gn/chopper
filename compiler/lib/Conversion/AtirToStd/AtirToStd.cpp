@@ -72,6 +72,9 @@ matchAndRewriteBinaryElementwise(Operation *op, PatternRewriter &rewriter) {
   if (isa<atir::AddOp>(op)) {
     binaryOpResult = rewriter.create<AddFOp>(loc, result.getType(),
                                              lhsBroadcasted, rhsBroadcasted);
+  } else if (isa<atir::SubOp>(op)) {
+    binaryOpResult = rewriter.create<SubFOp>(loc, result.getType(),
+                                             lhsBroadcasted, rhsBroadcasted);
   } else if (isa<atir::MaxOp>(op)) {
     // XXX: remove Ctir dep
     // XXX: remove Ctir ops from Ctir
@@ -150,6 +153,7 @@ public:
     patterns.add<ConvertUnaryElementwise<atir::ExpOp>,
                  ConvertUnaryElementwise<atir::TanhOp>>(context);
     patterns.add<ConvertBinaryElementwise<atir::AddOp>,
+                 ConvertBinaryElementwise<atir::SubOp>,
                  ConvertBinaryElementwise<atir::MaxOp>,
                  ConvertBinaryElementwise<atir::MulOp>>(context);
     return std::move(patterns);

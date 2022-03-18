@@ -68,16 +68,111 @@ public:
   using OpRewritePattern<atir::AddOp>::OpRewritePattern;
   LogicalResult matchAndRewrite(atir::AddOp op,
                                 PatternRewriter &rewriter) const override {
-    auto loc = op->getLoc();
-    auto lhs = op->getOperand(0);
-    auto rhs = op->getOperand(1);
-    auto elementTy = lhs.getType();
-    auto tosa_add = rewriter.create<tosa::AddOp>(loc, elementTy, lhs, rhs);
-    rewriter.replaceOp(op, tosa_add.getResult());
+
+    // TODO consider if do broadcast explicitly, or let TOSA do it
+    // one ref is AtirToStd
+    /***
+    // get shape of lhs and rhs
+    Value lhsShape = rewriter.create<shape::ShapeOfOp>(loc, lhs);
+    Value rhsShape = rewriter.create<shape::ShapeOfOp>(loc, rhs);
+
+    // Create the constraints, and the assuming region.
+    Value witness =
+        rewriter.create<shape::CstrBroadcastableOp>(loc, lhsShape, rhsShape);
+    auto assuming = rewriter.create<shape::AssumingOp>(
+        loc, ArrayRef<Type>{result.getType()}, witness);
+
+    // Start building the region body.
+    rewriter.createBlock(&assuming.doRegion());
+    */
+    // Value broadcastedShape = rewriter.create<shape::BroadcastOp>(
+    //     loc, getExtentTensorType(rewriter), lhsShape, rhsShape,
+    //     /*error=*/nullptr);
+
+    /*
+    // It's annoying to do the dynamic broadcast above then
+    // do the static transfer function here. Would be nice if they could
+    // somehow be unified.
+    SmallVector<int64_t, 6> broadcastedStaticShape;
+    OpTrait::util::getBroadcastedShape(lhsType.getShape(), rhsType.getShape(),
+                                       broadcastedStaticShape);
+    auto resultType =
+        RankedTensorType::get(broadcastedStaticShape, lhsType.getElementType());
+    Value lhsBroadcasted = rewriter.create<ctir::BroadcastToOp>(
+        loc, resultType, lhs, broadcastedShape);
+    Value rhsBroadcasted = rewriter.create<tosa::BroadcastToOp>(
+        loc, resultType, rhs, broadcastedShape);
+    binaryOpResult = rewriter.create<tosa::AddOp>(loc, result.getType(),
+                                             lhsBroadcasted, rhsBroadcasted);
+
+    rewriter.create<shape::AssumingYieldOp>(loc, binaryOpResult);
+
+    // Finally, replace with the results of the shape.assuming
+    rewriter.replaceOp(op, assuming.getResults());
+    */
+
+    // auto elementTy = lhs.getType();
+    Value lhs = op->getOperand(0);
+    Value rhs = op->getOperand(1);
+    Location loc = op->getLoc();
+    Value result = op->getResult(0);
+    auto lhsType = lhs.getType().dyn_cast<RankedTensorType>();
+    auto rhsType = rhs.getType().dyn_cast<RankedTensorType>();
+    if (!lhsType || !rhsType)
+      return rewriter.notifyMatchFailure(op, "requires ranked tensors");
+    // It's annoying to do the dynamic broadcast above then
+    // do the static transfer function here. Would be nice if they could
+    // somehow be unified.
+    SmallVector<int64_t, 6> broadcastedStaticShape;
+    OpTrait::util::getBroadcastedShape(lhsType.getShape(), rhsType.getShape(),
+                                       broadcastedStaticShape);
+    auto resultType =
+        RankedTensorType::get(broadcastedStaticShape, lhsType.getElementType());
+    // in TOSA, no need to explicit handle broadcast, just make the ret type
+    // become broadcastable compatible with the lhs and rhs
+    // check lhs/rhs, who shape is the resulting broadcastable shape
+
+    auto tosa_op = rewriter.create<tosa::AddOp>(loc, resultType, lhs, rhs);
+    rewriter.replaceOp(op, tosa_op.getResult());
 
     return success();
   }
 };
+
+class ConvertSubOp : public OpRewritePattern<atir::SubOp> {
+public:
+  using OpRewritePattern<atir::SubOp>::OpRewritePattern;
+  LogicalResult matchAndRewrite(atir::SubOp op,
+                                PatternRewriter &rewriter) const override {
+    // auto elementTy = lhs.getType();
+    Value lhs = op->getOperand(0);
+    Value rhs = op->getOperand(1);
+    Location loc = op->getLoc();
+    Value result = op->getResult(0);
+    auto lhsType = lhs.getType().dyn_cast<RankedTensorType>();
+    auto rhsType = rhs.getType().dyn_cast<RankedTensorType>();
+    if (!lhsType || !rhsType)
+      return rewriter.notifyMatchFailure(op, "requires ranked tensors");
+    // It's annoying to do the dynamic broadcast above then
+    // do the static transfer function here. Would be nice if they could
+    // somehow be unified.
+    SmallVector<int64_t, 6> broadcastedStaticShape;
+    OpTrait::util::getBroadcastedShape(lhsType.getShape(), rhsType.getShape(),
+                                       broadcastedStaticShape);
+    auto resultType =
+        RankedTensorType::get(broadcastedStaticShape, lhsType.getElementType());
+    // in TOSA, no need to explicit handle broadcast, just make the ret type
+    // become broadcastable compatible with the lhs and rhs
+    // check lhs/rhs, who shape is the resulting broadcastable shape
+
+    auto tosa_op = rewriter.create<tosa::SubOp>(loc, resultType, lhs, rhs);
+    rewriter.replaceOp(op, tosa_op.getResult());
+
+    return success();
+  }
+};
+
+// PUT ALL CONVERT PASSES ABOVE
 } // namespace
 
 namespace {
@@ -102,6 +197,7 @@ public:
     patterns.add<ConvertExpOp>(context);
     patterns.add<ConvertTanhOp>(context);
     patterns.add<ConvertAddOp>(context);
+    patterns.add<ConvertSubOp>(context);
     return std::move(patterns);
   }
 };

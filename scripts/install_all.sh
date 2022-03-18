@@ -23,3 +23,7 @@ python setup.py install --record install_cache.txt
 cd external/pymlir
 pip3 install .
 cd -
+
+#WORKAROUND register chopper-opt
+rm -f /usr/bin/tool-opt
+ln -s ${top_dir_realpath}/build/bin/chopper-opt /usr/bin/tool-opt
