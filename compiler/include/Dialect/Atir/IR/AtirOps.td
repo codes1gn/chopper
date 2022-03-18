@@ -46,19 +46,32 @@ def Atir_SubOp : BinaryArithmeticOp<"sub", [NoSideEffect]> {
   }];
 }
 
+def Atir_MulOp : BinaryArithmeticOp<"mul", [NoSideEffect]> {
+  let summary = "Multiply an input tensor by a scalar tensor.";
+  let description = [{
+    Multiplies each element of the input `input` with the scalar `other` and returns a new resulting tensor. The tensor types must match and shapes must be broadcastable.
+  }];
+}
+
+// TODO tosa not support DivOp currently
+// even divop is included here: https://mlir.llvm.org/docs/Dialects/TOSA/
+// wait for update
+//
+/*
+def Atir_DivOp : BinaryArithmeticOp<"mul", [NoSideEffect]> {
+  let summary = "Divtiply an input tensor by a scalar tensor.";
+  let description = [{
+    Divtiplies each element of the input `input` with the scalar `other` and returns a new resulting tensor. The tensor types must match and shapes must be broadcastable.
+  }];
+}
+*/
+
 def Atir_MaxOp : BinaryArithmeticOp<"max", [NoSideEffect]> {
   let summary = "Maximum of two tensors.";
   let description = [{
     Maximum of two tensors.
 
     Numpy-style broadcasting is allowed.
-  }];
-}
-
-def Atir_MulOp : BinaryArithmeticOp<"mul", [NoSideEffect]> {
-  let summary = "Multiply an input tensor by a scalar tensor.";
-  let description = [{
-    Multiplies each element of the input `input` with the scalar `other` and returns a new resulting tensor. The tensor types must match and shapes must be broadcastable.
   }];
 }
 

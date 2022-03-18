@@ -115,7 +115,7 @@ public:
     Value lhs = op->getOperand(0);
     Value rhs = op->getOperand(1);
     Location loc = op->getLoc();
-    Value result = op->getResult(0);
+    // Value result = op->getResult(0);
     auto lhsType = lhs.getType().dyn_cast<RankedTensorType>();
     auto rhsType = rhs.getType().dyn_cast<RankedTensorType>();
     if (!lhsType || !rhsType)
@@ -148,7 +148,7 @@ public:
     Value lhs = op->getOperand(0);
     Value rhs = op->getOperand(1);
     Location loc = op->getLoc();
-    Value result = op->getResult(0);
+    // Value result = op->getResult(0);
     auto lhsType = lhs.getType().dyn_cast<RankedTensorType>();
     auto rhsType = rhs.getType().dyn_cast<RankedTensorType>();
     if (!lhsType || !rhsType)
@@ -171,6 +171,79 @@ public:
     return success();
   }
 };
+
+class ConvertMulOp : public OpRewritePattern<atir::MulOp> {
+public:
+  using OpRewritePattern<atir::MulOp>::OpRewritePattern;
+  LogicalResult matchAndRewrite(atir::MulOp op,
+                                PatternRewriter &rewriter) const override {
+    // auto elementTy = lhs.getType();
+    Value lhs = op->getOperand(0);
+    Value rhs = op->getOperand(1);
+    Location loc = op->getLoc();
+    // Value result = op->getResult(0);
+    auto lhsType = lhs.getType().dyn_cast<RankedTensorType>();
+    auto rhsType = rhs.getType().dyn_cast<RankedTensorType>();
+    if (!lhsType || !rhsType)
+      return rewriter.notifyMatchFailure(op, "requires ranked tensors");
+    // It's annoying to do the dynamic broadcast above then
+    // do the static transfer function here. Would be nice if they could
+    // somehow be unified.
+    SmallVector<int64_t, 6> broadcastedStaticShape;
+    OpTrait::util::getBroadcastedShape(lhsType.getShape(), rhsType.getShape(),
+                                       broadcastedStaticShape);
+    auto shiftAttr = rewriter.getI32IntegerAttr(0);
+    auto resultType =
+        RankedTensorType::get(broadcastedStaticShape, lhsType.getElementType());
+    // in TOSA, no need to explicit handle broadcast, just make the ret type
+    // become broadcastable compatible with the lhs and rhs
+    // check lhs/rhs, who shape is the resulting broadcastable shape
+
+    auto tosa_op = rewriter.create<tosa::MulOp>(loc, resultType, lhs, rhs, shiftAttr);
+    rewriter.replaceOp(op, tosa_op.getResult());
+
+    return success();
+  }
+};
+
+// TODO tosa not support DivOp currently
+// even divop is included here: https://mlir.llvm.org/docs/Dialects/TOSA/
+// wait for update
+//
+/*
+class ConvertDivOp : public OpRewritePattern<atir::DivOp> {
+public:
+  using OpRewritePattern<atir::DivOp>::OpRewritePattern;
+  LogicalResult matchAndRewrite(atir::DivOp op,
+                                PatternRewriter &rewriter) const override {
+    // auto elementTy = lhs.getType();
+    Value lhs = op->getOperand(0);
+    Value rhs = op->getOperand(1);
+    Location loc = op->getLoc();
+    Value result = op->getResult(0);
+    auto lhsType = lhs.getType().dyn_cast<RankedTensorType>();
+    auto rhsType = rhs.getType().dyn_cast<RankedTensorType>();
+    if (!lhsType || !rhsType)
+      return rewriter.notifyMatchFailure(op, "requires ranked tensors");
+    // It's annoying to do the dynamic broadcast above then
+    // do the static transfer function here. Would be nice if they could
+    // somehow be unified.
+    SmallVector<int64_t, 6> broadcastedStaticShape;
+    OpTrait::util::getBroadcastedShape(lhsType.getShape(), rhsType.getShape(),
+                                       broadcastedStaticShape);
+    auto resultType =
+        RankedTensorType::get(broadcastedStaticShape, lhsType.getElementType());
+    // in TOSA, no need to explicit handle broadcast, just make the ret type
+    // become broadcastable compatible with the lhs and rhs
+    // check lhs/rhs, who shape is the resulting broadcastable shape
+
+    auto tosa_op = rewriter.create<tosa::DivOp>(loc, resultType, lhs, rhs);
+    rewriter.replaceOp(op, tosa_op.getResult());
+
+    return success();
+  }
+};
+*/
 
 // PUT ALL CONVERT PASSES ABOVE
 } // namespace
@@ -198,6 +271,7 @@ public:
     patterns.add<ConvertTanhOp>(context);
     patterns.add<ConvertAddOp>(context);
     patterns.add<ConvertSubOp>(context);
+    patterns.add<ConvertMulOp>(context);
     return std::move(patterns);
   }
 };

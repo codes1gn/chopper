@@ -72,22 +72,6 @@ class ATIR_SubOp(DialectOp):
 
 
 @dataclass
-class ATIR_MaxOp(DialectOp):
-    """AST node for an operation with an optional value."""
-
-    operand_a: SsaUse
-    operand_b: SsaUse
-    dtype: mast.FunctionType
-    _opname_ = "atir.max"
-
-    # TODO in syntax, between string_literals and non-terminals, must be
-    # seperated with whitespace
-    _syntax_ = [
-        "atir.max {operand_a.ssa_use} , {operand_b.ssa_use} : {dtype.function_type}",
-    ]
-
-
-@dataclass
 class ATIR_MulOp(DialectOp):
     """AST node for an operation with an optional value."""
 
@@ -101,6 +85,39 @@ class ATIR_MulOp(DialectOp):
     # seperated with whitespace
     _syntax_ = [
         "atir.mul {operand_a.ssa_use} , {operand_b.ssa_use} : {dtype.function_type}",
+    ]
+
+
+@dataclass
+class ATIR_DivOp(DialectOp):
+    """AST node for an operation with an optional value."""
+
+    operand_a: SsaUse
+    operand_b: SsaUse
+    dtype: mast.FunctionType
+
+    _opname_ = "atir.div"
+
+    # TODO in syntax, between string_literals and non-terminals, must be
+    # seperated with whitespace
+    _syntax_ = [
+        "atir.div {operand_a.ssa_use} , {operand_b.ssa_use} : {dtype.function_type}",
+    ]
+
+
+@dataclass
+class ATIR_MaxOp(DialectOp):
+    """AST node for an operation with an optional value."""
+
+    operand_a: SsaUse
+    operand_b: SsaUse
+    dtype: mast.FunctionType
+    _opname_ = "atir.max"
+
+    # TODO in syntax, between string_literals and non-terminals, must be
+    # seperated with whitespace
+    _syntax_ = [
+        "atir.max {operand_a.ssa_use} , {operand_b.ssa_use} : {dtype.function_type}",
     ]
 
 

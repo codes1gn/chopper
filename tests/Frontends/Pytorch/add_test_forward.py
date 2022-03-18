@@ -6,7 +6,7 @@ import numpy as np
 from chopper.pytorch import *
 
 
-def add_module_test(shape):
+def do_test(shape):
     class TestModule(torch.nn.Module):
         def __init__(self):
             super().__init__()
@@ -43,6 +43,6 @@ def add_module_test(shape):
     return
 
 
-add_module_test((2, 3))
-add_module_test((3, 3))
-add_module_test((7, 5))
+do_test((2, 3))
+do_test((3, 3))
+do_test((7, 5))

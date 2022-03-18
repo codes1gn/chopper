@@ -18,15 +18,17 @@ TMP_FILE_ATIR = "/tmp/atir.0"
 TMP_FILE_TOSA = "/tmp/tosa.0"
 _INPUT = 1.3
 
+
 def compile_it():
     _args = [
-            "placeholder",
-            TMP_FILE_ATIR,
-            "-convert-atir-to-tosa",
-            "-o",
-            TMP_FILE_TOSA,
-            ]
+        "placeholder",
+        TMP_FILE_ATIR,
+        "-convert-atir-to-tosa",
+        "-o",
+        TMP_FILE_TOSA,
+    ]
     return chopper_compiler.compile(_args)
+
 
 def compute_it():
     tosa_file = open(TMP_FILE_TOSA, "r")
@@ -39,14 +41,14 @@ def compute_it():
     # result = launch_and_execute(textual_atir, 'vulkan', _INPUT)
     print("vulkan backend inited")
     # test scalar on vulkan
-    binary_vulkan_scalar = ireecc.tools.compile_file(
-        TMP_FILE_TOSA,
-        input_type="tosa",
-        target_backends=["vulkan-spirv"]
-    )
+    binary_vulkan_scalar = ireecc.tools.compile_file(TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"])
+
+    # clean up the tmp files
+    subprocess.run(["rm", tmp_file_atir, tmp_file_tosa])
 
     # debugging now
     import chopper.iree.runtime.binding as iree_binding
+
     _avail_devs = iree_binding.HalDriver.query()
     print(_avail_devs)
     _driver = iree_binding.HalDriver.create("vulkan")
@@ -60,9 +62,7 @@ def compute_it():
     # build VmModule
     _vm_module = iree_binding.VmModule.from_flatbuffer(binary_vulkan_scalar)
     print(_vm_module)
-    _vm_context = iree_binding.VmContext(
-            instance=_rt_instance,
-            modules=[_hal_module, _vm_module])
+    _vm_context = iree_binding.VmContext(instance=_rt_instance, modules=[_hal_module, _vm_module])
     print(_vm_context)
     _vm_func = _vm_module.lookup_function("exp_trial_run")
     print(_vm_func)
@@ -79,12 +79,10 @@ def compute_it():
     _value = _ret_list.get_variant(0)
     print(_value)
 
-
     # STEP 2 show the reference result
     print("------ REF RESULTS in CPU -------")
     ref_result = exp_trial_run(_INPUT)
     print(ref_result)
-
 
 
 if __name__ == "__main__":

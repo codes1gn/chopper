@@ -20,13 +20,13 @@ def do_test(shape):
             ]
         )
         def forward(self, a, b):
-            c = a - b
-            d = c - a
+            c = a * b
+            d = c * a
             return d
 
         def ref_forward(self, a, b):
-            c = a - b
-            d = c - a
+            c = a * b
+            d = c * a
             return d
 
     lhs_input = torch.empty(shape, dtype=torch.float32).uniform_().clone().detach().requires_grad_(True)

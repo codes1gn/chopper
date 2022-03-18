@@ -68,9 +68,6 @@ if __name__ == "__main__":
     print("------ TOSA IR -------")
     print(tosa_file.read())
 
-    # clean up the tmp files
-    subprocess.run(["rm", TMP_FILE_ATIR, TMP_FILE_TOSA])
-
     # STEP 3 run on llvm-X86 backend
     print("------ RESULTS in VULKAN GPU -------")
     # TODO(albert), crash may caused by scope, that ctx of iree not freed automatically
@@ -83,6 +80,10 @@ if __name__ == "__main__":
     ctx = ireert.SystemContext(config=config)
     ctx.add_vm_module(vm_module)
     _callable = ctx.modules.module["exp_trial_run"]
+
+    # clean up the tmp files
+    subprocess.run(["rm", TMP_FILE_ATIR, TMP_FILE_TOSA])
+
     arg0 = np.array(_INPUT, dtype=np.float32)  # np.array([1., 2., 3., 4.], dtype=np.float32)
     result = _callable(arg0)
     print(result)

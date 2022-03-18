@@ -68,8 +68,6 @@ if __name__ == "__main__":
     tosa_file = open(TMP_FILE_TOSA, "r")
     print("------ TOSA IR -------")
     print(tosa_file.read())
-    # clean up the tmp files
-    subprocess.run(["rm", TMP_FILE_ATIR, TMP_FILE_TOSA])
 
     # STEP 3 run on llvm-X86 backend
     print("------ RESULTS in VULKAN GPU -------")
@@ -83,6 +81,10 @@ if __name__ == "__main__":
     ctx = ireert.SystemContext(config=config)
     ctx.add_vm_module(vm_module)
     _callable = ctx.modules.module["add_trial_run"]
+
+    # clean up the tmp files
+    subprocess.run(["rm", tmp_file_atir, tmp_file_tosa])
+
     arg0 = np.array(_INPUT_LHS, dtype=np.float32)  # np.array([1., 2., 3., 4.], dtype=np.float32)
     arg1 = np.array(_INPUT_RHS, dtype=np.float32)  # np.array([1., 2., 3., 4.], dtype=np.float32)
     result = _callable(arg0, arg1)
