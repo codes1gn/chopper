@@ -146,9 +146,9 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                     _ret_sym_entry = SymbolEntry(_ret_op_element.id, _result_type)
                     global_symbol_table.register_symbol(_ret_sym_entry)
 
-            elif _call_method == "add" or _call_method == "sub" or _call_method == "mul" or _call_method == "div":
+            elif _call_method == "add" or _call_method == "sub" or _call_method == "mul":
 
-                assert len(_arg_type_entries) == 1, "expected binary, too long of arguments for unaryop call"
+                assert len(_arg_type_entries) == 2, "expected binary, too long of arguments for unaryop call"
                 _lhs_type = _arg_type_entries[0].get_type()
                 _rhs_type = _arg_type_entries[1].get_type()
                 assert _lhs_type.element_type == _rhs_type.element_type
