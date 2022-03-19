@@ -192,6 +192,8 @@ public:
     SmallVector<int64_t, 6> broadcastedStaticShape;
     OpTrait::util::getBroadcastedShape(lhsType.getShape(), rhsType.getShape(),
                                        broadcastedStaticShape);
+    // ALBERT NOTE - shift is the attribute part of IR, use rewriter to build new elements
+    // references can be found from MLIR source codes
     auto shiftAttr = rewriter.getI32IntegerAttr(0);
     auto resultType =
         RankedTensorType::get(broadcastedStaticShape, lhsType.getElementType());

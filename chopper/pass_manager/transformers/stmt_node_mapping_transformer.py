@@ -12,7 +12,7 @@ from mlir import astnodes
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimension, RankedTensorType, NoneType
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
-from chopper.scaffold.mlir_dialects.dialect_atir import ATIR_AddOp, ATIR_SubOp, ATIR_MulOp, ATIR_ExpOp, UnitTensorType
+from chopper.scaffold.mlir_dialects.dialect_atir import ATIR_AddOp, ATIR_SubOp, ATIR_MulOp, ATIR_ExpOp, ATIR_TanhOp, UnitTensorType
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId
@@ -373,26 +373,96 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         #       "Map transformer::handling visit_Assign on node.\n")
         # print(">>>>>Python Assign Node:<<<<<\n", astunparse.dump(node))
         # print(type(node.value))
-        def mapping_Assign_Call(_node: ast.AST) -> ast.AST:
-            assert _node.value.func.attr == "exp", "assign an unsupported call"
-            _SsaId_operand = MlirSsaId(value=node.value.args[0].id, op_no=None)
-
-            # TODO(albert) this is a temporal transfer, use f32 for hardcoded
-            _type = UnitTensorType(element_type=astnodes.FloatType(MlirType.f32))
-            _assignop = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=_type)
-
-            _result_list = list()
-            _result_list.append(astnodes.OpResult(value=MlirSsaId(value=node.targets[0].id, op_no=None), count=None))
-            _assignop_wrapper = astnodes.Operation(result_list=_result_list, op=_assignop, location=None)
-
-            setattr(_node, "mast_node", _assignop_wrapper)
-            return _node
-
         _type = None
 
         if isinstance(node.value, ast.Call):
-            assert 0, "Guardian: not verified"
-            node = mapping_Assign_Call(node)
+            _call_method = node.value.func.attr
+            # split logics for unary and binary
+            # TODO change it into pattern match or calltype(node.value) -> unary | binary | cmp or other
+            if _call_method == "exp" or _call_method == "tanh":
+
+                # build arguments
+                _argname = node.value.args[0].id
+                _SsaId_operand = MlirSsaId(value=_argname, op_no=None)
+
+                # build arguments types
+                _arg_type_entry = global_symbol_table.query(_argname)
+                assert _arg_type_entry is not None, 'expected valid symbol entry, found None'
+                _argument_types = [_arg_type_entry.get_type()]
+
+                # build targets and their types
+                _res_argnames_list = [target.id for target in node.targets]
+                _result_list = [astnodes.OpResult(value=MlirSsaId(value=_res_argname, op_no=None), count=None) for _res_argname in _res_argnames_list]
+                # _result_types = [global_symbol_table.query(_res_argname).get_type() for _res_argname in _res_argnames_list]
+
+                # build function types for this operation
+                # _whole_op_type_def = FunctionType(argument_types=_argument_types, result_types=_result_types)
+
+                # build mlir.op according to ast.op
+                if _call_method == "exp":
+                    _assign_op = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=_arg_type_entry.get_type())
+                    # _assign_op = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=_whole_op_type_def)
+                elif _call_method == "tanh":
+                    _assign_op = ATIR_TanhOp(match=0, operand=_SsaId_operand, type=_arg_type_entry.get_type())
+                else:
+                    assert 0, "unsupported unary op"
+
+            elif _call_method == "add" or _call_method == "sub" or _call_method == "mul":
+
+                # build arguments
+                _lhs_argname = node.value.args[0].id
+                _rhs_argname = node.value.args[1].id
+                _SsaId_lhs_operand = MlirSsaId(value=_lhs_argname, op_no=None)
+                _SsaId_rhs_operand = MlirSsaId(value=_rhs_argname, op_no=None)
+
+                # build arguments types
+                _lhs_type_entry = global_symbol_table.query(_lhs_argname)
+                _rhs_type_entry = global_symbol_table.query(_rhs_argname)
+                assert _lhs_type_entry is not None, 'expected valid symbol entry at lhs arg, found None'
+                assert _rhs_type_entry is not None, 'expected valid symbol entry at rhs arg, found None'
+                _lhs_type = _lhs_type_entry.get_type()
+                _rhs_type = _rhs_type_entry.get_type()
+                _argument_types = [_lhs_type, _rhs_type]
+
+                # build targets and their types
+                _res_argnames_list = [target.id for target in node.targets]
+                _result_list = [astnodes.OpResult(value=MlirSsaId(value=_res_argname, op_no=None), count=None) for _res_argname in _res_argnames_list]
+                _result_types = [global_symbol_table.query(_res_argname).get_type() for _res_argname in _res_argnames_list]
+
+                # build function types for this operation
+                _whole_op_type_def = FunctionType(argument_types=_argument_types, result_types=_result_types)
+
+                # build mlir.op according to ast.op
+                if _call_method == "add":
+                    _assign_op = ATIR_AddOp(
+                        match=0,
+                        operand_a=_SsaId_lhs_operand,
+                        operand_b=_SsaId_rhs_operand,
+                        dtype=_whole_op_type_def,
+                    )
+                elif _call_method == "sub":
+                    _assign_op = ATIR_SubOp(
+                        match=0,
+                        operand_a=_SsaId_lhs_operand,
+                        operand_b=_SsaId_rhs_operand,
+                        dtype=_whole_op_type_def,
+                    )
+                elif _call_method == "mul":
+                    _assign_op = ATIR_MulOp(
+                        match=0,
+                        operand_a=_SsaId_lhs_operand,
+                        operand_b=_SsaId_rhs_operand,
+                        dtype=_whole_op_type_def,
+                    )
+                else:
+                    assert 0, "unsupported binary op"
+
+            else:
+                print("Not Support this op conversion from ast.AST -> mlir.astnodes.Node")
+
+            _assignop_wrapper = astnodes.Operation(result_list=_result_list, op=_assign_op, location=None)
+            setattr(node, "mast_node", _assignop_wrapper)
+            return node
 
         elif isinstance(node.value, ast.Num):
             assert 0, "Guardian: not verified"
@@ -496,8 +566,6 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     operand_b=_SsaId_right,
                     dtype=_whole_op_type_def,
                 )
-            elif isinstance(node.value.op, ast.Div):
-                assert 0
             elif isinstance(node.value.op, ast.Mod):
                 assert 0
             elif isinstance(node.value.op, ast.Pow):

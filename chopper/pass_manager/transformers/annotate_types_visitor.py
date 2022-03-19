@@ -93,35 +93,77 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         """
         print(self.__str__(), "::visit_Assign\n")
         _ret_op = node.targets
-        _bin_op = node.value
-        assert isinstance(_bin_op, ast.BinOp), "Not handle this type rhs value for AssignOp"
-        _lhs_arg = _bin_op.left
-        _rhs_arg = _bin_op.right
-        _opcode = _bin_op.op
+        _rhs_stmt = node.value
+        if isinstance(_rhs_stmt, ast.BinOp):
+            # handle c = a + b where '+' is a BinOp
+            _lhs_arg = _rhs_stmt.left
+            _rhs_arg = _rhs_stmt.right
+            _opcode = _rhs_stmt.op
 
-        # VERIFY SYMBOL TABLE IF READY FOR THIS OP
-        _lhs_sym_entry = global_symbol_table.query(_lhs_arg.id)
-        _rhs_sym_entry = global_symbol_table.query(_rhs_arg.id)
-        if _lhs_sym_entry is None or _rhs_sym_entry is None:
-            global_symbol_table.pass_again = True
-            super().generic_visit(node)
-            return node
+            # VERIFY SYMBOL TABLE IF READY FOR THIS OP
+            _lhs_sym_entry = global_symbol_table.query(_lhs_arg.id)
+            _rhs_sym_entry = global_symbol_table.query(_rhs_arg.id)
+            if _lhs_sym_entry is None or _rhs_sym_entry is None:
+                global_symbol_table.pass_again = True
+                super().generic_visit(node)
+                return node
 
-        # HANDLE OPERAND SHAPE
-        _lhs_type = _lhs_sym_entry.get_type()
-        _rhs_type = _rhs_sym_entry.get_type()
-        # assert _lhs_type.element_type.type == _rhs_type.element_type.type
-        assert _lhs_type.element_type == _rhs_type.element_type
-        _lhs_shape = _lhs_type.dimensions
-        _rhs_shape = _rhs_type.dimensions
-        if_same_shape = _lhs_shape == _rhs_shape
-        if if_same_shape:
-            # ret op always holds a list as AssignOp's targets
+            # HANDLE OPERAND SHAPE
+            _lhs_type = _lhs_sym_entry.get_type()
+            _rhs_type = _rhs_sym_entry.get_type()
+            assert _lhs_type.element_type == _rhs_type.element_type
+            _lhs_shape = _lhs_type.dimensions
+            _rhs_shape = _rhs_type.dimensions
+            assert _lhs_shape == _rhs_shape, "expected same shape of lhs and rhs arguments"
             for _ret_op_element in _ret_op:
                 _ret_sym_entry = SymbolEntry(_ret_op_element.id, _lhs_type)
                 global_symbol_table.register_symbol(_ret_sym_entry)
+
+        elif isinstance(_rhs_stmt, ast.Call):
+            print(astunparse.dump(_rhs_stmt))
+            _call_lib = _rhs_stmt.func.value.id  # torch
+            _call_method = _rhs_stmt.func.attr  # exp or add
+            _args = _rhs_stmt.args  # ast.Name, ast.Name
+            _arg_type_entries = [global_symbol_table.query(_argname.id) for _argname in _args]
+
+            # if any arg types are not inferred, means the infer of this call op is not ready
+            # run the pass again
+            for _ in _arg_type_entries:
+                if _ is None:
+                    global_symbol_table.pass_again = True
+                    super().generic_visit(node)
+                    return node
+
+            assert _rhs_stmt.func.value.id == "torch", "Found function call other than Torch DSL"
+
+            # handle accepted function calls and assert for guardian
+            # TODO build a builder or conversion or mapping utils
+            if _call_method == "exp" or _call_method == "tanh":
+
+                assert len(_arg_type_entries) == 1, "expected unary, too long of arguments for unaryop call"
+                _result_type = _arg_type_entries[0].get_type()
+                for _ret_op_element in _ret_op:
+                    _ret_sym_entry = SymbolEntry(_ret_op_element.id, _result_type)
+                    global_symbol_table.register_symbol(_ret_sym_entry)
+
+            elif _call_method == "add" or _call_method == "sub" or _call_method == "mul" or _call_method == "div":
+
+                assert len(_arg_type_entries) == 1, "expected binary, too long of arguments for unaryop call"
+                _lhs_type = _arg_type_entries[0].get_type()
+                _rhs_type = _arg_type_entries[1].get_type()
+                assert _lhs_type.element_type == _rhs_type.element_type
+                _lhs_shape = _lhs_type.dimensions
+                _rhs_shape = _rhs_type.dimensions
+                assert _lhs_shape == _rhs_shape, "expected same shape of lhs and rhs arguments"
+                for _ret_op_element in _ret_op:
+                    _ret_sym_entry = SymbolEntry(_ret_op_element.id, _lhs_type)
+                    global_symbol_table.register_symbol(_ret_sym_entry)
+
+            else:
+                assert 0, "found unsupported call method, please check <annotate_type_visitor>"
+
         else:
-            assert 0, "Not support BinaryOp with differing operand shape"
+            assert 0, "Not support AssignOp with supported RHS value"
 
         # anchor
         # TODO pattern matching or wrap to utils

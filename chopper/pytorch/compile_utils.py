@@ -147,10 +147,9 @@ def backend(backend_name: str):
 
             class _Callable_Func(Function):
                 @staticmethod
-                def forward(ctx, lhs: torch.Tensor, rhs: torch.Tensor) -> torch.Tensor:
-                    ctx.save_for_backward(lhs, rhs)
-                    lhs_data = lhs.detach().numpy()
-                    rhs_data = rhs.detach().numpy()
+                def forward(ctx, *inputs) -> torch.Tensor:
+                    ctx.save_for_backward(*inputs)
+                    _inputs = [val.detach().numpy() for val in inputs]
 
                     # TODO considering change the lifetime of CTX into higher level and let
                     # some entity of the chopper instance to manage it, but has to avoid
@@ -160,11 +159,11 @@ def backend(backend_name: str):
                     VKCTX.add_vm_module(vm_module)
                     # this part to be replaced by dyn naming
                     _callable = VKCTX.modules.module["forward"]
-                    return torch.tensor(_callable(lhs_data, rhs_data), requires_grad=True)
+                    return torch.tensor(_callable(*_inputs), requires_grad=True)
 
                 @staticmethod
                 def backward(ctx, grad_output):
-                    lhs, rhs = ctx.saved_tensors
+                    inputs = ctx.saved_tensors
                     return 1.1 * grad_output, 1.3 * grad_output
 
             # return ret_tensor
