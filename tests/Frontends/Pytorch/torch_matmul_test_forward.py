@@ -37,8 +37,8 @@ def do_test(shape1, shape2, shape3):
     # (shape3, torch.float32),
 
     test_module = TestModule()
-    ref_out = test_module.ref_forward(input1, input2)
-    real_out = test_module(lhs_input, rhs_input)
+    ref_out = test_module.ref_forward(input1, input2, input3)
+    real_out = test_module(input1, input2, input3)
     # TENSOR EQUAL
     print("reference result =\n", ref_out)
     print("actual result =\n", real_out)

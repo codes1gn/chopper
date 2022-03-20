@@ -221,22 +221,43 @@ public:
 
     // Value result = op->getResult(0);
     auto lhsType = lhs.getType().dyn_cast<RankedTensorType>();
+    auto lhsShape = lhsType.getShape();
+    SmallVector<int64_t> lhsTosaShape;
+    lhsTosaShape.push_back(1);
+    lhsTosaShape.push_back(lhsShape[0]);
+    lhsTosaShape.push_back(lhsShape[1]);
+    auto lhsTosaType =
+        RankedTensorType::get(lhsTosaShape, lhsType.getElementType());
+
     auto rhsType = rhs.getType().dyn_cast<RankedTensorType>();
+    auto rhsShape = rhsType.getShape();
+    SmallVector<int64_t> rhsTosaShape;
+    rhsTosaShape.push_back(1);
+    rhsTosaShape.push_back(rhsShape[0]);
+    rhsTosaShape.push_back(rhsShape[1]);
+    auto rhsTosaType =
+        RankedTensorType::get(rhsTosaShape, rhsType.getElementType());
+
     auto resultType = result.getType().dyn_cast<RankedTensorType>();
+    auto resultShape = resultType.getShape();
+    SmallVector<int64_t> resultTosaShape;
+    resultTosaShape.push_back(1);
+    resultTosaShape.push_back(resultShape[0]);
+    resultTosaShape.push_back(resultShape[1]);
+    auto resultTosaType =
+        RankedTensorType::get(resultTosaShape, resultType.getElementType());
 
-    auto shiftAttr = rewriter.getI32IntegerAttr(0);
+    auto lhsTosaShapeAttr = rewriter.getI64ArrayAttr(lhsTosaShape);
+    auto rhsTosaShapeAttr = rewriter.getI64ArrayAttr(rhsTosaShape);
 
-    // ALBERT NOTE<how to find info to use this>
-    // method 1: search TosaOps.td,
-    // found MatmulQuantInfoAttr define and its builder
-    // definition; then found its impl at TosaOps.cpp under mlir/lib/dialects/tosa/
-    // OpBuilder methods can be applied by specialising the PatternRewriter, and then
-    // call the methods by giving specified args in the .cpp method impl.
-    //
-    // method 2: search generated include h.inc, found MatMulOp scope, and demo
-    // a little bit
-    auto tosa_op = rewriter.create<tosa::MatMulOp>(loc, resultType, lhs, rhs);
-    rewriter.replaceOp(op, tosa_op.getResult());
+
+    Value lhsReshaped = rewriter.create<tosa::ReshapeOp>(
+        loc, lhsTosaType, lhs, lhsTosaShapeAttr);
+    Value rhsReshaped = rewriter.create<tosa::ReshapeOp>(
+        loc, rhsTosaType, rhs, rhsTosaShapeAttr);
+    auto tosa_op = rewriter.create<tosa::MatMulOp>(loc, resultTosaType, lhsReshaped, rhsReshaped);
+    auto tosa_op_reshaped_back = rewriter.create<tosa::ReshapeOp>(loc, resultType, tosa_op, rewriter.getI64ArrayAttr(resultShape));
+    rewriter.replaceOp(op, tosa_op_reshaped_back.getResult());
 
     return success();
   }
