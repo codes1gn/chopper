@@ -25,7 +25,6 @@ add_chopper_library(chopper-compiler-runmlir-capi
 
   CHOPPERCAPI
   MLIRAnalysis
-  MLIREDSC
   MLIRIR
   MLIRJitRunner
   MLIRParser
@@ -53,7 +52,6 @@ target_link_libraries(chopper-compiler-runmlir PRIVATE
 
   CHOPPERCAPI
   MLIRAnalysis
-  MLIREDSC
   MLIRIR
   MLIRJitRunner
   MLIRParser

@@ -9,7 +9,6 @@ set(LIBS
         MLIR
         CHOPPERCAPI
         MLIRAnalysis
-        MLIREDSC
         MLIRIR
         MLIRParser
         MLIRSupport
