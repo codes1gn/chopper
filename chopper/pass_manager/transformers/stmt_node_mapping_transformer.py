@@ -19,6 +19,7 @@ from chopper.scaffold.mlir_dialects.dialect_atir import (
     ATIR_ExpOp,
     ATIR_TanhOp,
     ATIR_MatmulOp,
+    ATIR_Conv2DChannelFirstOp,
     UnitTensorType,
 )
 
@@ -373,6 +374,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 or _call_method == "mul"
                 or _call_method == "linear"
                 or _call_method == "matmul"
+                or _call_method == "conv2d"
             ):
 
                 # build arguments
@@ -430,6 +432,14 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         match=0,
                         operand_a=_SsaId_lhs_operand,
                         operand_b=_SsaId_rhs_operand,
+                        dtype=_whole_op_type_def,
+                    )
+                elif _call_method == "conv2d":
+                    # TODO + WORKAROUND + HARDCODE, need to renaming
+                    _assign_op = ATIR_Conv2DChannelFirstOp(
+                        match=0,
+                        activation=_SsaId_lhs_operand,
+                        kernel=_SsaId_rhs_operand,
                         dtype=_whole_op_type_def,
                     )
                 else:

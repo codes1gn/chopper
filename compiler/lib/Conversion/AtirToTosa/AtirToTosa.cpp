@@ -263,6 +263,81 @@ public:
   }
 };
 
+class ConvertConv2DOp : public OpRewritePattern<atir::Conv2DCFirstOp> {
+public:
+  using OpRewritePattern<atir::Conv2DCFirstOp>::OpRewritePattern;
+  LogicalResult matchAndRewrite(atir::Conv2DCFirstOp op,
+                                PatternRewriter &rewriter) const override {
+    // auto elementTy = lhs.getType();
+    Value lhs = op->getOperand(0);
+    Value rhs = op->getOperand(1);
+    Location loc = op->getLoc();
+    Value result = op->getResult(0);
+
+    // Value result = op->getResult(0);
+    auto lhsType = lhs.getType().dyn_cast<RankedTensorType>();
+    auto lhsShape = lhsType.getShape();
+    auto rhsType = rhs.getType().dyn_cast<RankedTensorType>();
+    auto rhsShape = rhsType.getShape();
+    auto resultType = result.getType().dyn_cast<RankedTensorType>();
+    auto resultShape = resultType.getShape();
+    // SmallVector<int64_t> lhsTosaShape;
+    // lhsTosaShape.push_back(1);
+    // lhsTosaShape.push_back(lhsShape[0]);
+    // lhsTosaShape.push_back(lhsShape[1]);
+    // auto lhsTosaShapeAttr = rewriter.getI64ArrayAttr(lhsTosaShape);
+    // auto lhsTosaType =
+    //     RankedTensorType::get(lhsTosaShape, lhsType.getElementType());
+    // SmallVector<int64_t> resultTosaShape;
+    // resultTosaShape.push_back(1);
+    // resultTosaShape.push_back(resultShape[0]);
+    // resultTosaShape.push_back(resultShape[1]);
+
+
+
+    // return type
+    auto resultTosaType =
+        RankedTensorType::get(resultShape, resultType.getElementType());
+
+    // TODO(albert): Attrs are still HARDCODED, wait for fixing
+    // pad
+    SmallVector<int64_t> pad_data;
+    pad_data.push_back(0);
+    pad_data.push_back(0);
+    pad_data.push_back(0);
+    pad_data.push_back(0);
+    auto pad = rewriter.getI64ArrayAttr(pad_data);
+
+    // stride
+    SmallVector<int64_t> stride_data;
+    stride_data.push_back(1);
+    stride_data.push_back(1);
+    auto stride = rewriter.getI64ArrayAttr(stride_data);
+
+    // dilation
+    SmallVector<int64_t> dilation_data;
+    dilation_data.push_back(1);
+    dilation_data.push_back(1);
+    auto dilation = rewriter.getI64ArrayAttr(dilation_data);
+
+    // bias
+    SmallVector<float> zeroLiteral(rhsShape[0], 0);
+    SmallVector<int64_t> biasShape;
+    SmallVector<Attribute, 2> biasAttr;
+    biasShape.push_back(rhsShape[0]);
+    auto biasType =
+        RankedTensorType::get(biasShape, resultType.getElementType());
+    auto bias = rewriter.create<tosa::ConstOp>(loc, biasType, DenseElementsAttr::get(biasType, rewriter.getZeroAttr(resultType.getElementType())));
+    // auto bias = tosa::getConstTensor<float>(rewriter, op, zeroLiteral, {static_cast<int32_t>(rhsShape[0])}).getValue();
+
+    auto tosa_op = rewriter.create<tosa::Conv2DOp>(loc, resultTosaType, lhs, rhs, bias, pad, stride, dilation);
+
+    rewriter.replaceOp(op, tosa_op.getResult());
+
+    return success();
+  }
+};
+
 // TODO tosa not support DivOp currently
 // even divop is included here: https://mlir.llvm.org/docs/Dialects/TOSA/
 // wait for update
@@ -330,6 +405,7 @@ public:
     patterns.add<ConvertSubOp>(context);
     patterns.add<ConvertMulOp>(context);
     patterns.add<ConvertMatmulOp>(context);
+    patterns.add<ConvertConv2DOp>(context);
     return std::move(patterns);
   }
 };

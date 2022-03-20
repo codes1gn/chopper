@@ -180,6 +180,27 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 for _ret_op_element in _ret_op:
                     _ret_sym_entry = SymbolEntry(_ret_op_element.id, _ret_type)
                     global_symbol_table.register_symbol(_ret_sym_entry)
+            elif _call_method == "conv2d":
+                assert len(_arg_type_entries) == 2, "expected binary, too long of arguments for unaryop call"
+                _lhs_type = _arg_type_entries[0].get_type()
+                _rhs_type = _arg_type_entries[1].get_type()
+                assert _lhs_type.element_type == _rhs_type.element_type
+                _lhs_shape = _lhs_type.dimensions
+                _rhs_shape = _rhs_type.dimensions
+                # TODO + WORKAROUND + HARDCODE, assuming dilation = 1, padding = 0, stride = 1, and with channel_last setting
+                _ret_type = RankedTensorType(
+                    dimensions=[
+                        _lhs_shape[0],
+                        Dimension(_lhs_shape[1].value + 1 - _rhs_shape[0].value),
+                        Dimension(_lhs_shape[2].value + 1 - _rhs_shape[1].value),
+                        _rhs_shape[3],
+                    ],
+                    element_type=_lhs_type.element_type,
+                )
+
+                for _ret_op_element in _ret_op:
+                    _ret_sym_entry = SymbolEntry(_ret_op_element.id, _ret_type)
+                    global_symbol_table.register_symbol(_ret_sym_entry)
 
             else:
                 assert 0, "found unsupported call method, please check <annotate_type_visitor>"

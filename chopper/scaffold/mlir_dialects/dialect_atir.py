@@ -146,12 +146,12 @@ class ATIR_Conv2DChannelFirstOp(DialectOp):
     kernel: SsaUse
     dtype: mast.FunctionType
 
-    _opname_ = "atir.conv_2d_nchw"
+    _opname_ = "atir.conv_2d_cfirst"
 
     # TODO in syntax, between string_literals and non-terminals, must be
     # seperated with whitespace
     _syntax_ = [
-        "atir.conv_2d_nchw {activation.ssa_use} , {kernel.ssa_use} : {dtype.function_type}",
+        "atir.conv_2d_cfirst {activation.ssa_use} , {kernel.ssa_use} : {dtype.function_type}",
     ]
 
 
