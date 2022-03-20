@@ -12,7 +12,15 @@ from mlir import astnodes
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimension, RankedTensorType, NoneType
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
-from chopper.scaffold.mlir_dialects.dialect_atir import ATIR_AddOp, ATIR_SubOp, ATIR_MulOp, ATIR_ExpOp, ATIR_TanhOp, UnitTensorType
+from chopper.scaffold.mlir_dialects.dialect_atir import (
+    ATIR_AddOp,
+    ATIR_SubOp,
+    ATIR_MulOp,
+    ATIR_ExpOp,
+    ATIR_TanhOp,
+    ATIR_MatmulOp,
+    UnitTensorType,
+)
 
 MlirNode = astnodes.Node
 MlirSsaId = astnodes.SsaId
@@ -69,13 +77,15 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 arg = func_args[arg_index]
                 # TODO move this hardcode into base
                 # case 1, arguments is float type
-
-                _annotation = node._torch_dsl_arg_annotations[arg_index]
-                # print(_annotation)
-                if _annotation is None:
-                    _type = NoneType()
+                _arg_id = global_symbol_table.query(arg.arg).get_name()
+                _type = global_symbol_table.query(arg.arg).get_type()
+                print(_arg_id)
+                if _arg_id == "self":
                     # HARDCODE + WORKAROUND, this is a temperal handle to avoid runtime error in type conversion by IREE Runtime
                     continue
+
+                """
+                # print(_annotation)
                 else:
                     _dtype = astnodes.FloatType(MlirType.f32)
                     _dim = [Dimension(_annotation[0][k]) for k in range(len(_annotation[0]))]
@@ -84,6 +94,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         element_type=_dtype,
                     )
                     global_symbol_table.register_symbol(SymbolEntry(arg.arg, _type))
+
+                """
 
                 if hasattr(arg.annotation, "id") and arg.annotation.id == "float":
                     assert 0, "wait for tuning"
@@ -121,63 +133,10 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             # None Arguments still need a empty NamedArgument
             _args.append(NamedArgument())
 
-        _result_type = None
-        # TODO is this function return is None, keep it until all shapes are fixed
-        if node.returns:
-            assert 0, "wait for tuning, support pre-annotated function-type-return"
-            if hasattr(node.returns, "id") and node.returns.id == "float":
-                # TODO(albert) workaround to tensor, should be f32 in future , and do convertion in compiler
-                _type = UnitTensorType(element_type=astnodes.FloatType(MlirType.f32))
-                _result_type = _type
-            elif hasattr(node.returns, "id") and node.returns.id == "list":
-                _result_type = astnodes.RankedTensorType(
-                    dimensions=[Dimension(value=None)], element_type=astnodes.FloatType(MlirType.f32)
-                )
-            elif (
-                isinstance(arg.annotation, ast.Subscript)
-                and isinstance(arg.annotation.slice, ast.Index)
-                and arg.annotation.value.id == "List"
-            ):
-                if arg.annotation.slice.value.id == "float":  # TODO: Other type, only support float now
-                    _result_type = astnodes.RankedTensorType(
-                        dimensions=[Dimension(value=None)], element_type=astnodes.FloatType(MlirType.f32)
-                    )
-            else:
-                # TODO: Other type
-                pass
-        elif node.returns is None:
-            # TODO this path now handles equal shaped binary or single shape
-            # assert node._torch_dsl_arg_annotations is List[Optional[ArgAnnotation]]
-            # TOP guardian
-            _annotations = node._torch_dsl_arg_annotations
-            if len(_annotations) == 1:
-                # this case only has self as sole arg, not possible to infer out type
-                _result_type = None
-            elif len(_annotations) == 2:
-                # this case is unary function, generally outputs same type
-                # special cases TODO handled later
-                _sole_annotation = _annotations[1]
-                _dtype = astnodes.FloatType(MlirType.f32) if _sole_annotation[1] is torch.float32 else None
-                assert _dtype is not None, "guard this condition if dtype not annotated"
-                _dim = [Dimension(_sole_annotation[0][k]) for k in range(len(_sole_annotation[0]))]
-                _result_type = RankedTensorType(
-                    dimensions=_dim,
-                    element_type=_dtype,
-                )
-            elif len(_annotations) == 3:
-                _lhs_annotation = _annotations[1]
-                _rhs_annotation = _annotations[2]
-                # do sanity check and only handles equal shape, guard unsupported situation
-                # TODO should provide all equal compare utils
-                assert _lhs_annotation == _rhs_annotation
-                _dtype = astnodes.FloatType(MlirType.f32) if _lhs_annotation[1] is torch.float32 else None
-                assert _dtype is not None, "guard this condition if dtype not annotated"
-                _dim = [Dimension(_annotation[0][k]) for k in range(len(_annotation[0]))]
-                _result_type = RankedTensorType(
-                    dimensions=_dim,
-                    element_type=_dtype,
-                )
-
+        _result_type = global_symbol_table.query("ReturnTypeForFunctionDef").get_type()
+        print(global_symbol_table)
+        print(_result_type)
+        # assert 0, "bad"
         _attributes = None
 
         _function = astnodes.Function(
@@ -269,19 +228,17 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         if isinstance(node.value, ast.Name):
             _value = node.value.id
             # anchor
-            # _type = global_symbol_table.query(_value)
+            _type = [global_symbol_table.query(_value).get_type()]
             _op_no = None
 
             _values.append(MlirSsaId(value=_value, op_no=_op_no))
-            _types.append(None)
+            _types.append(_type)
             _returnop.values = _values
-            _returnop.types = _types
+            _returnop.types = _type
 
         _returnop_wrapper = astnodes.Operation(result_list=None, op=_returnop, location=None)
 
         setattr(node, "mast_node", _returnop_wrapper)
-        # print("\nMLIR Node for Return:<<<<<\n",
-        #       self.pretty_mlir(node.mast_node))
 
         return node
 
@@ -387,12 +344,15 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
                 # build arguments types
                 _arg_type_entry = global_symbol_table.query(_argname)
-                assert _arg_type_entry is not None, 'expected valid symbol entry, found None'
+                assert _arg_type_entry is not None, "expected valid symbol entry, found None"
                 _argument_types = [_arg_type_entry.get_type()]
 
                 # build targets and their types
                 _res_argnames_list = [target.id for target in node.targets]
-                _result_list = [astnodes.OpResult(value=MlirSsaId(value=_res_argname, op_no=None), count=None) for _res_argname in _res_argnames_list]
+                _result_list = [
+                    astnodes.OpResult(value=MlirSsaId(value=_res_argname, op_no=None), count=None)
+                    for _res_argname in _res_argnames_list
+                ]
                 # _result_types = [global_symbol_table.query(_res_argname).get_type() for _res_argname in _res_argnames_list]
 
                 # build function types for this operation
@@ -407,7 +367,13 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 else:
                     assert 0, "unsupported unary op"
 
-            elif _call_method == "add" or _call_method == "sub" or _call_method == "mul":
+            elif (
+                _call_method == "add"
+                or _call_method == "sub"
+                or _call_method == "mul"
+                or _call_method == "linear"
+                or _call_method == "matmul"
+            ):
 
                 # build arguments
                 _lhs_argname = node.value.args[0].id
@@ -418,16 +384,21 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 # build arguments types
                 _lhs_type_entry = global_symbol_table.query(_lhs_argname)
                 _rhs_type_entry = global_symbol_table.query(_rhs_argname)
-                assert _lhs_type_entry is not None, 'expected valid symbol entry at lhs arg, found None'
-                assert _rhs_type_entry is not None, 'expected valid symbol entry at rhs arg, found None'
+                assert _lhs_type_entry is not None, "expected valid symbol entry at lhs arg, found None"
+                assert _rhs_type_entry is not None, "expected valid symbol entry at rhs arg, found None"
                 _lhs_type = _lhs_type_entry.get_type()
                 _rhs_type = _rhs_type_entry.get_type()
                 _argument_types = [_lhs_type, _rhs_type]
 
                 # build targets and their types
                 _res_argnames_list = [target.id for target in node.targets]
-                _result_list = [astnodes.OpResult(value=MlirSsaId(value=_res_argname, op_no=None), count=None) for _res_argname in _res_argnames_list]
-                _result_types = [global_symbol_table.query(_res_argname).get_type() for _res_argname in _res_argnames_list]
+                _result_list = [
+                    astnodes.OpResult(value=MlirSsaId(value=_res_argname, op_no=None), count=None)
+                    for _res_argname in _res_argnames_list
+                ]
+                _result_types = [
+                    global_symbol_table.query(_res_argname).get_type() for _res_argname in _res_argnames_list
+                ]
 
                 # build function types for this operation
                 _whole_op_type_def = FunctionType(argument_types=_argument_types, result_types=_result_types)
@@ -454,14 +425,21 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         operand_b=_SsaId_rhs_operand,
                         dtype=_whole_op_type_def,
                     )
+                elif _call_method == "linear" or _call_method == "matmul":
+                    _assign_op = ATIR_MatmulOp(
+                        match=0,
+                        operand_a=_SsaId_lhs_operand,
+                        operand_b=_SsaId_rhs_operand,
+                        dtype=_whole_op_type_def,
+                    )
                 else:
                     assert 0, "unsupported binary op"
 
             else:
                 print("Not Support this op conversion from ast.AST -> mlir.astnodes.Node")
 
-            _assignop_wrapper = astnodes.Operation(result_list=_result_list, op=_assign_op, location=None)
-            setattr(node, "mast_node", _assignop_wrapper)
+            _assign_op_wrapper = astnodes.Operation(result_list=_result_list, op=_assign_op, location=None)
+            setattr(node, "mast_node", _assign_op_wrapper)
             return node
 
         elif isinstance(node.value, ast.Num):
@@ -598,24 +576,3 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         #           self.pretty_mlir(node.mast_node))
 
         return node
-
-    # def visit_Name(self, node: ast.AST) -> ast.AST:
-    #     """Method that constructs MLIR node via the func return type.
-
-    #     Construct MLIR node by set Name attribute "mast_node".
-    #     Name is return expr args.
-
-    #     Args:
-    #         node (ast.AST): Name node of python ast.
-
-    #     Returns:
-    #         ast.AST: Name node with corresponding MLIR ast node.
-    #     """
-    #     super().generic_visit(node)
-    #     # print(self.__str__(), "visit_Name on node\n", astunparse.dump(node))
-
-    #     _type_wrapper = astnodes.FloatType(MlirType.f32)
-
-    #     # print("_type_wrapper:\n", self.pretty_mlir(_type_wrapper))
-    #     setattr(node, "mast_node", _type_wrapper)
-    #     return node

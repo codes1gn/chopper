@@ -14,4 +14,6 @@ add_chopper_dialect_library(CHOPPERDialectAtir
   LINK_LIBS PUBLIC
   MLIRIR
   MLIRSupport
+  MLIRInferTypeOpInterface
+  MLIRSideEffectInterfaces
 )

@@ -3,6 +3,7 @@ from typing import Optional
 
 __all__ = [
     "SymbolTable",
+    "global_symbol_table",
 ]
 
 
@@ -36,7 +37,7 @@ class SymbolTable(object):
 
     def __init__(self):
         self.scoped_symbol_table = {}
-        self.pass_again = False
+        self.pass_again = True
 
     def register_symbol(self, symbol_entry: SymbolEntry):
         self.scoped_symbol_table[symbol_entry.name] = symbol_entry

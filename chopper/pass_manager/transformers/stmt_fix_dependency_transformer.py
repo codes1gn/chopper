@@ -174,13 +174,3 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         # print(self.pretty_mlir(node.mast_node))
 
         return node
-
-    # def visit_Name(self, node: ast.AST) -> ast.AST:
-    #     """
-    #     Method that constructs the ReturnOperation in python_native dialect
-    #     """
-    #     super().generic_visit(node)
-    #     print(self.__str__(), "Fix handling visit_Name on node\n",
-    #           astunparse.dump(node))
-
-    #     return node

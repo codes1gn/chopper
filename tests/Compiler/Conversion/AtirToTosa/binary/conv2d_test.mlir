@@ -1,4 +1,4 @@
-// RUN: chopper-opt <%s | FileCheck %s
+// RUN: chopper-opt <%s -split-input-file -convert-atir-to-tosa | FileCheck %s --dump-input=fail
 
 
 // CHECK-LABEL: conv2d

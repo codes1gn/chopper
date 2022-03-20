@@ -208,6 +208,40 @@ public:
   }
 };
 
+class ConvertMatmulOp : public OpRewritePattern<atir::MatmulOp> {
+public:
+  using OpRewritePattern<atir::MatmulOp>::OpRewritePattern;
+  LogicalResult matchAndRewrite(atir::MatmulOp op,
+                                PatternRewriter &rewriter) const override {
+    // auto elementTy = lhs.getType();
+    Value lhs = op->getOperand(0);
+    Value rhs = op->getOperand(1);
+    Location loc = op->getLoc();
+    Value result = op->getResult(0);
+
+    // Value result = op->getResult(0);
+    auto lhsType = lhs.getType().dyn_cast<RankedTensorType>();
+    auto rhsType = rhs.getType().dyn_cast<RankedTensorType>();
+    auto resultType = result.getType().dyn_cast<RankedTensorType>();
+
+    auto shiftAttr = rewriter.getI32IntegerAttr(0);
+
+    // ALBERT NOTE<how to find info to use this>
+    // method 1: search TosaOps.td,
+    // found MatmulQuantInfoAttr define and its builder
+    // definition; then found its impl at TosaOps.cpp under mlir/lib/dialects/tosa/
+    // OpBuilder methods can be applied by specialising the PatternRewriter, and then
+    // call the methods by giving specified args in the .cpp method impl.
+    //
+    // method 2: search generated include h.inc, found MatMulOp scope, and demo
+    // a little bit
+    auto tosa_op = rewriter.create<tosa::MatMulOp>(loc, resultType, lhs, rhs);
+    rewriter.replaceOp(op, tosa_op.getResult());
+
+    return success();
+  }
+};
+
 // TODO tosa not support DivOp currently
 // even divop is included here: https://mlir.llvm.org/docs/Dialects/TOSA/
 // wait for update
@@ -262,7 +296,7 @@ public:
     (void)applyPatternsAndFoldGreedily(getOperation(), getPatterns());
   }
 
-  FrozenRewritePatternList getPatterns() {
+  FrozenRewritePatternSet getPatterns() {
     // NOTE: We are keeping this pass around, even though it currently does
     // nothing, in order to avoid having to reintroduce the same
     // boilerplate.
@@ -274,6 +308,7 @@ public:
     patterns.add<ConvertAddOp>(context);
     patterns.add<ConvertSubOp>(context);
     patterns.add<ConvertMulOp>(context);
+    patterns.add<ConvertMatmulOp>(context);
     return std::move(patterns);
   }
 };

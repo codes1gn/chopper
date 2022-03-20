@@ -121,7 +121,12 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
         elif isinstance(_rhs_stmt, ast.Call):
             print(astunparse.dump(_rhs_stmt))
-            _call_lib = _rhs_stmt.func.value.id  # torch
+            # TODO change this way of matching into String Utils
+            # e.g. torch.nn.functional.linear and
+            # torch.matmul can be explored equally
+            # _call_lib = _rhs_stmt.func.value.id  # torch
+            # assert _rhs_stmt.func.value.id == "torch", "Found function call other than Torch DSL"
+
             _call_method = _rhs_stmt.func.attr  # exp or add
             _args = _rhs_stmt.args  # ast.Name, ast.Name
             _arg_type_entries = [global_symbol_table.query(_argname.id) for _argname in _args]
@@ -133,8 +138,6 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                     global_symbol_table.pass_again = True
                     super().generic_visit(node)
                     return node
-
-            assert _rhs_stmt.func.value.id == "torch", "Found function call other than Torch DSL"
 
             # handle accepted function calls and assert for guardian
             # TODO build a builder or conversion or mapping utils
@@ -157,6 +160,25 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 assert _lhs_shape == _rhs_shape, "expected same shape of lhs and rhs arguments"
                 for _ret_op_element in _ret_op:
                     _ret_sym_entry = SymbolEntry(_ret_op_element.id, _lhs_type)
+                    global_symbol_table.register_symbol(_ret_sym_entry)
+            elif _call_method == "linear" or _call_method == "matmul":
+                assert len(_arg_type_entries) == 2, "expected binary, too long of arguments for unaryop call"
+                _lhs_type = _arg_type_entries[0].get_type()
+                _rhs_type = _arg_type_entries[1].get_type()
+                assert _lhs_type.element_type == _rhs_type.element_type
+                _lhs_shape = _lhs_type.dimensions
+                _rhs_shape = _rhs_type.dimensions
+                # anchor
+                _ret_type = RankedTensorType(
+                    dimensions=[
+                        _lhs_shape[0],
+                        _rhs_shape[1],
+                    ],
+                    element_type=_lhs_type.element_type,
+                )
+
+                for _ret_op_element in _ret_op:
+                    _ret_sym_entry = SymbolEntry(_ret_op_element.id, _ret_type)
                     global_symbol_table.register_symbol(_ret_sym_entry)
 
             else:

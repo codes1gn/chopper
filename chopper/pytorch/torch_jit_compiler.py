@@ -183,5 +183,6 @@ class TorchJitCompiler:
         pass_manager = PastToMlirPassManager()
         pass_manager.register_passes()
         pass_manager.run(pyast)
+        print(pyast.mast_node.dump())
 
         return pyast.mast_node

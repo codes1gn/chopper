@@ -12,6 +12,7 @@
 include "Dialect/Atir/IR/AtirDialect.td"
 
 include "mlir/Interfaces/SideEffectInterfaces.td"
+include "mlir/Interfaces/InferTypeOpInterface.td"
 
 
 class BinaryArithmeticOp<string mnemonic, list<OpTrait> traits = []> :
@@ -123,8 +124,8 @@ def Atir_MatmulOp : Atir_Op<"matmul"> {
     If the `K` dimension mismatches between the operands, this op aborts the
     program.
   }];
-  let arguments = (ins 2DTensorOf<[F32]>:$lhs, 2DTensorOf<[F32]>:$rhs);
-  let results = (outs 2DTensorOf<[F32]>:$result);
+  let arguments = (ins TensorRankOf<[F32], [2, 3]>:$lhs, TensorRankOf<[F32], [2, 3]>:$rhs);
+  let results = (outs TensorRankOf<[F32], [2, 3]>:$result);
 
   let assemblyFormat = "$lhs `,` $rhs attr-dict `:` functional-type(operands, results)";
 }
