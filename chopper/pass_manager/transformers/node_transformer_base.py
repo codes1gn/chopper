@@ -12,9 +12,9 @@ class NodeTransformerBase(ast.NodeTransformer):
     Attributes:
         None.
     """
+
     def __init__(self) -> None:
-        """initialize the NodeTransformerBase class
-        """
+        """initialize the NodeTransformerBase class"""
         super().__init__()
 
     def generic_visit(self, node):

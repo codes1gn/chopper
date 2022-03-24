@@ -21,13 +21,11 @@ def do_test(shape):
         )
         def forward(self, a, b):
             c = torch.mul(a, b)
-            d = torch.mul(a, c)
-            return d
+            return c
 
         def ref_forward(self, a, b):
             c = torch.mul(a, b)
-            d = torch.mul(a, c)
-            return d
+            return c
 
     lhs_input = torch.empty(shape, dtype=torch.float32).uniform_().clone().detach().requires_grad_(True)
     rhs_input = torch.empty(shape, dtype=torch.float32).uniform_().clone().detach().requires_grad_(True)

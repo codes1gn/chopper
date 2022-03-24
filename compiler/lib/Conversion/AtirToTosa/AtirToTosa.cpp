@@ -63,6 +63,46 @@ public:
   }
 };
 
+class ConvertIdentityOp : public OpRewritePattern<atir::IdentityOp> {
+public:
+  using OpRewritePattern<atir::IdentityOp>::OpRewritePattern;
+  LogicalResult matchAndRewrite(atir::IdentityOp op,
+                                PatternRewriter &rewriter) const override {
+    // way 2, explicit replace with replaceOp
+    auto loc = op->getLoc();
+    auto elementTy = op->getOperand(0).getType();
+    auto tosa_op =
+        rewriter.create<tosa::IdentityOp>(loc, elementTy, op->getOperand(0));
+    rewriter.replaceOp(op, tosa_op.getResult());
+
+    // way 1, use replaceOpWithNewOp
+    // rewriter.replaceOpWithNewOp<tosa::IdentityOp>(op, elementTy,
+    // op->getOperand(0));
+
+    return success();
+  }
+};
+
+class ConvertNegateOp : public OpRewritePattern<atir::NegateOp> {
+public:
+  using OpRewritePattern<atir::NegateOp>::OpRewritePattern;
+  LogicalResult matchAndRewrite(atir::NegateOp op,
+                                PatternRewriter &rewriter) const override {
+    // way 2, explicit replace with replaceOp
+    auto loc = op->getLoc();
+    auto elementTy = op->getOperand(0).getType();
+    auto tosa_op =
+        rewriter.create<tosa::NegateOp>(loc, elementTy, op->getOperand(0));
+    rewriter.replaceOp(op, tosa_op.getResult());
+
+    // way 1, use replaceOpWithNewOp
+    // rewriter.replaceOpWithNewOp<tosa::NegateOp>(op, elementTy,
+    // op->getOperand(0));
+
+    return success();
+  }
+};
+
 class ConvertAddOp : public OpRewritePattern<atir::AddOp> {
 public:
   using OpRewritePattern<atir::AddOp>::OpRewritePattern;
@@ -401,6 +441,8 @@ public:
     RewritePatternSet patterns(context);
     patterns.add<ConvertExpOp>(context);
     patterns.add<ConvertTanhOp>(context);
+    patterns.add<ConvertIdentityOp>(context);
+    patterns.add<ConvertNegateOp>(context);
     patterns.add<ConvertAddOp>(context);
     patterns.add<ConvertSubOp>(context);
     patterns.add<ConvertMulOp>(context);

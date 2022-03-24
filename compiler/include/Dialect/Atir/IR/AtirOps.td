@@ -85,7 +85,7 @@ class UnaryArithmeticOp<string mnemonic, list<OpTrait> traits = []> :
       TensorRankOf<[F32], [0, 1, 2, 3, 4]>:$operand);
   let results = (outs
       TensorRankOf<[F32], [0, 1, 2, 3, 4]>:$result);
-  let assemblyFormat = "$operand attr-dict `:` type($operand)";
+  let assemblyFormat = "$operand attr-dict `:` functional-type(operands, results)";
 }
 
 def Atir_ExpOp : UnaryArithmeticOp<"exp", [NoSideEffect,
@@ -94,7 +94,7 @@ def Atir_ExpOp : UnaryArithmeticOp<"exp", [NoSideEffect,
                                            SameOperandsAndResultElementType]> {
   let summary = "base-e exponential";
   let description = [{
-    See std.exp for more details.
+    See atir.exp for more details.
   }];
 }
 
@@ -104,7 +104,27 @@ def Atir_TanhOp : UnaryArithmeticOp<"tanh", [NoSideEffect,
                                              SameOperandsAndResultElementType]> {
   let summary = "hyperbolic tangent";
   let description = [{
-    See std.tanh for more details.
+    See atir.tanh for more details.
+  }];
+}
+
+def Atir_IdentityOp : UnaryArithmeticOp<"identity", [NoSideEffect,
+                                             SameOperandsAndResultType,
+                                             SameOperandsAndResultShape,
+                                             SameOperandsAndResultElementType]> {
+  let summary = "identity function";
+  let description = [{
+    See atir.identity for more details.
+  }];
+}
+
+def Atir_NegateOp : UnaryArithmeticOp<"negate", [NoSideEffect,
+                                             SameOperandsAndResultType,
+                                             SameOperandsAndResultShape,
+                                             SameOperandsAndResultElementType]> {
+  let summary = "negate function";
+  let description = [{
+    See atir.negate for more details.
   }];
 }
 

@@ -44,6 +44,7 @@ class StmtConversionReadyCheckVisitor(NodeVisitorBase):
 
         super().generic_visit(node)
         assert node.mast_node is not None
+        assert node.mast_node_autodiff is not None
         # print("\n##### Check FunctionDef ######\n",
         #       self.pretty_mlir(node.mast_node))
 
@@ -78,6 +79,7 @@ class StmtConversionReadyCheckVisitor(NodeVisitorBase):
 
         super().generic_visit(node)
         assert node.mast_node is not None
+        assert node.mast_node_autodiff is not None
         # print("\n##### Check ReturnOp #####\n",
         #       self.pretty_mlir(node.mast_node))
 
@@ -95,6 +97,7 @@ class StmtConversionReadyCheckVisitor(NodeVisitorBase):
 
         super().generic_visit(node)
         assert node.mast_node is not None
+        # TODO assert (node.mast_node_autodiff_lhs is not None) and (node.mast_node_autodiff_rhs is not None)
         # print("\n##### Check AssignOp ######\n", self.pretty_mlir(node.mast_node))
 
         return node

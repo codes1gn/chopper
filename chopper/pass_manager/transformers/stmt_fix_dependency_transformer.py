@@ -3,6 +3,7 @@ import astunparse
 from astunparse.printer import Printer
 
 from chopper.scaffold.utils import *
+from chopper.pass_manager.symbol_table import *
 from .node_transformer_base import NodeTransformerBase
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from mlir.astnodes import CustomOperation, FunctionType, NamedArgument
@@ -60,70 +61,41 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         """
         _blocks = node.mast_node.op.region.body
         operations = node.body
-        # * obtain func argument type to List()
-        # * if no arguments: argument_type=None
-        # * if arguments : argumets_type = [arg_type, ...]
-        argument_type = None
-        if node.mast_node.op.args:
-            argument_type = []
-            for nameargument in node.mast_node.op.args:
-                argument_type.append(nameargument.type)
-        else:
-            argument_type = [None]
-
-        op_type = node.mast_node.op.result_types
-        return_type = node.mast_node.op.result_types
-
-        # * if there no argument, set argument_type == return_type
-        if not argument_type[0]:
-            argument_type = [return_type]
-        """
-        Set the Operation Type based on the Argument Type and Return Type at the time the function was defined
-        """
-        # TODO(albert), eliminate this hardcoded of type constraints
-        for operation in operations:
-            _OP = operation.mast_node.op
-            if isinstance(_OP, ReturnOperation):
-                for i in range(len(operation.mast_node.op.types)):
-                    _OP.types[i] = return_type
-            if isinstance(_OP, ConstantOperation):
-                _OP.type = argument_type[0]
-
-            if isinstance(_OP, CustomOperation):
-                # * BinOp -> add/sub/mul/matmul/div
-                if (
-                    (
-                        _OP.name == "add"
-                        or _OP.name == "sub"
-                        or _OP.name == "mul"
-                        or _OP.name == "matmul"
-                        or _OP.name == "div"
-                        or _OP.name == "mod"
-                        or _OP.name == "pow"
-                        or _OP.name == "lshift"
-                        or _OP.name == "rshift"
-                        or _OP.name == "bitor"
-                        or _OP.name == "bitxor"
-                        or _OP.name == "bitand"
-                        or _OP.name == "floordiv"
-                    )
-                    and isinstance(_OP.type.argument_types, list)
-                    and isinstance(_OP.type.result_types, list)
-                ):
-                    for i in range(len(_OP.type.argument_types)):
-                        _OP.type.argument_types[i] = argument_type[0]
-
-                    for i in range(len(_OP.type.result_types)):
-                        _OP.type.result_types[i] = return_type
-                else:
-                    # TODO: add more BinOp type
-                    pass
-
         if operations:
             for i in range(len(_blocks)):
                 _blocks[i].body.clear()
                 for _, operation in enumerate(operations):
                     _blocks[i].body.append(operation.mast_node)
+
+        # handle autodiff logics
+        _returnop = node.mast_node_autodiff
+        from collections import deque
+
+        _autodiff_op_stack = deque()
+        # print(_returnop.dump())
+        _autodiff_root = None
+        if operations:
+            for _, operation in enumerate(operations):
+                if hasattr(operation, "mast_node_autodiff"):
+                    _autodiff_op_stack.append(operation.mast_node_autodiff)
+                else:
+                    _autodiff_op_stack.append(operation.mast_node_autodiff_rhs)
+                    _autodiff_op_stack.append(operation.mast_node_autodiff_lhs)
+        while _autodiff_op_stack:
+            _op = _autodiff_op_stack.pop()
+            # print(self.pretty_mlir(_op))
+            if isinstance(_op.op, astnodes.Function):
+                _autodiff_root = _op
+                continue
+            else:
+                assert _autodiff_root is not None, "should has value"
+                # print(_autodiff_root.op.region.body[0].body)
+                _autodiff_root.op.region.body[0].body.append(_op)
+                # print(_autodiff_root.op.region.body[0].body)
+        _autodiff_root.op.region.body[0].body.append(_returnop)
+        # print(_autodiff_root.dump())
+        global_symbol_table.reset_autodiff_graph()
+        global_symbol_table.set_autodiff_graph(_autodiff_root)
 
         return node
 
@@ -150,7 +122,8 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
                 for index in range(len(_block.body)):
                     _block.body[index] = node.body[index].mast_node
 
-        # print(self.pretty_mlir(node.mast_node))
+        # handle autodiff mastnodes, since its bodies are FunctionDef, they all
+        # set with mast_node_autodiff
 
         return node
 

@@ -163,6 +163,14 @@ class ATIR_ExpOp(UnaryOperation):
     _opname_ = "atir.exp"
 
 
+class ATIR_IdentityOp(UnaryOperation):
+    _opname_ = "atir.identity"
+
+
+class ATIR_NegateOp(UnaryOperation):
+    _opname_ = "atir.negate"
+
+
 ##############################################################################
 # Dialect
 

@@ -69,20 +69,28 @@ def backend(backend_name: str):
         global_symbol_table.reset_symbol_table()
 
         ast_source = tjcompiler.annotate_function(ast_source, fn._torch_dsl_arg_annotations)
-        mlir_dialect = tjcompiler.to_mlir_dialect(ast_source)
+        mlir_dialect, mlir_dialect_autodiff = tjcompiler.to_mlir_dialect(ast_source)
         print("------ ATIR IR -------")
         textual_atir = mlir_dialect.dump()
+        textual_atir_autodiff = mlir_dialect_autodiff.dump()
         print(textual_atir)
+        print(textual_atir_autodiff)
 
         # STAGE 2 :: mlir atir dialects => TOSA
         uid = uuid.uuid4().hex
         TMP_FILE_ATIR = "/tmp/atir." + uid
+        TMP_FILE_ATIR_AD = "/tmp/atir_ad." + uid
         TMP_FILE_TOSA = "/tmp/tosa." + uid
+        TMP_FILE_TOSA_AD = "/tmp/tosa_ad." + uid
 
         # write atir to tmp file
         atir_file = open(TMP_FILE_ATIR, "w")
         atir_file.write(textual_atir)
         atir_file.close()
+
+        atir_file_ad = open(TMP_FILE_ATIR_AD, "w")
+        atir_file_ad.write(textual_atir_autodiff)
+        atir_file_ad.close()
         # compile atir ir into tosa ir and saved to TMP_FILE_TOSA
         """
         # TODO(fix): USE CMD SHELL TOOL to avoid core dump, may caused by initialization once but not closed before run twice
@@ -112,7 +120,22 @@ def backend(backend_name: str):
             ]
         )
 
+        subprocess.run(
+            [
+                "tool-opt",
+                TMP_FILE_ATIR_AD,
+                "-convert-atir-to-tosa",
+                "-o",
+                TMP_FILE_TOSA_AD,
+            ]
+        )
+
         tosa_file = open(TMP_FILE_TOSA, "r")
+        print("------ TOSA IR -------")
+        print(tosa_file.read())
+        tosa_file.close()
+
+        tosa_file = open(TMP_FILE_TOSA_AD, "r")
         print("------ TOSA IR -------")
         print(tosa_file.read())
         tosa_file.close()
@@ -121,13 +144,18 @@ def backend(backend_name: str):
         print("------ RESULTS in VULKAN GPU -------")
         print("vulkan backend inited")
         # test scalar on vulkan
-        binary_vulkan_scalar = ireecc.tools.compile_file(
-            TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"]
+        callable_binary = ireecc.tools.compile_file(TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"])
+        callable_binary_ad = ireecc.tools.compile_file(
+            TMP_FILE_TOSA_AD, input_type="tosa", target_backends=["vulkan-spirv"]
         )
-        vm_module = ireert.VmModule.from_flatbuffer(binary_vulkan_scalar)
+        vm_module = ireert.VmModule.from_flatbuffer(callable_binary)
+        vm_module_ad = ireert.VmModule.from_flatbuffer(callable_binary_ad)
         # clean up the tmp files after all compilation done
         subprocess.run(["rm", TMP_FILE_ATIR])
         subprocess.run(["rm", TMP_FILE_TOSA])
+        subprocess.run(["rm", TMP_FILE_ATIR_AD])
+        subprocess.run(["rm", TMP_FILE_TOSA_AD])
+        # assert 0
 
         # TODO mock with arg0 as self, anyway this are not used
         # result = _callable(arg0, arg0, arg1)
@@ -149,6 +177,7 @@ def backend(backend_name: str):
                 @staticmethod
                 def forward(ctx, *inputs) -> torch.Tensor:
                     ctx.save_for_backward(*inputs)
+                    ctx.arg_count = len(inputs)
                     _inputs = [val.detach().numpy() for val in inputs]
 
                     # TODO considering change the lifetime of CTX into higher level and let
@@ -163,8 +192,31 @@ def backend(backend_name: str):
 
                 @staticmethod
                 def backward(ctx, grad_output):
-                    inputs = ctx.saved_tensors
-                    return 1.1 * grad_output, 1.3 * grad_output
+                    _inputs_activation = ctx.saved_tensors
+                    _inputs_activation_to_numpy = [_.contiguous().detach().numpy() for _ in _inputs_activation]
+                    print(ctx.arg_count)
+                    # TODO consider grad or list of grads
+                    _grad = grad_output.contiguous().detach().numpy()
+
+                    # TODO considering change the lifetime of CTX into higher level and let
+                    # some entity of the chopper instance to manage it, but has to avoid
+                    # duplicate naming of function entries.
+                    # shall support uid or hashing for mangling functions
+                    VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
+                    VKCTX.add_vm_module(vm_module_ad)
+                    # this part to be replaced by dyn naming
+                    _callable = VKCTX.modules.module["bpfunction"]
+
+                    # _fake_grad = np.array([[1.0, 2.0, 3.0], [1.0, 2.0, 3.0]], np.float32)
+                    # print(type(_fake_grad))
+                    # print(type(_grad))
+                    # outputs = _callable(_fake_grad)
+                    outputs = _callable(_grad, *_inputs_activation_to_numpy)
+                    if ctx.arg_count == 1:
+                        return torch.tensor(outputs)
+                    else:
+                        ret_tensors = tuple([torch.tensor(grad_output) for grad_output in outputs])
+                        return ret_tensors
 
             # return ret_tensor
             return _Callable_Func.apply(*args[1:], **kwargs)

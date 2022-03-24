@@ -6,7 +6,7 @@
 // CHECK:           return %[[RET]] : tensor<?xf32>
 // CHECK:         }
 func @unary_ops(%arg0: tensor<?xf32>) -> tensor<?xf32> {
-  %0 = atir.exp %arg0 : tensor<?xf32>
+  %0 = atir.exp %arg0 : (tensor<?xf32>) -> tensor<?xf32>
   return %0 : tensor<?xf32>
 }
 

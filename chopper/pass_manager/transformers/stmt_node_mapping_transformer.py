@@ -13,6 +13,8 @@ from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimensio
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
 from chopper.scaffold.mlir_dialects.dialect_atir import (
+    ATIR_IdentityOp,
+    ATIR_NegateOp,
     ATIR_AddOp,
     ATIR_SubOp,
     ATIR_MulOp,
@@ -66,7 +68,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         # print(">>>>>Python FunctionDef Node:<<<<<\n", astunparse.dump(node))
         # print(node._torch_dsl_arg_annotations)
 
-        _block = astnodes.Block(label=None, body=[None])
+        _block = astnodes.Block(label=None, body=[])
         _region = astnodes.Region(body=[_block])
         _name = astnodes.SymbolRefId(value=node.name)
         _args = []
@@ -80,23 +82,9 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 # case 1, arguments is float type
                 _arg_id = global_symbol_table.query(arg.arg).get_name()
                 _type = global_symbol_table.query(arg.arg).get_type()
-                print(_arg_id)
                 if _arg_id == "self":
                     # HARDCODE + WORKAROUND, this is a temperal handle to avoid runtime error in type conversion by IREE Runtime
                     continue
-
-                """
-                # print(_annotation)
-                else:
-                    _dtype = astnodes.FloatType(MlirType.f32)
-                    _dim = [Dimension(_annotation[0][k]) for k in range(len(_annotation[0]))]
-                    _type = RankedTensorType(
-                        dimensions=_dim,
-                        element_type=_dtype,
-                    )
-                    global_symbol_table.register_symbol(SymbolEntry(arg.arg, _type))
-
-                """
 
                 if hasattr(arg.annotation, "id") and arg.annotation.id == "float":
                     assert 0, "wait for tuning"
@@ -135,8 +123,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             _args.append(NamedArgument())
 
         _result_type = global_symbol_table.query("ReturnTypeForFunctionDef").get_type()
-        print(global_symbol_table)
-        print(_result_type)
+        # print(global_symbol_table)
+        # print(_result_type)
         # assert 0, "bad"
         _attributes = None
 
@@ -149,9 +137,17 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         )
         _function_wrapper = astnodes.Operation(result_list=[], op=_function, location=None)
 
+        # handle backward
+        _autodiff_op = ReturnOperation(match=1)
+        _autodiff_op.values = [_.name for _ in _args]
+        _autodiff_op.types = [_.type for _ in _args]
+
+        _autodiff_wrapper = astnodes.Operation(result_list=None, op=_autodiff_op, location=None)
+
         setattr(node, "mast_node", _function_wrapper)
-        # print("\n>>>>>MLIR Node for FunctionDef:<<<<<\n",
-        #       self.pretty_mlir(node.mast_node))
+        setattr(node, "mast_node_autodiff", _autodiff_wrapper)
+        print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
+        print(node.mast_node_autodiff.dump())
 
         return node
 
@@ -174,12 +170,15 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         _name = None
         _attributes = None
 
+        # Construct the autodiff block for Function Op
+        # FunctionOp <=> ReturnOp
         _out_block = astnodes.Block(label=None, body=[None])
         _out_region = astnodes.Region(body=[_out_block])
         _module = astnodes.Module(name=_name, attributes=_attributes, region=_out_region, location=None)
         _mlirfile = astnodes.MLIRFile(definitions=[], modules=[_module])
 
         setattr(node, "mast_node", _mlirfile)
+        # setattr(node, "mast_node_autodiff", _mlirfile)
         # print("\n>>>>>MLIR Node for Module:<<<<<\n",
         #       self.pretty_mlir(node.mast_node))
 
@@ -229,17 +228,42 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         if isinstance(node.value, ast.Name):
             _value = node.value.id
             # anchor
-            _type = [global_symbol_table.query(_value).get_type()]
+            _type = global_symbol_table.query(_value).get_type()
             _op_no = None
 
             _values.append(MlirSsaId(value=_value, op_no=_op_no))
             _types.append(_type)
             _returnop.values = _values
-            _returnop.types = _type
+            _returnop.types = _types
 
         _returnop_wrapper = astnodes.Operation(result_list=None, op=_returnop, location=None)
 
+        # Construct the autodiff block for Return Op
+        # ReturnOp <=> FunctionOp
+        _args_with_activations = global_symbol_table.query("ActivationSaveForAutodiff").get_type()
+        _args = [NamedArgument(name=_values[idx], type=_types[idx])
+            for idx in range(len(_values))]
+
+        # merge grad at output + activations at inputs, as the total inputs for bp
+        _args.append(_args_with_activations)
+        _block = astnodes.Block(label=None, body=[])
+        _region = astnodes.Region(body=[_block])
+        _attributes = None
+        _name = astnodes.SymbolRefId(value="bpfunction")
+        _autodiff_ret_type = global_symbol_table.query("AutodiffFuncReturnType").get_type()
+        _autodiff_op = astnodes.Function(
+            name=_name,
+            args=_args,
+            result_types=_autodiff_ret_type,
+            region=_region,
+            attributes=_attributes,
+        )
+        _autodiff_wrapper = astnodes.Operation(result_list=[], op=_autodiff_op, location=None)
+
         setattr(node, "mast_node", _returnop_wrapper)
+        setattr(node, "mast_node_autodiff", _autodiff_wrapper)
+        print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
+        print(node.mast_node_autodiff.dump())
 
         return node
 
@@ -361,12 +385,30 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
                 # build mlir.op according to ast.op
                 if _call_method == "exp":
-                    _assign_op = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=_arg_type_entry.get_type())
-                    # _assign_op = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=_whole_op_type_def)
+                    _assign_op = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=FunctionType(argument_types=_argument_types, result_types=_argument_types))
+                    # TODO
+                    _autodiff_op = ATIR_ExpOp(
+                            match=0,
+                            operand=MlirSsaId(value=_SsaId_operand.value + "_activation", op_no=None),
+                            type=FunctionType(argument_types=_argument_types, result_types=_argument_types),
+                    )
                 elif _call_method == "tanh":
-                    _assign_op = ATIR_TanhOp(match=0, operand=_SsaId_operand, type=_arg_type_entry.get_type())
+                    _assign_op = ATIR_TanhOp(match=0, operand=_SsaId_operand, type=FunctionType(argument_types=_argument_types, result_types=_argument_types))
+                    # TODO
+                    _autodiff_op = ATIR_TanhOp(
+                            match=0,
+                            operand=MlirSsaId(value=_SsaId_operand.value + "_activation", op_no=None),
+                            type=FunctionType(argument_types=_argument_types, result_types=_argument_types),
+                    )
                 else:
                     assert 0, "unsupported unary op"
+
+                _assign_op_wrapper = astnodes.Operation(result_list=_result_list, op=_assign_op, location=None)
+                _autodiff_result = [astnodes.OpResult(value=_SsaId_operand, count=None)]
+                _autodiff_wrapper = astnodes.Operation(result_list=_autodiff_result, op=_autodiff_op, location=None)
+                setattr(node, "mast_node", _assign_op_wrapper)
+                setattr(node, "mast_node_autodiff", _autodiff_wrapper)
+                print("\n ++++ show MLIR node ++++ \n", node.mast_node_autodiff.dump())
 
             elif (
                 _call_method == "add"
@@ -413,12 +455,32 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         operand_b=_SsaId_rhs_operand,
                         dtype=_whole_op_type_def,
                     )
+                    _autodiff_lhs_op = ATIR_IdentityOp(
+                            match=0,
+                            operand=MlirSsaId(value=node.targets[0].id),
+                            type=FunctionType(argument_types=_result_types, result_types=[_lhs_type]),
+                    )
+                    _autodiff_rhs_op = ATIR_IdentityOp(
+                            match=0,
+                            operand=MlirSsaId(value=node.targets[0].id),
+                            type=FunctionType(argument_types=_result_types, result_types=[_rhs_type]),
+                    )
                 elif _call_method == "sub":
                     _assign_op = ATIR_SubOp(
                         match=0,
                         operand_a=_SsaId_lhs_operand,
                         operand_b=_SsaId_rhs_operand,
                         dtype=_whole_op_type_def,
+                    )
+                    _autodiff_lhs_op = ATIR_IdentityOp(
+                            match=0,
+                            operand=MlirSsaId(value=node.targets[0].id),
+                            type=FunctionType(argument_types=_result_types, result_types=[_lhs_type]),
+                    )
+                    _autodiff_rhs_op = ATIR_NegateOp(
+                            match=0,
+                            operand=MlirSsaId(value=node.targets[0].id),
+                            type=FunctionType(argument_types=_result_types, result_types=[_rhs_type]),
                     )
                 elif _call_method == "mul":
                     _assign_op = ATIR_MulOp(
@@ -427,12 +489,40 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         operand_b=_SsaId_rhs_operand,
                         dtype=_whole_op_type_def,
                     )
+                    _SsaId_left_activation = MlirSsaId(value=_lhs_argname + "_activation", op_no=None)
+                    _SsaId_right_activation = MlirSsaId(value=_rhs_argname + "_activation", op_no=None)
+                    _autodiff_lhs_op = ATIR_MulOp(
+                            match=0,
+                            operand_a=MlirSsaId(value=node.targets[0].id),
+                            operand_b=_SsaId_right_activation,
+                            dtype=FunctionType(argument_types=[_result_types[0], _rhs_type], result_types=[_lhs_type]),
+                    )
+                    _autodiff_rhs_op = ATIR_MulOp(
+                            match=0,
+                            operand_a=_SsaId_left_activation,
+                            operand_b=MlirSsaId(value=node.targets[0].id),
+                            dtype=FunctionType(argument_types=[_lhs_type, _result_types[0]], result_types=[_rhs_type]),
+                    )
                 elif _call_method == "linear" or _call_method == "matmul":
                     _assign_op = ATIR_MatmulOp(
                         match=0,
                         operand_a=_SsaId_lhs_operand,
                         operand_b=_SsaId_rhs_operand,
                         dtype=_whole_op_type_def,
+                    )
+                    _SsaId_left_activation = MlirSsaId(value=_lhs_argname + "_activation", op_no=None)
+                    _SsaId_right_activation = MlirSsaId(value=_rhs_argname + "_activation", op_no=None)
+                    _autodiff_lhs_op = ATIR_MatmulOp(
+                            match=0,
+                            operand_a=MlirSsaId(value=node.targets[0].id),
+                            operand_b=_SsaId_right_activation,
+                            dtype=FunctionType(argument_types=[_result_types[0], _rhs_type], result_types=[_lhs_type]),
+                    )
+                    _autodiff_rhs_op = ATIR_MatmulOp(
+                            match=0,
+                            operand_a=_SsaId_left_activation,
+                            operand_b=MlirSsaId(value=node.targets[0].id),
+                            dtype=FunctionType(argument_types=[_lhs_type, _result_types[0]], result_types=[_rhs_type]),
                     )
                 elif _call_method == "conv2d":
                     # TODO + WORKAROUND + HARDCODE, need to renaming
@@ -445,11 +535,21 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 else:
                     assert 0, "unsupported binary op"
 
+                _assign_op_wrapper = astnodes.Operation(result_list=_result_list, op=_assign_op, location=None)
+                _autodiff_result_lhs = [astnodes.OpResult(value=_SsaId_lhs_operand, count=None)]
+                _autodiff_result_rhs = [astnodes.OpResult(value=_SsaId_rhs_operand, count=None)]
+                _autodiff_wrapper_lhs = astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)
+                _autodiff_wrapper_rhs = astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)
+                setattr(node, "mast_node", _assign_op_wrapper)
+                setattr(node, "mast_node_autodiff_lhs", _autodiff_wrapper_lhs)
+                setattr(node, "mast_node_autodiff_rhs", _autodiff_wrapper_rhs)
+                print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
+                print(node.mast_node_autodiff_lhs.dump())
+                print(node.mast_node_autodiff_rhs.dump())
+
             else:
                 print("Not Support this op conversion from ast.AST -> mlir.astnodes.Node")
 
-            _assign_op_wrapper = astnodes.Operation(result_list=_result_list, op=_assign_op, location=None)
-            setattr(node, "mast_node", _assign_op_wrapper)
             return node
 
         elif isinstance(node.value, ast.Num):
@@ -517,6 +617,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 _rhs_argname = node.value.right.id
             _SsaId_left = MlirSsaId(value=_lhs_argname, op_no=None)
             _SsaId_right = MlirSsaId(value=_rhs_argname, op_no=None)
+            _SsaId_left_activation = MlirSsaId(value=_lhs_argname + "_activation", op_no=None)
+            _SsaId_right_activation = MlirSsaId(value=_rhs_argname + "_activation", op_no=None)
             _res_argnames_list = [target.id for target in node.targets]
             print(astunparse.dump(node.value))
 
@@ -535,25 +637,57 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             # STEP 4 build op according to py.op
             if isinstance(node.value.op, ast.Add):
                 _op = ATIR_AddOp(
-                    match=0,
-                    operand_a=_SsaId_left,
-                    operand_b=_SsaId_right,
-                    dtype=_whole_op_type_def,
-                )
+                        match=0,
+                        operand_a=_SsaId_left,
+                        operand_b=_SsaId_right,
+                        dtype=_whole_op_type_def,
+                        )
+                _autodiff_lhs_op = ATIR_IdentityOp(
+                        match=0,
+                        operand=MlirSsaId(value=node.targets[0].id),
+                        type=FunctionType(argument_types=_result_types, result_types=[_lhs_type]),
+                        )
+                _autodiff_rhs_op = ATIR_IdentityOp(
+                        match=0,
+                        operand=MlirSsaId(value=node.targets[0].id),
+                        type=FunctionType(argument_types=_result_types, result_types=[_rhs_type]),
+                        )
             elif isinstance(node.value.op, ast.Sub):
                 _op = ATIR_SubOp(
-                    match=0,
-                    operand_a=_SsaId_left,
-                    operand_b=_SsaId_right,
-                    dtype=_whole_op_type_def,
-                )
+                        match=0,
+                        operand_a=_SsaId_left,
+                        operand_b=_SsaId_right,
+                        dtype=_whole_op_type_def,
+                        )
+                _autodiff_lhs_op = ATIR_IdentityOp(
+                        match=0,
+                        operand=MlirSsaId(value=node.targets[0].id),
+                        type=FunctionType(argument_types=_result_types, result_types=[_lhs_type]),
+                        )
+                _autodiff_rhs_op = ATIR_NegateOp(
+                        match=0,
+                        operand=MlirSsaId(value=node.targets[0].id),
+                        type=FunctionType(argument_types=_result_types, result_types=[_rhs_type]),
+                        )
             elif isinstance(node.value.op, ast.Mult):
                 _op = ATIR_MulOp(
-                    match=0,
-                    operand_a=_SsaId_left,
-                    operand_b=_SsaId_right,
-                    dtype=_whole_op_type_def,
-                )
+                        match=0,
+                        operand_a=_SsaId_left,
+                        operand_b=_SsaId_right,
+                        dtype=_whole_op_type_def,
+                        )
+                _autodiff_lhs_op = ATIR_MulOp(
+                        match=0,
+                        operand_a=MlirSsaId(value=node.targets[0].id),
+                        operand_b=_SsaId_right_activation,
+                        dtype=FunctionType(argument_types=[_result_types[0], _rhs_type], result_types=[_lhs_type]),
+                        )
+                _autodiff_rhs_op = ATIR_MulOp(
+                        match=0,
+                        operand_a=_SsaId_left_activation,
+                        operand_b=MlirSsaId(value=node.targets[0].id),
+                        dtype=FunctionType(argument_types=[_lhs_type, _result_types[0]], result_types=[_rhs_type]),
+                        )
             elif isinstance(node.value.op, ast.Mod):
                 assert 0
             elif isinstance(node.value.op, ast.Pow):
@@ -574,15 +708,22 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 assert 0
 
             # STEP 5 build op_wrapper
-
             _op_wrapper = astnodes.Operation(result_list=_result_list, op=_op, location=None)
-            # print(">>>>>MLIR Node for Assign BinOp:<<<<<\n",
-            #       self.pretty_mlir(_op_wrapper))
-            setattr(node, "mast_node", _op_wrapper)
+            _autodiff_result_lhs = [astnodes.OpResult(value=_SsaId_left, count=None)]
+            _autodiff_result_rhs = [astnodes.OpResult(value=_SsaId_right, count=None)]
+            _autodiff_wrapper_lhs = astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)
+            _autodiff_wrapper_rhs = astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)
 
         else:
             assert 0, "found unsupported form of rhs operator"
         # print(">>>>>Converted MLIR Node:<<<<<\n",
         #           self.pretty_mlir(node.mast_node))
+
+        setattr(node, "mast_node", _op_wrapper)
+        setattr(node, "mast_node_autodiff_lhs", _autodiff_wrapper_lhs)
+        setattr(node, "mast_node_autodiff_rhs", _autodiff_wrapper_rhs)
+        print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
+        print(node.mast_node_autodiff_lhs.dump())
+        print(node.mast_node_autodiff_rhs.dump())
 
         return node

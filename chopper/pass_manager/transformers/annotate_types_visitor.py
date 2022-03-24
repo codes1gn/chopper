@@ -3,6 +3,7 @@ import torch
 import astunparse
 
 from chopper.scaffold.utils import *
+from mlir import astnodes
 from .node_visitor_base import NodeVisitorBase
 from chopper.pass_manager.symbol_table import global_symbol_table, SymbolTable, SymbolEntry
 from mlir.astnodes import (
@@ -15,6 +16,8 @@ from mlir.astnodes import (
     FloatTypeEnum,
     FloatType,
 )
+
+MlirSsaId = astnodes.SsaId
 
 __all__ = [
     "AnnotateTypesVisitor",
@@ -52,6 +55,10 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         # WORKAROUND
         setattr(node, TORCH_MLIR_ARG_ANNOTATIONS_ATTR_NAME, self.arg_annotation)
         func_args = node.args.args
+        # HARDCODE TYPE DEFINE FOR AUTODIFF FUNCTION RETURN
+        # at bp path, function outputs is equivalent to input arguments
+        func_return_for_autodiff = []
+        activation_save_for_autodiff = []
         for arg_index in range(len(func_args)):
             _argname = func_args[arg_index].arg
             # TODO move this hardcode into base
@@ -75,7 +82,17 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                     dimensions=_dim,
                     element_type=_dtype,
                 )
+                # record this type for autodiff use only if it is not None
+                func_return_for_autodiff.append(_type)
+
+                # record save for backward activations as arguments of bp compute
+                _activation_arg = NamedArgument(name=MlirSsaId(value=_argname + "_activation", op_no=None), type=_type)
+                activation_save_for_autodiff.append(_activation_arg)
+            # record this type for symbol table use even it is NoneType of self
             global_symbol_table.register_symbol(SymbolEntry(_argname, _type))
+
+        global_symbol_table.register_symbol(SymbolEntry("AutodiffFuncReturnType", func_return_for_autodiff))
+        global_symbol_table.register_symbol(SymbolEntry("ActivationSaveForAutodiff", activation_save_for_autodiff))
 
         super().generic_visit(node)
         return node
@@ -151,6 +168,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
             elif _call_method == "add" or _call_method == "sub" or _call_method == "mul":
 
+                print(_call_method)
                 assert len(_arg_type_entries) == 2, "expected binary, too long of arguments for unaryop call"
                 _lhs_type = _arg_type_entries[0].get_type()
                 _rhs_type = _arg_type_entries[1].get_type()

@@ -13,8 +13,7 @@ def do_test(shape1, shape2, shape3):
 
         def ref_forward(self, a, b, c):
             d = torch.matmul(a, b)
-            e = torch.matmul(a, d)
-            return e
+            return d
 
         @backend("IREE")
         @annotate_arguments(
@@ -27,8 +26,7 @@ def do_test(shape1, shape2, shape3):
         )
         def forward(self, a, b, c):
             d = torch.matmul(a, b)
-            e = torch.matmul(a, d)
-            return e
+            return d
 
     input1 = torch.empty(shape1, dtype=torch.float32).uniform_().clone().detach().requires_grad_(True)
     input2 = torch.empty(shape2, dtype=torch.float32).uniform_().clone().detach().requires_grad_(True)

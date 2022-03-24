@@ -20,8 +20,7 @@ class ElementwiseBinaryModule(torch.nn.Module):
     )
     def forward(self, a, b):
         c = a + b
-        d = a + c
-        return d
+        return c
 
 
 class ElementwiseBinaryModule2(torch.nn.Module):
@@ -38,8 +37,7 @@ class ElementwiseBinaryModule2(torch.nn.Module):
     )
     def forward(self, a, b):
         c = a + b
-        d = b + c
-        return d
+        return c
 
 
 class ElementwiseBinaryModule3(torch.nn.Module):

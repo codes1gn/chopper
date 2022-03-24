@@ -41,12 +41,12 @@ func @mul(%arg0: tensor<?xf32>, %arg1: tensor<?xf32>) -> tensor<?xf32> {
 
 // EXP: output #0: dense<[1.000000e+00, 2.71828175]> : tensor<2xf32>
 func @exp(%arg0: tensor<?xf32>) -> tensor<?xf32> {
-  %0 = atir.exp %arg0 : tensor<?xf32>
+  %0 = atir.exp %arg0 : (tensor<?xf32>) -> tensor<?xf32>
   return %0 : tensor<?xf32>
 }
 
 // TANH: output #0: dense<[0.000000e+00, 0.761594116]> : tensor<2xf32>
 func @tanh(%arg0: tensor<?xf32>) -> tensor<?xf32> {
-  %0 = atir.tanh %arg0 : tensor<?xf32>
+  %0 = atir.tanh %arg0 :(tensor<?xf32>) ->  tensor<?xf32>
   return %0 : tensor<?xf32>
 }

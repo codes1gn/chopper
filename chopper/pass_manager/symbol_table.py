@@ -33,11 +33,19 @@ class SymbolTable(object):
     __slots__ = [
         "scoped_symbol_table",
         "pass_again",
+        "autodiff_tree",
     ]
 
     def __init__(self):
         self.scoped_symbol_table = {}
         self.pass_again = True
+        _name = None
+        _attributes = None
+        _out_block = astnodes.Block(label=None, body=[None])
+        _out_region = astnodes.Region(body=[_out_block])
+        _module = astnodes.Module(name=_name, attributes=_attributes, region=_out_region, location=None)
+        _mlirfile = astnodes.MLIRFile(definitions=[], modules=[_module])
+        self.autodiff_tree = _mlirfile
 
     def register_symbol(self, symbol_entry: SymbolEntry):
         self.scoped_symbol_table[symbol_entry.name] = symbol_entry
@@ -47,6 +55,15 @@ class SymbolTable(object):
 
     def query(self, key: str) -> Optional[SymbolEntry]:
         return self.scoped_symbol_table.get(key)
+
+    def get_autodiff_graph(self) -> astnodes.MLIRFile:
+        return self.autodiff_tree
+
+    def reset_autodiff_graph(self):
+        self.autodiff_tree.modules[0].region.body[0].body = [None]
+
+    def set_autodiff_graph(self, func: astnodes.Function):
+        self.autodiff_tree.modules[0].region.body[0].body = [func]
 
     def __str__(self) -> str:
         debug_str = ""

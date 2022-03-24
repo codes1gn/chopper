@@ -21,8 +21,7 @@ class ElementwiseBinaryModule(torch.nn.Module):
     )
     def forward(self, a, b):
         c = a + b
-        d = a + c
-        return d
+        return c
 
 
 class HighLevelBlock(torch.nn.Module):
@@ -33,8 +32,7 @@ class HighLevelBlock(torch.nn.Module):
 
     def forward(self, a, b):
         x = self.ewsb_module1(a, b)
-        y = self.ewsb_module2(a, x)
-        return y
+        return x
 
 
 lhs_input = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=torch.float32, requires_grad=True)
