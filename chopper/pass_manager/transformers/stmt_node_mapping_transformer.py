@@ -549,6 +549,12 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                             operand=MlirSsaId(value=node.targets[0].id),
                             type=FunctionType(argument_types=_result_types, result_types=[_rhs_type]),
                     )
+                    _autodiff_result_lhs = [astnodes.OpResult(value=_SsaId_lhs_operand, count=None)]
+                    _autodiff_result_rhs = [astnodes.OpResult(value=_SsaId_rhs_operand, count=None)]
+                    _autodiff_wrapper_lhs = [astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)]
+                    _autodiff_wrapper_rhs = [astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)]
+                    setattr(node, "mast_node_autodiff_lhs", _autodiff_wrapper_lhs)
+                    setattr(node, "mast_node_autodiff_rhs", _autodiff_wrapper_rhs)
                 elif _call_method == "sub":
                     _assign_op = ATIR_SubOp(
                         match=0,
@@ -566,6 +572,12 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                             operand=MlirSsaId(value=node.targets[0].id),
                             type=FunctionType(argument_types=_result_types, result_types=[_rhs_type]),
                     )
+                    _autodiff_result_lhs = [astnodes.OpResult(value=_SsaId_lhs_operand, count=None)]
+                    _autodiff_result_rhs = [astnodes.OpResult(value=_SsaId_rhs_operand, count=None)]
+                    _autodiff_wrapper_lhs = [astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)]
+                    _autodiff_wrapper_rhs = [astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)]
+                    setattr(node, "mast_node_autodiff_lhs", _autodiff_wrapper_lhs)
+                    setattr(node, "mast_node_autodiff_rhs", _autodiff_wrapper_rhs)
                 elif _call_method == "mul":
                     _assign_op = ATIR_MulOp(
                         match=0,
@@ -587,6 +599,12 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                             operand_b=MlirSsaId(value=node.targets[0].id),
                             dtype=FunctionType(argument_types=[_lhs_type, _result_types[0]], result_types=[_rhs_type]),
                     )
+                    _autodiff_result_lhs = [astnodes.OpResult(value=_SsaId_lhs_operand, count=None)]
+                    _autodiff_result_rhs = [astnodes.OpResult(value=_SsaId_rhs_operand, count=None)]
+                    _autodiff_wrapper_lhs = [astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)]
+                    _autodiff_wrapper_rhs = [astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)]
+                    setattr(node, "mast_node_autodiff_lhs", _autodiff_wrapper_lhs)
+                    setattr(node, "mast_node_autodiff_rhs", _autodiff_wrapper_rhs)
                 elif _call_method == "linear" or _call_method == "matmul":
                     _assign_op = ATIR_MatmulOp(
                         match=0,
@@ -594,21 +612,118 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         operand_b=_SsaId_rhs_operand,
                         dtype=_whole_op_type_def,
                     )
+
                     _SsaId_left_activation = MlirSsaId(value=_lhs_argname + "_activation", op_no=None)
                     _SsaId_right_activation = MlirSsaId(value=_rhs_argname + "_activation", op_no=None)
 
+                    # build the const shape as transpose operand
+                    # %a_0 = "tosa.const"() {value = dense<[1, 0]> : tensor<2xi32>} : () -> tensor<2xi32>
+                    _type_result_0 = RankedTensorType(dimensions=[Dimension(2)], element_type=astnodes.SignlessIntegerType(32))
+                    _autodiff_lhs_intermediate_result_0 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_lhs_operand.value+"_0", op_no=None), count=None)]
+                    _autodiff_wrapper_lhs_0 = astnodes.Operation(
+                        result_list=_autodiff_lhs_intermediate_result_0,
+                        op=ATIR_ConstShapeOp(
+                            match=0,
+                            value=[1, 0],
+                            dtype=_type_result_0,
+                        ),
+                        location=None,
+                    )
+                    print(_autodiff_wrapper_lhs_0.dump())
+
+                    # build the transpose op
+                    # %a_1 = "tosa.transpose" (%b_activation, %a_0) : (tensor<3x4xf32>, tensor<2xi32>) -> tensor<4x3xf32>
+                    _rhs_type_transposed = RankedTensorType(
+                        dimensions=[
+                            _rhs_type.dimensions[1],
+                            _rhs_type.dimensions[0],
+                        ],
+                        element_type=_rhs_type.element_type,
+                    )
+                    _autodiff_lhs_intermediate_result_1 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_lhs_operand.value+"_1", op_no=None), count=None)]
+                    _autodiff_wrapper_lhs_1 = astnodes.Operation(
+                        result_list=_autodiff_lhs_intermediate_result_1,
+                        op=ATIR_TransposeOp(
+                            match=0,
+                            operand_a=_SsaId_right_activation,
+                            operand_b=_autodiff_lhs_intermediate_result_0,
+                            dtype=FunctionType(argument_types=[_rhs_type, _type_result_0], result_types=[_rhs_type_transposed])
+                        ),
+                        location=None,
+                    )
+                    print(_autodiff_wrapper_lhs_1.dump())
+
+
+                    _autodiff_result_lhs = [astnodes.OpResult(value=_SsaId_lhs_operand, count=None)]
                     _autodiff_lhs_op = ATIR_MatmulOp(
                             match=0,
                             operand_a=MlirSsaId(value=node.targets[0].id),
-                            operand_b=_SsaId_right_activation,
-                            dtype=FunctionType(argument_types=[_result_types[0], _rhs_type], result_types=[_lhs_type]),
+                            operand_b=_autodiff_lhs_intermediate_result_1,
+                            dtype=FunctionType(argument_types=[_result_types[0], _rhs_type_transposed], result_types=[_lhs_type]),
                     )
-                    _autodiff_rhs_op = ATIR_MatmulOp(
+                    _autodiff_wrapper_lhs_2 = astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)
+                    print(_autodiff_wrapper_lhs_2.dump())
+                    _autodiff_wrapper_lhs = [
+                        _autodiff_wrapper_lhs_2,
+                        _autodiff_wrapper_lhs_1,
+                        _autodiff_wrapper_lhs_0,
+                    ]
+                    setattr(node, "mast_node_autodiff_lhs", _autodiff_wrapper_lhs)
+
+                    # build the const shape as transpose operand
+                    # %a_0 = "tosa.const"() {value = dense<[1, 0]> : tensor<2xi32>} : () -> tensor<2xi32>
+                    _type_result_0 = RankedTensorType(dimensions=[Dimension(2)], element_type=astnodes.SignlessIntegerType(32))
+                    _autodiff_rhs_intermediate_result_0 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_rhs_operand.value+"_0", op_no=None), count=None)]
+                    _autodiff_wrapper_rhs_0 = astnodes.Operation(
+                        result_list=_autodiff_rhs_intermediate_result_0,
+                        op=ATIR_ConstShapeOp(
+                            match=0,
+                            value=[1, 0],
+                            dtype=_type_result_0,
+                        ),
+                        location=None,
+                    )
+                    print(_autodiff_wrapper_rhs_0.dump())
+
+                    # build the transpose op
+                    # %a_1 = "tosa.transpose" (%b_activation, %a_0) : (tensor<3x4xf32>, tensor<2xi32>) -> tensor<4x3xf32>
+                    _lhs_type_transposed = RankedTensorType(
+                        dimensions=[
+                            _lhs_type.dimensions[1],
+                            _lhs_type.dimensions[0],
+                        ],
+                        element_type=_lhs_type.element_type,
+                    )
+                    _autodiff_rhs_intermediate_result_1 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_rhs_operand.value+"_1", op_no=None), count=None)]
+                    _autodiff_wrapper_rhs_1 = astnodes.Operation(
+                        result_list=_autodiff_rhs_intermediate_result_1,
+                        op=ATIR_TransposeOp(
                             match=0,
                             operand_a=_SsaId_left_activation,
-                            operand_b=MlirSsaId(value=node.targets[0].id),
-                            dtype=FunctionType(argument_types=[_lhs_type, _result_types[0]], result_types=[_rhs_type]),
+                            operand_b=_autodiff_rhs_intermediate_result_0,
+                            dtype=FunctionType(argument_types=[_lhs_type, _type_result_0], result_types=[_lhs_type_transposed])
+                        ),
+                        location=None,
                     )
+                    print(_autodiff_wrapper_rhs_1.dump())
+
+                    _autodiff_result_rhs = [astnodes.OpResult(value=_SsaId_rhs_operand, count=None)]
+                    _autodiff_rhs_op = ATIR_MatmulOp(
+                            match=0,
+                            operand_a=_autodiff_rhs_intermediate_result_1,
+                            operand_b=MlirSsaId(value=node.targets[0].id),
+                            dtype=FunctionType(argument_types=[_lhs_type_transposed, _result_types[0]], result_types=[_rhs_type]),
+                    )
+                    _autodiff_wrapper_rhs_2 = astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)
+                    print(_autodiff_wrapper_rhs_2.dump())
+
+                    _autodiff_wrapper_rhs = [
+                        _autodiff_wrapper_rhs_2,
+                        _autodiff_wrapper_rhs_1,
+                        _autodiff_wrapper_rhs_0,
+                    ]
+                    setattr(node, "mast_node_autodiff_rhs", _autodiff_wrapper_rhs)
+
                 elif _call_method == "conv2d":
                     # TODO + WORKAROUND + HARDCODE, need to renaming
                     _assign_op = ATIR_Conv2DChannelFirstOp(
@@ -621,13 +736,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     assert 0, "unsupported binary op"
 
                 _assign_op_wrapper = astnodes.Operation(result_list=_result_list, op=_assign_op, location=None)
-                _autodiff_result_lhs = [astnodes.OpResult(value=_SsaId_lhs_operand, count=None)]
-                _autodiff_result_rhs = [astnodes.OpResult(value=_SsaId_rhs_operand, count=None)]
-                _autodiff_wrapper_lhs = [astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)]
-                _autodiff_wrapper_rhs = [astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)]
                 setattr(node, "mast_node", _assign_op_wrapper)
-                setattr(node, "mast_node_autodiff_lhs", _autodiff_wrapper_lhs)
-                setattr(node, "mast_node_autodiff_rhs", _autodiff_wrapper_rhs)
                 # print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
                 # print(node.mast_node_autodiff_lhs[0].dump())
                 # print(node.mast_node_autodiff_rhs[0].dump())
