@@ -31,6 +31,8 @@ from chopper.scaffold.mlir_dialects.dialect_atir import (
     ATIR_TanhOp,
     ATIR_MatmulOp,
     ATIR_Conv2DChannelFirstOp,
+    ATIR_ConstShapeOp,
+    ATIR_TransposeOp,
     UnitTensorType,
 )
 
@@ -594,6 +596,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     )
                     _SsaId_left_activation = MlirSsaId(value=_lhs_argname + "_activation", op_no=None)
                     _SsaId_right_activation = MlirSsaId(value=_rhs_argname + "_activation", op_no=None)
+
                     _autodiff_lhs_op = ATIR_MatmulOp(
                             match=0,
                             operand_a=MlirSsaId(value=node.targets[0].id),

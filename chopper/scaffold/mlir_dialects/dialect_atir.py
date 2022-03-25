@@ -59,6 +59,44 @@ class ATIR_ConstOp(DialectOp):
         )
 
 
+@dataclass
+class ATIR_ConstShapeOp(DialectOp):
+    """AST node for an operation with an optional value."""
+
+    value: List[int]
+    dtype: mast.RankedTensorType
+
+    _opname_ = "tosa.const"
+
+    def dump(self, indent: int = 0) -> str:
+        return (
+            '"tosa.const"() {value = dense<'
+            + self.value.__str__()
+            + "> : "
+            + self.dtype.dump()
+            + "} : () -> "
+            + self.dtype.dump()
+        )
+
+
+# HARDCODE WORKAROUND for TOSA OP
+@dataclass
+class ATIR_TransposeOp(DialectOp):
+    """AST node for an operation with an optional value."""
+
+    operand_a: SsaUse
+    operand_b: SsaUse
+    dtype: mast.FunctionType
+
+    _opname_ = "tosa.transpose"
+
+    # TODO in syntax, between string_literals and non-terminals, must be
+    # seperated with whitespace
+    _syntax_ = [
+        '"tosa.transpose" ({operand_a.ssa_use} , {operand_b.ssa_use}) : {dtype.function_type}',
+    ]
+
+
 ##############################################################################
 # Dialect Operations
 
