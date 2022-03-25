@@ -33,6 +33,32 @@ class UnitTensorType(TensorType):
         return "tensor<%s>" % (self.element_type.dump(indent))
 
 
+@dataclass
+class ATIR_ConstOp(DialectOp):
+    """AST node for an operation with an optional value."""
+
+    value: float
+    dtype: mast.Type
+
+    _opname_ = "tosa.const"
+
+    # TODO in syntax, between string_literals and non-terminals, must be
+    # seperated with whitespace
+    # _syntax_ = [
+    #     '"tosa.const"() \{value = dense< {value.float} > : {dtype.type} \} : () -> {dtype.type}',
+    # ]
+
+    def dump(self, indent: int = 0) -> str:
+        return (
+            '"tosa.const"() {value = dense<'
+            + self.value.__str__()
+            + "> : "
+            + self.dtype.dump()
+            + "} : () -> "
+            + self.dtype.dump()
+        )
+
+
 ##############################################################################
 # Dialect Operations
 

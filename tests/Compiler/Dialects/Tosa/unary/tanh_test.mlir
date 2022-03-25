@@ -44,4 +44,3 @@ func @atir_tanh_test_shapedtensor_ret(%arg0: tensor<17x16xf32>) -> tensor<17x16x
   %0 = "tosa.tanh"(%arg0): (tensor<17x16xf32>) -> tensor<17x16xf32>
   return %0 : tensor<17x16xf32>
 }
-

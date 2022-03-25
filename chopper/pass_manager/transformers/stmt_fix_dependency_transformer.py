@@ -68,7 +68,7 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
                     _blocks[i].body.append(operation.mast_node)
 
         # handle autodiff logics
-        _returnop = node.mast_node_autodiff
+        _returnop = node.mast_node_autodiff[0]
         from collections import deque
 
         _autodiff_op_stack = deque()
@@ -77,10 +77,13 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         if operations:
             for _, operation in enumerate(operations):
                 if hasattr(operation, "mast_node_autodiff"):
-                    _autodiff_op_stack.append(operation.mast_node_autodiff)
+                    for _ in operation.mast_node_autodiff:
+                        _autodiff_op_stack.append(_)
                 else:
-                    _autodiff_op_stack.append(operation.mast_node_autodiff_rhs)
-                    _autodiff_op_stack.append(operation.mast_node_autodiff_lhs)
+                    for _ in operation.mast_node_autodiff_rhs:
+                        _autodiff_op_stack.append(_)
+                    for _ in operation.mast_node_autodiff_lhs:
+                        _autodiff_op_stack.append(_)
         while _autodiff_op_stack:
             _op = _autodiff_op_stack.pop()
             # print(self.pretty_mlir(_op))
@@ -93,7 +96,8 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
                 _autodiff_root.op.region.body[0].body.append(_op)
                 # print(_autodiff_root.op.region.body[0].body)
         _autodiff_root.op.region.body[0].body.append(_returnop)
-        # print(_autodiff_root.dump())
+        print(_autodiff_root.dump())
+        # assert 0
         global_symbol_table.reset_autodiff_graph()
         global_symbol_table.set_autodiff_graph(_autodiff_root)
 

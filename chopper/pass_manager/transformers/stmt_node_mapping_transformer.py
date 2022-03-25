@@ -9,10 +9,19 @@ from .node_transformer_base import NodeTransformerBase
 from chopper.pass_manager.symbol_table import global_symbol_table, SymbolTable, SymbolEntry
 
 from mlir import astnodes
-from mlir.astnodes import CustomOperation, FunctionType, NamedArgument, Dimension, RankedTensorType, NoneType
+from mlir.astnodes import (
+    CustomOperation,
+    FunctionType,
+    NamedArgument,
+    Dimension,
+    RankedTensorType,
+    NoneType,
+    DenseElementsAttr,
+)
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
 from chopper.scaffold.mlir_dialects.dialect_atir import (
+    ATIR_ConstOp,
     ATIR_IdentityOp,
     ATIR_NegateOp,
     ATIR_AddOp,
@@ -142,12 +151,12 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         _autodiff_op.values = [_.name for _ in _args]
         _autodiff_op.types = [_.type for _ in _args]
 
-        _autodiff_wrapper = astnodes.Operation(result_list=None, op=_autodiff_op, location=None)
+        _autodiff_wrapper = [astnodes.Operation(result_list=None, op=_autodiff_op, location=None)]
 
         setattr(node, "mast_node", _function_wrapper)
         setattr(node, "mast_node_autodiff", _autodiff_wrapper)
-        print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
-        print(node.mast_node_autodiff.dump())
+        # print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
+        # print(node.mast_node_autodiff[0].dump())
 
         return node
 
@@ -227,7 +236,6 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
         if isinstance(node.value, ast.Name):
             _value = node.value.id
-            # anchor
             _type = global_symbol_table.query(_value).get_type()
             _op_no = None
 
@@ -258,12 +266,12 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             region=_region,
             attributes=_attributes,
         )
-        _autodiff_wrapper = astnodes.Operation(result_list=[], op=_autodiff_op, location=None)
+        _autodiff_wrapper = [astnodes.Operation(result_list=[], op=_autodiff_op, location=None)]
 
         setattr(node, "mast_node", _returnop_wrapper)
         setattr(node, "mast_node_autodiff", _autodiff_wrapper)
-        print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
-        print(node.mast_node_autodiff.dump())
+        # print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
+        # print(node.mast_node_autodiff[0].dump())
 
         return node
 
@@ -392,23 +400,97 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                             operand=MlirSsaId(value=_SsaId_operand.value + "_activation", op_no=None),
                             type=FunctionType(argument_types=_argument_types, result_types=_argument_types),
                     )
+                    _autodiff_result = [astnodes.OpResult(value=_SsaId_operand, count=None)]
+                    _autodiff_wrapper = [astnodes.Operation(result_list=_autodiff_result, op=_autodiff_op, location=None)]
                 elif _call_method == "tanh":
                     _assign_op = ATIR_TanhOp(match=0, operand=_SsaId_operand, type=FunctionType(argument_types=_argument_types, result_types=_argument_types))
                     # TODO
-                    _autodiff_op = ATIR_TanhOp(
+                    _autodiff_intermediate_result_0 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_operand.value+"_0", op_no=None), count=None)]
+                    _autodiff_op_0 = ATIR_TanhOp(
                             match=0,
                             operand=MlirSsaId(value=_SsaId_operand.value + "_activation", op_no=None),
                             type=FunctionType(argument_types=_argument_types, result_types=_argument_types),
                     )
+                    _autodiff_wrapper_0 = astnodes.Operation(result_list=_autodiff_intermediate_result_0, op=_autodiff_op_0, location=None,)
+                    _autodiff_op_1 = ATIR_MulOp(
+                            match=0,
+                            operand_a=_autodiff_intermediate_result_0,
+                            operand_b=_autodiff_intermediate_result_0,
+                            dtype=FunctionType(argument_types=[*_argument_types, *_argument_types], result_types=_argument_types),
+                    )
+                    _autodiff_intermediate_result_1 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_operand.value+"_1", op_no=None), count=None)]
+                    _autodiff_intermediate_result_2 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_operand.value+"_2", op_no=None), count=None)]
+                    _autodiff_result = [astnodes.OpResult(value=_SsaId_operand, count=None)]
+                    _autodiff_wrapper_1 = astnodes.Operation(result_list=_autodiff_intermediate_result_1, op=_autodiff_op_1, location=None,)
+                    # print(_autodiff_wrapper_1.dump())
+                    _type_result_2 = UnitTensorType(element_type=astnodes.FloatType(MlirType.f32))
+                    # anchor
+                    _autodiff_wrapper_2 = astnodes.Operation(
+                        result_list=_autodiff_intermediate_result_2,
+                        op=ATIR_ConstOp(
+                            match=0,
+                            value=1.0,
+                            dtype=_type_result_2,
+                        ),
+                        location=None,
+                    )
+                    """
+                    _autodiff_wrapper_2 = astnodes.Operation(
+                        result_list=_autodiff_intermediate_result_2,
+                        op=DenseElementsAttr(
+                                attribute=astnodes.FloatAttr(
+                                    value=1.0,
+                                    type=None,
+                                ),
+                                type=_type_result_2,
+                            ),
+                        location=None,
+                    )
+                            ConstantOperation(
+                                match=0,
+                                value=DenseElementsAttr(
+                                    attribute=astnodes.FloatAttr(
+                                        value=1.0,
+                                        type=None,
+                                    ),
+                                    type=None
+                                ),
+                                type=_type_result_2,
+                            ),
+                    """
+                    # print(_autodiff_wrapper_2.dump())
+                    # anchor
+                    # assert 0
+                    _type_result_3 = FunctionType(argument_types=[_type_result_2, *_argument_types], result_types=_argument_types)
+                    _op_3 = ATIR_SubOp(
+                        match=0,
+                        operand_a=_autodiff_intermediate_result_2,
+                        operand_b=_autodiff_intermediate_result_1,
+                        dtype=_type_result_3,
+                    )
+                    _autodiff_wrapper_3 = astnodes.Operation(
+                            result_list=_autodiff_result,
+                            op=_op_3,
+                            location=None,
+                    )
+                    # print(_autodiff_wrapper_3.dump())
+                    # assert 0
+                    _autodiff_wrapper = [
+                            _autodiff_wrapper_3,
+                            _autodiff_wrapper_2,
+                            _autodiff_wrapper_1,
+                            _autodiff_wrapper_0,
+                            ]
+                    # anchor
+                    # assert 0
+
                 else:
                     assert 0, "unsupported unary op"
 
                 _assign_op_wrapper = astnodes.Operation(result_list=_result_list, op=_assign_op, location=None)
-                _autodiff_result = [astnodes.OpResult(value=_SsaId_operand, count=None)]
-                _autodiff_wrapper = astnodes.Operation(result_list=_autodiff_result, op=_autodiff_op, location=None)
                 setattr(node, "mast_node", _assign_op_wrapper)
                 setattr(node, "mast_node_autodiff", _autodiff_wrapper)
-                print("\n ++++ show MLIR node ++++ \n", node.mast_node_autodiff.dump())
+                # print("\n ++++ show MLIR node ++++ \n", node.mast_node_autodiff[0].dump())
 
             elif (
                 _call_method == "add"
@@ -538,14 +620,14 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 _assign_op_wrapper = astnodes.Operation(result_list=_result_list, op=_assign_op, location=None)
                 _autodiff_result_lhs = [astnodes.OpResult(value=_SsaId_lhs_operand, count=None)]
                 _autodiff_result_rhs = [astnodes.OpResult(value=_SsaId_rhs_operand, count=None)]
-                _autodiff_wrapper_lhs = astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)
-                _autodiff_wrapper_rhs = astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)
+                _autodiff_wrapper_lhs = [astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)]
+                _autodiff_wrapper_rhs = [astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)]
                 setattr(node, "mast_node", _assign_op_wrapper)
                 setattr(node, "mast_node_autodiff_lhs", _autodiff_wrapper_lhs)
                 setattr(node, "mast_node_autodiff_rhs", _autodiff_wrapper_rhs)
-                print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
-                print(node.mast_node_autodiff_lhs.dump())
-                print(node.mast_node_autodiff_rhs.dump())
+                # print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
+                # print(node.mast_node_autodiff_lhs[0].dump())
+                # print(node.mast_node_autodiff_rhs[0].dump())
 
             else:
                 print("Not Support this op conversion from ast.AST -> mlir.astnodes.Node")
@@ -620,7 +702,6 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             _SsaId_left_activation = MlirSsaId(value=_lhs_argname + "_activation", op_no=None)
             _SsaId_right_activation = MlirSsaId(value=_rhs_argname + "_activation", op_no=None)
             _res_argnames_list = [target.id for target in node.targets]
-            print(astunparse.dump(node.value))
 
             # STEP 2 build op arg types
             # TODO make a op_builder to simplify the building process ast.AST => astnodes.Node
@@ -711,8 +792,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             _op_wrapper = astnodes.Operation(result_list=_result_list, op=_op, location=None)
             _autodiff_result_lhs = [astnodes.OpResult(value=_SsaId_left, count=None)]
             _autodiff_result_rhs = [astnodes.OpResult(value=_SsaId_right, count=None)]
-            _autodiff_wrapper_lhs = astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)
-            _autodiff_wrapper_rhs = astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)
+            _autodiff_wrapper_lhs = [astnodes.Operation(result_list=_autodiff_result_lhs, op=_autodiff_lhs_op, location=None)]
+            _autodiff_wrapper_rhs = [astnodes.Operation(result_list=_autodiff_result_rhs, op=_autodiff_rhs_op, location=None)]
 
         else:
             assert 0, "found unsupported form of rhs operator"
@@ -722,8 +803,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         setattr(node, "mast_node", _op_wrapper)
         setattr(node, "mast_node_autodiff_lhs", _autodiff_wrapper_lhs)
         setattr(node, "mast_node_autodiff_rhs", _autodiff_wrapper_rhs)
-        print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
-        print(node.mast_node_autodiff_lhs.dump())
-        print(node.mast_node_autodiff_rhs.dump())
+        # print("\n ++++ show MLIR node ++++ \n", node.mast_node.dump())
+        # print(node.mast_node_autodiff_lhs[0].dump())
+        # print(node.mast_node_autodiff_rhs[0].dump())
 
         return node
