@@ -98,8 +98,8 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         _autodiff_root.op.region.body[0].body.append(_returnop)
         print(_autodiff_root.dump())
         # assert 0
-        global_symbol_table.reset_autodiff_graph()
-        global_symbol_table.set_autodiff_graph(_autodiff_root)
+        autodiff_symbol_table.reset_autodiff_graph()
+        autodiff_symbol_table.set_autodiff_graph(_autodiff_root)
 
         return node
 

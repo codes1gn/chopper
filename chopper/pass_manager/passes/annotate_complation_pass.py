@@ -3,7 +3,7 @@ import ast
 from chopper.pass_manager.transformers import *
 from chopper.pass_manager.passes.pass_base import PassBase
 from chopper.scaffold.utils import *
-from chopper.pass_manager.symbol_table import global_symbol_table, SymbolTable, SymbolEntry
+from chopper.pass_manager.symbol_table import feed_forward_symbol_table, SymbolEntry
 
 
 __all__ = [
@@ -97,10 +97,10 @@ class AnnotateCompletionPass(PassBase):
         """
 
         print("\n====== enter AnnotateCompletionPass =====\n")
-        global_symbol_table.pass_again = True
+        feed_forward_symbol_table.pass_again = True
         for _solver in self.solvers:
-            while global_symbol_table.pass_again == True:
-                global_symbol_table.pass_again = False
+            while feed_forward_symbol_table.pass_again == True:
+                feed_forward_symbol_table.pass_again = False
                 ast_root = _solver(self.arg_annotation).visit(ast_root)
 
         return ast_root

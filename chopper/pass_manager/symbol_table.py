@@ -2,8 +2,11 @@ import mlir.astnodes as astnodes
 from typing import Optional
 
 __all__ = [
-    "SymbolTable",
-    "global_symbol_table",
+    "SymbolEntry",
+    "FeedForwardSymbolTable",
+    "feed_forward_symbol_table",
+    "AutodiffSymbolTable",
+    "autodiff_symbol_table",
 ]
 
 
@@ -29,16 +32,14 @@ class SymbolEntry(object):
         return self.mlirtype
 
 
-class SymbolTable(object):
+class AutodiffSymbolTable(object):
     __slots__ = [
         "scoped_symbol_table",
-        "pass_again",
         "autodiff_tree",
     ]
 
     def __init__(self):
         self.scoped_symbol_table = {}
-        self.pass_again = True
         _name = None
         _attributes = None
         _out_block = astnodes.Block(label=None, body=[None])
@@ -46,15 +47,6 @@ class SymbolTable(object):
         _module = astnodes.Module(name=_name, attributes=_attributes, region=_out_region, location=None)
         _mlirfile = astnodes.MLIRFile(definitions=[], modules=[_module])
         self.autodiff_tree = _mlirfile
-
-    def insert(self, symbol_entry: SymbolEntry):
-        self.scoped_symbol_table[symbol_entry.name] = symbol_entry
-
-    def reset_symbol_table(self):
-        self.scoped_symbol_table = {}
-
-    def lookup(self, name: str) -> Optional[SymbolEntry]:
-        return self.scoped_symbol_table.get(name)
 
     def get_autodiff_graph(self) -> astnodes.MLIRFile:
         return self.autodiff_tree
@@ -64,6 +56,53 @@ class SymbolTable(object):
 
     def set_autodiff_graph(self, func: astnodes.Function):
         self.autodiff_tree.modules[0].region.body[0].body = [func]
+
+    """
+    def insert(self, symbol_entry: SymbolEntry):
+        self.scoped_symbol_table[symbol_entry.name] = symbol_entry
+
+    def reset_symbol_table(self):
+        self.scoped_symbol_table = {}
+
+    def lookup(self, name: str) -> Optional[SymbolEntry]:
+        return self.scoped_symbol_table.get(name)
+
+    def __str__(self) -> str:
+        debug_str = ""
+        debug_str += ">=============================<\n"
+        debug_str += ">==== SymbolTable Summary ====<\n"
+        debug_str += ">=============================<\n\n"
+        debug_str += "Count of Symbol Entries = {}\n".format(len(self.scoped_symbol_table))
+        debug_str += "Listing Symbol Entries ...\n\n"
+        iid = 0
+        for key, value in self.scoped_symbol_table.items():
+            debug_str += "Symbol Entry #{} =>{}".format(iid, value.debug_str())
+            iid += 1
+        debug_str += "\n\n>=============================<\n"
+        debug_str += ">== End SymbolTable Summary ==<\n"
+        debug_str += ">=============================<\n"
+        return debug_str
+    """
+
+
+class FeedForwardSymbolTable(object):
+    __slots__ = [
+        "scoped_symbol_table",
+        "pass_again",
+    ]
+
+    def __init__(self):
+        self.scoped_symbol_table = {}
+        self.pass_again = True
+
+    def insert(self, symbol_entry: SymbolEntry):
+        self.scoped_symbol_table[symbol_entry.name] = symbol_entry
+
+    def reset_symbol_table(self):
+        self.scoped_symbol_table = {}
+
+    def lookup(self, name: str) -> Optional[SymbolEntry]:
+        return self.scoped_symbol_table.get(name)
 
     def __str__(self) -> str:
         debug_str = ""
@@ -83,4 +122,5 @@ class SymbolTable(object):
 
 
 # TODO make it singleton
-global_symbol_table = SymbolTable()
+feed_forward_symbol_table = FeedForwardSymbolTable()
+autodiff_symbol_table = AutodiffSymbolTable()

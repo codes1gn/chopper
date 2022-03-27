@@ -13,7 +13,7 @@ import chopper.iree.runtime as ireert
 
 from .torch_jit_compiler import *
 from chopper.scaffold.utils import *
-from chopper.pass_manager.symbol_table import global_symbol_table
+from chopper.pass_manager.symbol_table import feed_forward_symbol_table
 
 __all__ = [
     "annotate_arguments",
@@ -66,7 +66,7 @@ def backend(backend_name: str):
         # reset symbol table
         # TODO avoid this action here, make it lazy_load and add scope support,
         # bind the lifetime with the whole compiler
-        global_symbol_table.reset_symbol_table()
+        feed_forward_symbol_table.reset_symbol_table()
 
         ast_source = tjcompiler.annotate_function(ast_source, fn._torch_dsl_arg_annotations)
         mlir_dialect, mlir_dialect_autodiff = tjcompiler.to_mlir_dialect(ast_source)

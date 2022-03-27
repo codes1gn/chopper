@@ -14,7 +14,7 @@ from imp import new_module
 from mlir import parse_path, parse_string
 from mlir import astnodes
 from chopper.scaffold.mlir_dialects import *
-from chopper.pass_manager.symbol_table import global_symbol_table
+from chopper.pass_manager.symbol_table import autodiff_symbol_table
 from chopper.scaffold.utils import *
 
 MlirNode = astnodes.Node
@@ -184,4 +184,4 @@ class TorchJitCompiler:
         pass_manager.register_passes()
         pass_manager.run(pyast)
 
-        return pyast.mast_node, global_symbol_table.get_autodiff_graph()
+        return pyast.mast_node, autodiff_symbol_table.get_autodiff_graph()
