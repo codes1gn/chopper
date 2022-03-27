@@ -91,8 +91,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 arg = func_args[arg_index]
                 # TODO move this hardcode into base
                 # case 1, arguments is float type
-                _arg_id = global_symbol_table.query(arg.arg).get_name()
-                _type = global_symbol_table.query(arg.arg).get_type()
+                _arg_id = global_symbol_table.lookup(arg.arg).get_name()
+                _type = global_symbol_table.lookup(arg.arg).get_type()
                 if _arg_id == "self":
                     # HARDCODE + WORKAROUND, this is a temperal handle to avoid runtime error in type conversion by IREE Runtime
                     continue
@@ -133,7 +133,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             # None Arguments still need a empty NamedArgument
             _args.append(NamedArgument())
 
-        _result_type = global_symbol_table.query("ReturnTypeForFunctionDef").get_type()
+        _result_type = global_symbol_table.lookup("ReturnTypeForFunctionDef").get_type()
         # print(global_symbol_table)
         # print(_result_type)
         # assert 0, "bad"
@@ -238,7 +238,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
         if isinstance(node.value, ast.Name):
             _value = node.value.id
-            _type = global_symbol_table.query(_value).get_type()
+            _type = global_symbol_table.lookup(_value).get_type()
             _op_no = None
 
             _values.append(MlirSsaId(value=_value, op_no=_op_no))
@@ -250,7 +250,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
         # Construct the autodiff block for Return Op
         # ReturnOp <=> FunctionOp
-        _args_with_activations = global_symbol_table.query("ActivationSaveForAutodiff").get_type()
+        _args_with_activations = global_symbol_table.lookup("ActivationSaveForAutodiff").get_type()
         _args = [NamedArgument(name=_values[idx], type=_types[idx])
             for idx in range(len(_values))]
 
@@ -260,7 +260,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         _region = astnodes.Region(body=[_block])
         _attributes = None
         _name = astnodes.SymbolRefId(value="bpfunction")
-        _autodiff_ret_type = global_symbol_table.query("AutodiffFuncReturnType").get_type()
+        _autodiff_ret_type = global_symbol_table.lookup("AutodiffFuncReturnType").get_type()
         _autodiff_op = astnodes.Function(
             name=_name,
             args=_args,
@@ -378,7 +378,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 _SsaId_operand = MlirSsaId(value=_argname, op_no=None)
 
                 # build arguments types
-                _arg_type_entry = global_symbol_table.query(_argname)
+                _arg_type_entry = global_symbol_table.lookup(_argname)
                 assert _arg_type_entry is not None, "expected valid symbol entry, found None"
                 _argument_types = [_arg_type_entry.get_type()]
 
@@ -388,7 +388,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     astnodes.OpResult(value=MlirSsaId(value=_res_argname, op_no=None), count=None)
                     for _res_argname in _res_argnames_list
                 ]
-                # _result_types = [global_symbol_table.query(_res_argname).get_type() for _res_argname in _res_argnames_list]
+                # _result_types = [global_symbol_table.lookup(_res_argname).get_type() for _res_argname in _res_argnames_list]
 
                 # build function types for this operation
                 # _whole_op_type_def = FunctionType(argument_types=_argument_types, result_types=_result_types)
@@ -510,8 +510,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 _SsaId_rhs_operand = MlirSsaId(value=_rhs_argname, op_no=None)
 
                 # build arguments types
-                _lhs_type_entry = global_symbol_table.query(_lhs_argname)
-                _rhs_type_entry = global_symbol_table.query(_rhs_argname)
+                _lhs_type_entry = global_symbol_table.lookup(_lhs_argname)
+                _rhs_type_entry = global_symbol_table.lookup(_rhs_argname)
                 assert _lhs_type_entry is not None, "expected valid symbol entry at lhs arg, found None"
                 assert _rhs_type_entry is not None, "expected valid symbol entry at rhs arg, found None"
                 _lhs_type = _lhs_type_entry.get_type()
@@ -525,7 +525,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     for _res_argname in _res_argnames_list
                 ]
                 _result_types = [
-                    global_symbol_table.query(_res_argname).get_type() for _res_argname in _res_argnames_list
+                    global_symbol_table.lookup(_res_argname).get_type() for _res_argname in _res_argnames_list
                 ]
 
                 # build function types for this operation
@@ -817,10 +817,10 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
             # STEP 2 build op arg types
             # TODO make a op_builder to simplify the building process ast.AST => astnodes.Node
-            _lhs_type = global_symbol_table.query(_lhs_argname).get_type()
-            _rhs_type = global_symbol_table.query(_rhs_argname).get_type()
+            _lhs_type = global_symbol_table.lookup(_lhs_argname).get_type()
+            _rhs_type = global_symbol_table.lookup(_rhs_argname).get_type()
             _argument_types = [_lhs_type, _lhs_type]
-            _result_types = [global_symbol_table.query(_res_argname).get_type() for _res_argname in _res_argnames_list]
+            _result_types = [global_symbol_table.lookup(_res_argname).get_type() for _res_argname in _res_argnames_list]
             _whole_op_type_def = FunctionType(argument_types=_argument_types, result_types=_result_types)
 
             # STEP 3 build result symbol

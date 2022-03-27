@@ -47,14 +47,14 @@ class SymbolTable(object):
         _mlirfile = astnodes.MLIRFile(definitions=[], modules=[_module])
         self.autodiff_tree = _mlirfile
 
-    def register_symbol(self, symbol_entry: SymbolEntry):
+    def insert(self, symbol_entry: SymbolEntry):
         self.scoped_symbol_table[symbol_entry.name] = symbol_entry
 
     def reset_symbol_table(self):
         self.scoped_symbol_table = {}
 
-    def query(self, key: str) -> Optional[SymbolEntry]:
-        return self.scoped_symbol_table.get(key)
+    def lookup(self, name: str) -> Optional[SymbolEntry]:
+        return self.scoped_symbol_table.get(name)
 
     def get_autodiff_graph(self) -> astnodes.MLIRFile:
         return self.autodiff_tree

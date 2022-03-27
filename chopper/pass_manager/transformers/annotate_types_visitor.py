@@ -63,7 +63,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
             _argname = func_args[arg_index].arg
             # TODO move this hardcode into base
             # case 1, arguments is float type
-            if global_symbol_table.query(_argname) is not None:
+            if global_symbol_table.lookup(_argname) is not None:
                 continue
 
             if self.arg_annotation[arg_index] is None:
@@ -89,17 +89,17 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 _activation_arg = NamedArgument(name=MlirSsaId(value=_argname + "_activation", op_no=None), type=_type)
                 activation_save_for_autodiff.append(_activation_arg)
             # record this type for symbol table use even it is NoneType of self
-            global_symbol_table.register_symbol(SymbolEntry(_argname, _type))
+            global_symbol_table.insert(SymbolEntry(_argname, _type))
 
-        global_symbol_table.register_symbol(SymbolEntry("AutodiffFuncReturnType", func_return_for_autodiff))
-        global_symbol_table.register_symbol(SymbolEntry("ActivationSaveForAutodiff", activation_save_for_autodiff))
+        global_symbol_table.insert(SymbolEntry("AutodiffFuncReturnType", func_return_for_autodiff))
+        global_symbol_table.insert(SymbolEntry("ActivationSaveForAutodiff", activation_save_for_autodiff))
 
         super().generic_visit(node)
         return node
 
     def visit_Assign(self, node: ast.AST) -> ast.AST:
         """handle typing annotation and check, infer the operand and return
-        types by querying symbol table; and create corresponding symbol
+        types by lookuping symbol table; and create corresponding symbol
         entries into symbol table.
 
         Args:
@@ -118,8 +118,8 @@ class AnnotateTypesVisitor(NodeVisitorBase):
             _opcode = _rhs_stmt.op
 
             # VERIFY SYMBOL TABLE IF READY FOR THIS OP
-            _lhs_sym_entry = global_symbol_table.query(_lhs_arg.id)
-            _rhs_sym_entry = global_symbol_table.query(_rhs_arg.id)
+            _lhs_sym_entry = global_symbol_table.lookup(_lhs_arg.id)
+            _rhs_sym_entry = global_symbol_table.lookup(_rhs_arg.id)
             if _lhs_sym_entry is None or _rhs_sym_entry is None:
                 global_symbol_table.pass_again = True
                 super().generic_visit(node)
@@ -134,7 +134,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
             assert _lhs_shape == _rhs_shape, "expected same shape of lhs and rhs arguments"
             for _ret_op_element in _ret_op:
                 _ret_sym_entry = SymbolEntry(_ret_op_element.id, _lhs_type)
-                global_symbol_table.register_symbol(_ret_sym_entry)
+                global_symbol_table.insert(_ret_sym_entry)
 
         elif isinstance(_rhs_stmt, ast.Call):
             print(astunparse.dump(_rhs_stmt))
@@ -146,7 +146,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
             _call_method = _rhs_stmt.func.attr  # exp or add
             _args = _rhs_stmt.args  # ast.Name, ast.Name
-            _arg_type_entries = [global_symbol_table.query(_argname.id) for _argname in _args]
+            _arg_type_entries = [global_symbol_table.lookup(_argname.id) for _argname in _args]
 
             # if any arg types are not inferred, means the infer of this call op is not ready
             # run the pass again
@@ -164,7 +164,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 _result_type = _arg_type_entries[0].get_type()
                 for _ret_op_element in _ret_op:
                     _ret_sym_entry = SymbolEntry(_ret_op_element.id, _result_type)
-                    global_symbol_table.register_symbol(_ret_sym_entry)
+                    global_symbol_table.insert(_ret_sym_entry)
 
             elif _call_method == "add" or _call_method == "sub" or _call_method == "mul":
 
@@ -178,7 +178,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 assert _lhs_shape == _rhs_shape, "expected same shape of lhs and rhs arguments"
                 for _ret_op_element in _ret_op:
                     _ret_sym_entry = SymbolEntry(_ret_op_element.id, _lhs_type)
-                    global_symbol_table.register_symbol(_ret_sym_entry)
+                    global_symbol_table.insert(_ret_sym_entry)
             elif _call_method == "linear" or _call_method == "matmul":
                 assert len(_arg_type_entries) == 2, "expected binary, too long of arguments for unaryop call"
                 _lhs_type = _arg_type_entries[0].get_type()
@@ -197,7 +197,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
                 for _ret_op_element in _ret_op:
                     _ret_sym_entry = SymbolEntry(_ret_op_element.id, _ret_type)
-                    global_symbol_table.register_symbol(_ret_sym_entry)
+                    global_symbol_table.insert(_ret_sym_entry)
             elif _call_method == "conv2d":
                 assert len(_arg_type_entries) == 2, "expected binary, too long of arguments for unaryop call"
                 _lhs_type = _arg_type_entries[0].get_type()
@@ -218,7 +218,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
                 for _ret_op_element in _ret_op:
                     _ret_sym_entry = SymbolEntry(_ret_op_element.id, _ret_type)
-                    global_symbol_table.register_symbol(_ret_sym_entry)
+                    global_symbol_table.insert(_ret_sym_entry)
 
             else:
                 assert 0, "found unsupported call method, please check <annotate_type_visitor>"
@@ -263,7 +263,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
     def visit_Return(self, node: ast.AST) -> ast.AST:
         """handle typing annotation and check, infer the operand and return
-        types by querying symbol table; and create corresponding symbol
+        types by lookuping symbol table; and create corresponding symbol
         entries into symbol table.
 
         Args:
@@ -275,7 +275,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         print(self.__str__(), "::visit_Return\n")
         assert isinstance(node.value, ast.Name), "Not handle this type rhs value for AssignOp"
         _argname = node.value.id
-        _ret_sym_entry = global_symbol_table.query(_argname)
+        _ret_sym_entry = global_symbol_table.lookup(_argname)
         if _ret_sym_entry is None:
             global_symbol_table.pass_again = True
             super().generic_visit(node)
@@ -284,7 +284,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         # HANDLE OPERAND SHAPE
         _func_ret_type = _ret_sym_entry.get_type()
         _func_ret_sym_entry = SymbolEntry("ReturnTypeForFunctionDef", _func_ret_type)
-        global_symbol_table.register_symbol(_func_ret_sym_entry)
+        global_symbol_table.insert(_func_ret_sym_entry)
 
         super().generic_visit(node)
         return node
