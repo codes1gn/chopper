@@ -3,6 +3,7 @@ import astunparse
 from astunparse import printer
 from typing import Tuple, List, Optional
 import torch
+from chopper.scaffold.utils.builders import *
 
 from chopper.scaffold.utils import *
 from .node_transformer_base import NodeTransformerBase

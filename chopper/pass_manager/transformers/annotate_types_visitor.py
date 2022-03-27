@@ -6,6 +6,7 @@ from chopper.scaffold.utils import *
 from mlir import astnodes
 from .node_visitor_base import NodeVisitorBase
 from chopper.pass_manager.symbol_table import feed_forward_symbol_table, SymbolEntry
+from chopper.scaffold.utils.builders import *
 from mlir.astnodes import (
     CustomOperation,
     FunctionType,
