@@ -232,8 +232,8 @@ public:
     SmallVector<int64_t, 6> broadcastedStaticShape;
     OpTrait::util::getBroadcastedShape(lhsType.getShape(), rhsType.getShape(),
                                        broadcastedStaticShape);
-    // ALBERT NOTE - shift is the attribute part of IR, use rewriter to build new elements
-    // references can be found from MLIR source codes
+    // ALBERT NOTE - shift is the attribute part of IR, use rewriter to build
+    // new elements references can be found from MLIR source codes
     auto shiftAttr = rewriter.getI32IntegerAttr(0);
     auto resultType =
         RankedTensorType::get(broadcastedStaticShape, lhsType.getElementType());
@@ -241,7 +241,8 @@ public:
     // become broadcastable compatible with the lhs and rhs
     // check lhs/rhs, who shape is the resulting broadcastable shape
 
-    auto tosa_op = rewriter.create<tosa::MulOp>(loc, resultType, lhs, rhs, shiftAttr);
+    auto tosa_op =
+        rewriter.create<tosa::MulOp>(loc, resultType, lhs, rhs, shiftAttr);
     rewriter.replaceOp(op, tosa_op.getResult());
 
     return success();
@@ -290,13 +291,14 @@ public:
     auto lhsTosaShapeAttr = rewriter.getI64ArrayAttr(lhsTosaShape);
     auto rhsTosaShapeAttr = rewriter.getI64ArrayAttr(rhsTosaShape);
 
-
-    Value lhsReshaped = rewriter.create<tosa::ReshapeOp>(
-        loc, lhsTosaType, lhs, lhsTosaShapeAttr);
-    Value rhsReshaped = rewriter.create<tosa::ReshapeOp>(
-        loc, rhsTosaType, rhs, rhsTosaShapeAttr);
-    auto tosa_op = rewriter.create<tosa::MatMulOp>(loc, resultTosaType, lhsReshaped, rhsReshaped);
-    auto tosa_op_reshaped_back = rewriter.create<tosa::ReshapeOp>(loc, resultType, tosa_op, rewriter.getI64ArrayAttr(resultShape));
+    Value lhsReshaped = rewriter.create<tosa::ReshapeOp>(loc, lhsTosaType, lhs,
+                                                         lhsTosaShapeAttr);
+    Value rhsReshaped = rewriter.create<tosa::ReshapeOp>(loc, rhsTosaType, rhs,
+                                                         rhsTosaShapeAttr);
+    auto tosa_op = rewriter.create<tosa::MatMulOp>(loc, resultTosaType,
+                                                   lhsReshaped, rhsReshaped);
+    auto tosa_op_reshaped_back = rewriter.create<tosa::ReshapeOp>(
+        loc, resultType, tosa_op, rewriter.getI64ArrayAttr(resultShape));
     rewriter.replaceOp(op, tosa_op_reshaped_back.getResult());
 
     return success();
@@ -333,8 +335,6 @@ public:
     // resultTosaShape.push_back(resultShape[0]);
     // resultTosaShape.push_back(resultShape[1]);
 
-
-
     // return type
     auto resultTosaType =
         RankedTensorType::get(resultShape, resultType.getElementType());
@@ -367,10 +367,15 @@ public:
     biasShape.push_back(rhsShape[0]);
     auto biasType =
         RankedTensorType::get(biasShape, resultType.getElementType());
-    auto bias = rewriter.create<tosa::ConstOp>(loc, biasType, DenseElementsAttr::get(biasType, rewriter.getZeroAttr(resultType.getElementType())));
-    // auto bias = tosa::getConstTensor<float>(rewriter, op, zeroLiteral, {static_cast<int32_t>(rhsShape[0])}).getValue();
+    auto bias = rewriter.create<tosa::ConstOp>(
+        loc, biasType,
+        DenseElementsAttr::get(
+            biasType, rewriter.getZeroAttr(resultType.getElementType())));
+    // auto bias = tosa::getConstTensor<float>(rewriter, op, zeroLiteral,
+    // {static_cast<int32_t>(rhsShape[0])}).getValue();
 
-    auto tosa_op = rewriter.create<tosa::Conv2DOp>(loc, resultTosaType, lhs, rhs, bias, pad, stride, dilation);
+    auto tosa_op = rewriter.create<tosa::Conv2DOp>(
+        loc, resultTosaType, lhs, rhs, bias, pad, stride, dilation);
 
     rewriter.replaceOp(op, tosa_op.getResult());
 
