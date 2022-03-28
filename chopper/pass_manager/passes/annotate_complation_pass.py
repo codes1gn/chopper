@@ -3,7 +3,7 @@ import ast
 from chopper.pass_manager.transformers import *
 from chopper.pass_manager.passes.pass_base import PassBase
 from chopper.scaffold.utils import *
-from chopper.pass_manager.symbol_table import feed_forward_symbol_table, SymbolEntry
+from chopper.pass_manager.symbol_table import feed_forward_symbol_table
 
 
 __all__ = [

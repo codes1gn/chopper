@@ -2,7 +2,6 @@ import mlir.astnodes as astnodes
 from typing import Optional
 
 __all__ = [
-    "SymbolEntry",
     "FeedForwardSymbolTable",
     "feed_forward_symbol_table",
     "AutodiffSymbolTable",
@@ -10,36 +9,16 @@ __all__ = [
 ]
 
 
-# TODO debug print
-class SymbolEntry(object):
-
-    __slots__ = [
-        "name",
-        "mlirtype",
-    ]
-
-    def __init__(self, name: str, mlirtype: astnodes.Type):
-        self.name = name
-        self.mlirtype = mlirtype
-
-    def debug_str(self) -> str:
-        return "\n    obj={},\n    name={},\n    type={}\n".format(self, self.name, self.mlirtype)
-
-    def get_name(self) -> str:
-        return self.name
-
-    def get_type(self) -> astnodes.Type:
-        return self.mlirtype
-
-
 class AutodiffSymbolTable(object):
     __slots__ = [
-        "scoped_symbol_table",
+        "type_table",
+        "value_table",
         "autodiff_tree",
     ]
 
     def __init__(self):
-        self.scoped_symbol_table = {}
+        self.type_table = {}
+        self.value_table = {}
         _name = None
         _attributes = None
         _out_block = astnodes.Block(label=None, body=[None])
@@ -57,63 +36,86 @@ class AutodiffSymbolTable(object):
     def set_autodiff_graph(self, func: astnodes.Function):
         self.autodiff_tree.modules[0].region.body[0].body = [func]
 
-    """
-    def insert(self, symbol_entry: SymbolEntry):
-        self.scoped_symbol_table[symbol_entry.name] = symbol_entry
+    def insert(self, query_name: str, query_type: astnodes.Type):
+        self.type_table[query_name] = query_type
+        self.value_table[query_name] = astnodes.SsaId(value=query_name, op_no=None)
 
     def reset_symbol_table(self):
-        self.scoped_symbol_table = {}
+        self.type_table = {}
+        self.value_table = {}
 
-    def lookup(self, name: str) -> Optional[SymbolEntry]:
-        return self.scoped_symbol_table.get(name)
+    # lookup method to query 1 of 3 value forms in:
+    # value: SsaId | type: Type | typed-value: NamedArgument
+    def lookup(self, query_name: str, query_key: str) -> Optional[astnodes.Type]:
+        if query_key == "value":
+            return self.value_table.get(query_name)
+        elif query_key == "type":
+            return self.type_table.get(query_name)
+        elif query_key == "typed-value":
+            return astnodes.NamedArgument(name=self.value_table.get(query_name), type=self.type_table.get(query_name))
+        else:
+            assert 0, "lookup for non-exist query key"
 
     def __str__(self) -> str:
         debug_str = ""
         debug_str += ">=============================<\n"
         debug_str += ">==== SymbolTable Summary ====<\n"
         debug_str += ">=============================<\n\n"
-        debug_str += "Count of Symbol Entries = {}\n".format(len(self.scoped_symbol_table))
+        debug_str += "Count of Symbol Entries = {}\n".format(len(self.value_table))
         debug_str += "Listing Symbol Entries ...\n\n"
         iid = 0
-        for key, value in self.scoped_symbol_table.items():
-            debug_str += "Symbol Entry #{} =>{}".format(iid, value.debug_str())
+        for key, value in self.value_table.items():
+            debug_str += "\nSymbol #{} \n=> {} \n=> {}\n".format(iid, value, self.lookup(key, "type"))
             iid += 1
         debug_str += "\n\n>=============================<\n"
         debug_str += ">== End SymbolTable Summary ==<\n"
         debug_str += ">=============================<\n"
         return debug_str
-    """
 
 
 class FeedForwardSymbolTable(object):
     __slots__ = [
-        "scoped_symbol_table",
+        "value_table",
+        "type_table",
         "pass_again",
     ]
 
     def __init__(self):
-        self.scoped_symbol_table = {}
+        self.type_table = {}
+        self.value_table = {}
         self.pass_again = True
 
-    def insert(self, symbol_entry: SymbolEntry):
-        self.scoped_symbol_table[symbol_entry.name] = symbol_entry
+    # store ssaid and type
+    def insert(self, query_name: str, query_type: astnodes.Type):
+        self.type_table[query_name] = query_type
+        self.value_table[query_name] = astnodes.SsaId(value=query_name, op_no=None)
 
     def reset_symbol_table(self):
-        self.scoped_symbol_table = {}
+        self.type_table = {}
+        self.value_table = {}
 
-    def lookup(self, name: str) -> Optional[SymbolEntry]:
-        return self.scoped_symbol_table.get(name)
+    # lookup method to query 1 of 3 value forms in:
+    # value: SsaId | type: Type | typed-value: NamedArgument
+    def lookup(self, query_name: str, query_key: str) -> Optional[astnodes.Type]:
+        if query_key == "value":
+            return self.value_table.get(query_name)
+        elif query_key == "type":
+            return self.type_table.get(query_name)
+        elif query_key == "typed-value":
+            return astnodes.NamedArgument(name=self.value_table.get(query_name), type=self.type_table.get(query_name))
+        else:
+            assert 0, "lookup for non-exist query key"
 
     def __str__(self) -> str:
         debug_str = ""
         debug_str += ">=============================<\n"
         debug_str += ">==== SymbolTable Summary ====<\n"
         debug_str += ">=============================<\n\n"
-        debug_str += "Count of Symbol Entries = {}\n".format(len(self.scoped_symbol_table))
+        debug_str += "Count of Symbol Entries = {}\n".format(len(self.value_table))
         debug_str += "Listing Symbol Entries ...\n\n"
         iid = 0
-        for key, value in self.scoped_symbol_table.items():
-            debug_str += "Symbol Entry #{} =>{}".format(iid, value.debug_str())
+        for key, value in self.value_table.items():
+            debug_str += "\nSymbol #{} \n=> {} \n=> {}\n".format(iid, value, self.lookup(key, "type"))
             iid += 1
         debug_str += "\n\n>=============================<\n"
         debug_str += ">== End SymbolTable Summary ==<\n"

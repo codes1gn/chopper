@@ -7,17 +7,13 @@ from chopper.scaffold.utils.builders import *
 
 from chopper.scaffold.utils import *
 from .node_transformer_base import NodeTransformerBase
-from chopper.pass_manager.symbol_table import feed_forward_symbol_table, SymbolEntry
+from chopper.pass_manager.symbol_table import feed_forward_symbol_table
 
 from mlir import astnodes
 from mlir.astnodes import (
     CustomOperation,
     FunctionType,
     NamedArgument,
-    Dimension,
-    RankedTensorType,
-    NoneType,
-    DenseElementsAttr,
 )
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
@@ -92,8 +88,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 arg = func_args[arg_index]
                 # TODO move this hardcode into base
                 # case 1, arguments is float type
-                _arg_id = feed_forward_symbol_table.lookup(arg.arg).get_name()
-                _type = feed_forward_symbol_table.lookup(arg.arg).get_type()
+                _arg_id = arg.arg
+                _type = feed_forward_symbol_table.lookup(arg.arg, "type")
                 if _arg_id == "self":
                     # HARDCODE + WORKAROUND, this is a temperal handle to avoid runtime error in type conversion by IREE Runtime
                     continue
@@ -105,9 +101,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 elif hasattr(arg.annotation, "id") and arg.annotation.id == "list":
                     assert 0, "wait for tuning"
                     # TODO: list -> <?xf32> <?x?xf32> <?x?x?f32>
-                    _type = astnodes.RankedTensorType(
-                        dimensions=[Dimension(value=None)], element_type=astnodes.FloatType(MlirType.f32)
-                    )
+                    _type = TypeBuilder.create("tensor", shape=[None], dtype="f32")
                     _args.append(NamedArgument(name=MlirSsaId(value=arg.arg, op_no=None), type=_type))
                 elif (
                     isinstance(arg.annotation, ast.Subscript)
@@ -118,9 +112,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     # TODO: List[float] -> <?xf32> <?x?xf32> <?x?x?f32>
                     if arg.annotation.slice.value.id == "float":
                         # TODO: Other type, only support float now
-                        _type = astnodes.RankedTensorType(
-                            dimensions=[Dimension(value=None)], element_type=astnodes.FloatType(MlirType.f32)
-                        )
+                        _type = TypeBuilder.create("tensor", shape=[None], dtype="f32")
                         _args.append(NamedArgument(name=MlirSsaId(value=arg.arg, op_no=None), type=_type))
                 # use pattern match to replace if-elif-else branching, since misplace
                 # the sequence of each block may result in failed catching
@@ -134,10 +126,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             # None Arguments still need a empty NamedArgument
             _args.append(NamedArgument())
 
-        _result_type = feed_forward_symbol_table.lookup("ReturnTypeForFunctionDef").get_type()
-        # print(feed_forward_symbol_table)
-        # print(_result_type)
-        # assert 0, "bad"
+        _result_type = ValueBuilder.get_type("ReturnTypeForFunctionDef")
         _attributes = None
 
         _function = astnodes.Function(
@@ -213,47 +202,31 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         #       "Map transformer::handling visit_Return on node.\n")
         # print(">>>>>Python Return Node:<<<<<\n", astunparse.dump(node))
 
-        # if return value is not None, set match=1
+        # return => match = 0
         match = 0
         if node.value:
             match = 1
         _returnop = ReturnOperation(match)
         _returnop.values = node.value
         _values = list()
-        _types = list()
 
-        # two case of ReturnOp:
-        # 1. return 1.0 -> return a specific value
-        # 2. return var -> return the value specified by a variable
-        if isinstance(node.value, ast.Constant):
-            _value = "ret" + str(match)
-            _op_no = None
 
-            _values.append(MlirSsaId(value=_value, op_no=_op_no))
-            if isinstance(node.value.value, float):
-                _types.append(astnodes.FloatType(MlirType.f32))
-            else:
-                _types = None
-            _returnop.values = _values
-            _returnop.types = _types
-
+        # return var => match = 1
         if isinstance(node.value, ast.Name):
-            _value = node.value.id
-            _type = feed_forward_symbol_table.lookup(_value).get_type()
+            _value_name = node.value.id
             _op_no = None
 
-            _values.append(MlirSsaId(value=_value, op_no=_op_no))
-            _types.append(_type)
+            _values.append(MlirSsaId(value=_value_name, op_no=_op_no))
             _returnop.values = _values
-            _returnop.types = _types
+            _returnop.types = [ValueBuilder.get_type(_value_name, expect_exist=True)]
 
         _returnop_wrapper = astnodes.Operation(result_list=None, op=_returnop, location=None)
 
         # Construct the autodiff block for Return Op
         # ReturnOp <=> FunctionOp
-        _args_with_activations = feed_forward_symbol_table.lookup("ActivationSaveForAutodiff").get_type()
-        _args = [NamedArgument(name=_values[idx], type=_types[idx])
-            for idx in range(len(_values))]
+        _args_with_activations = feed_forward_symbol_table.lookup("ActivationSaveForAutodiff", "type")
+        _args = [NamedArgument(name=_returnop.values[idx], type=_returnop.types[idx])
+            for idx in range(len(_returnop.values))]
 
         # merge grad at output + activations at inputs, as the total inputs for bp
         _args.append(_args_with_activations)
@@ -261,7 +234,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         _region = astnodes.Region(body=[_block])
         _attributes = None
         _name = astnodes.SymbolRefId(value="bpfunction")
-        _autodiff_ret_type = feed_forward_symbol_table.lookup("AutodiffFuncReturnType").get_type()
+        _autodiff_ret_type = feed_forward_symbol_table.lookup("AutodiffFuncReturnType", "type")
         _autodiff_op = astnodes.Function(
             name=_name,
             args=_args,
@@ -379,9 +352,9 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 _SsaId_operand = MlirSsaId(value=_argname, op_no=None)
 
                 # build arguments types
-                _arg_type_entry = feed_forward_symbol_table.lookup(_argname)
-                assert _arg_type_entry is not None, "expected valid symbol entry, found None"
-                _argument_types = [_arg_type_entry.get_type()]
+                _arg_type = ValueBuilder.get_type(_argname)
+                assert _arg_type is not None, "expected valid symbol entry, found None"
+                _argument_types = [_arg_type]
 
                 # build targets and their types
                 _res_argnames_list = [target.id for target in node.targets]
@@ -389,15 +362,10 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     astnodes.OpResult(value=MlirSsaId(value=_res_argname, op_no=None), count=None)
                     for _res_argname in _res_argnames_list
                 ]
-                # _result_types = [feed_forward_symbol_table.lookup(_res_argname).get_type() for _res_argname in _res_argnames_list]
-
-                # build function types for this operation
-                # _whole_op_type_def = FunctionType(argument_types=_argument_types, result_types=_result_types)
 
                 # build mlir.op according to ast.op
                 if _call_method == "exp":
                     _assign_op = ATIR_ExpOp(match=0, operand=_SsaId_operand, type=FunctionType(argument_types=_argument_types, result_types=_argument_types))
-                    # TODO
                     _autodiff_op = ATIR_ExpOp(
                             match=0,
                             operand=MlirSsaId(value=_SsaId_operand.value + "_activation", op_no=None),
@@ -407,7 +375,6 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     _autodiff_wrapper = [astnodes.Operation(result_list=_autodiff_result, op=_autodiff_op, location=None)]
                 elif _call_method == "tanh":
                     _assign_op = ATIR_TanhOp(match=0, operand=_SsaId_operand, type=FunctionType(argument_types=_argument_types, result_types=_argument_types))
-                    # TODO
                     _autodiff_intermediate_result_0 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_operand.value+"_0", op_no=None), count=None)]
                     _autodiff_op_0 = ATIR_TanhOp(
                             match=0,
@@ -425,9 +392,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     _autodiff_intermediate_result_2 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_operand.value+"_2", op_no=None), count=None)]
                     _autodiff_result = [astnodes.OpResult(value=_SsaId_operand, count=None)]
                     _autodiff_wrapper_1 = astnodes.Operation(result_list=_autodiff_intermediate_result_1, op=_autodiff_op_1, location=None,)
-                    # print(_autodiff_wrapper_1.dump())
-                    _type_result_2 = UnitTensorType(element_type=astnodes.FloatType(MlirType.f32))
-                    # anchor
+
+                    _type_result_2 = TypeBuilder.create("unit")
                     _autodiff_wrapper_2 = astnodes.Operation(
                         result_list=_autodiff_intermediate_result_2,
                         op=ATIR_ConstOp(
@@ -437,33 +403,6 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         ),
                         location=None,
                     )
-                    """
-                    _autodiff_wrapper_2 = astnodes.Operation(
-                        result_list=_autodiff_intermediate_result_2,
-                        op=DenseElementsAttr(
-                                attribute=astnodes.FloatAttr(
-                                    value=1.0,
-                                    type=None,
-                                ),
-                                type=_type_result_2,
-                            ),
-                        location=None,
-                    )
-                            ConstantOperation(
-                                match=0,
-                                value=DenseElementsAttr(
-                                    attribute=astnodes.FloatAttr(
-                                        value=1.0,
-                                        type=None,
-                                    ),
-                                    type=None
-                                ),
-                                type=_type_result_2,
-                            ),
-                    """
-                    # print(_autodiff_wrapper_2.dump())
-                    # anchor
-                    # assert 0
                     _type_result_3 = FunctionType(argument_types=[_type_result_2, *_argument_types], result_types=_argument_types)
                     _op_3 = ATIR_SubOp(
                         match=0,
@@ -511,12 +450,10 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 _SsaId_rhs_operand = MlirSsaId(value=_rhs_argname, op_no=None)
 
                 # build arguments types
-                _lhs_type_entry = feed_forward_symbol_table.lookup(_lhs_argname)
-                _rhs_type_entry = feed_forward_symbol_table.lookup(_rhs_argname)
-                assert _lhs_type_entry is not None, "expected valid symbol entry at lhs arg, found None"
-                assert _rhs_type_entry is not None, "expected valid symbol entry at rhs arg, found None"
-                _lhs_type = _lhs_type_entry.get_type()
-                _rhs_type = _rhs_type_entry.get_type()
+                _lhs_type = ValueBuilder.get_type(_lhs_argname)
+                _rhs_type = ValueBuilder.get_type(_rhs_argname)
+                assert _lhs_type is not None, "expected valid symbol entry at lhs arg, found None"
+                assert _rhs_type is not None, "expected valid symbol entry at rhs arg, found None"
                 _argument_types = [_lhs_type, _rhs_type]
 
                 # build targets and their types
@@ -526,7 +463,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     for _res_argname in _res_argnames_list
                 ]
                 _result_types = [
-                    feed_forward_symbol_table.lookup(_res_argname).get_type() for _res_argname in _res_argnames_list
+                    feed_forward_symbol_table.lookup(_res_argname, "type") for _res_argname in _res_argnames_list
                 ]
 
                 # build function types for this operation
@@ -619,7 +556,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
                     # build the const shape as transpose operand
                     # %a_0 = "tosa.const"() {value = dense<[1, 0]> : tensor<2xi32>} : () -> tensor<2xi32>
-                    _type_result_0 = RankedTensorType(dimensions=[Dimension(2)], element_type=astnodes.SignlessIntegerType(32))
+                    _type_result_0 = TypeBuilder.create("tensor", shape=[2], dtype="i32")
                     _autodiff_lhs_intermediate_result_0 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_lhs_operand.value+"_0", op_no=None), count=None)]
                     _autodiff_wrapper_lhs_0 = astnodes.Operation(
                         result_list=_autodiff_lhs_intermediate_result_0,
@@ -634,13 +571,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
                     # build the transpose op
                     # %a_1 = "tosa.transpose" (%b_activation, %a_0) : (tensor<3x4xf32>, tensor<2xi32>) -> tensor<4x3xf32>
-                    _rhs_type_transposed = RankedTensorType(
-                        dimensions=[
-                            _rhs_type.dimensions[1],
-                            _rhs_type.dimensions[0],
-                        ],
-                        element_type=_rhs_type.element_type,
-                    )
+
+                    _rhs_type_transposed = TypeBuilder.create("tensor", from_unary_tensor=_rhs_type, transpose_order=[1, 0])
                     _autodiff_lhs_intermediate_result_1 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_lhs_operand.value+"_1", op_no=None), count=None)]
                     _autodiff_wrapper_lhs_1 = astnodes.Operation(
                         result_list=_autodiff_lhs_intermediate_result_1,
@@ -673,7 +605,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
                     # build the const shape as transpose operand
                     # %a_0 = "tosa.const"() {value = dense<[1, 0]> : tensor<2xi32>} : () -> tensor<2xi32>
-                    _type_result_0 = RankedTensorType(dimensions=[Dimension(2)], element_type=astnodes.SignlessIntegerType(32))
+                    _type_result_0 = TypeBuilder.create("tensor", shape=[2], dtype="i32")
                     _autodiff_rhs_intermediate_result_0 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_rhs_operand.value+"_0", op_no=None), count=None)]
                     _autodiff_wrapper_rhs_0 = astnodes.Operation(
                         result_list=_autodiff_rhs_intermediate_result_0,
@@ -688,13 +620,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
                     # build the transpose op
                     # %a_1 = "tosa.transpose" (%b_activation, %a_0) : (tensor<3x4xf32>, tensor<2xi32>) -> tensor<4x3xf32>
-                    _lhs_type_transposed = RankedTensorType(
-                        dimensions=[
-                            _lhs_type.dimensions[1],
-                            _lhs_type.dimensions[0],
-                        ],
-                        element_type=_lhs_type.element_type,
-                    )
+                    _lhs_type_transposed = TypeBuilder.create("tensor", from_unary_tensor=_lhs_type, transpose_order=[1, 0])
                     _autodiff_rhs_intermediate_result_1 = [astnodes.OpResult(value=MlirSsaId(value=_SsaId_rhs_operand.value+"_1", op_no=None), count=None)]
                     _autodiff_wrapper_rhs_1 = astnodes.Operation(
                         result_list=_autodiff_rhs_intermediate_result_1,
@@ -818,10 +744,10 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
 
             # STEP 2 build op arg types
             # TODO make a op_builder to simplify the building process ast.AST => astnodes.Node
-            _lhs_type = feed_forward_symbol_table.lookup(_lhs_argname).get_type()
-            _rhs_type = feed_forward_symbol_table.lookup(_rhs_argname).get_type()
+            _lhs_type = feed_forward_symbol_table.lookup(_lhs_argname, "type")
+            _rhs_type = feed_forward_symbol_table.lookup(_rhs_argname, "type")
             _argument_types = [_lhs_type, _lhs_type]
-            _result_types = [feed_forward_symbol_table.lookup(_res_argname).get_type() for _res_argname in _res_argnames_list]
+            _result_types = [feed_forward_symbol_table.lookup(_res_argname, "type") for _res_argname in _res_argnames_list]
             _whole_op_type_def = FunctionType(argument_types=_argument_types, result_types=_result_types)
 
             # STEP 3 build result symbol

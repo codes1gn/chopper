@@ -5,17 +5,9 @@ import astunparse
 from chopper.scaffold.utils import *
 from mlir import astnodes
 from .node_visitor_base import NodeVisitorBase
-from chopper.pass_manager.symbol_table import feed_forward_symbol_table, SymbolEntry
 from chopper.scaffold.utils.builders import *
 from mlir.astnodes import (
-    CustomOperation,
-    FunctionType,
     NamedArgument,
-    Dimension,
-    RankedTensorType,
-    NoneType,
-    FloatTypeEnum,
-    FloatType,
 )
 
 MlirSsaId = astnodes.SsaId
@@ -64,43 +56,36 @@ class AnnotateTypesVisitor(NodeVisitorBase):
             _argname = func_args[arg_index].arg
             # TODO move this hardcode into base
             # case 1, arguments is float type
-            if feed_forward_symbol_table.lookup(_argname) is not None:
-                continue
 
             if self.arg_annotation[arg_index] is None:
-                _type = NoneType()
+                _argtype = TypeBuilder.create("none")
             else:
                 # TODO use From Trait or other way to make this conversion elegant
                 if self.arg_annotation[arg_index][1] is torch.float32:
-                    _dtype = FloatType(FloatTypeEnum.f32)
+                    _argtype = TypeBuilder.create("tensor", shape=self.arg_annotation[arg_index][0], dtype="f32")
                 else:
                     assert 0, "Not support this dtype for annotation"
-                _dim = [
-                    Dimension(self.arg_annotation[arg_index][0][k])
-                    for k in range(len(self.arg_annotation[arg_index][0]))
-                ]
-                _type = RankedTensorType(
-                    dimensions=_dim,
-                    element_type=_dtype,
-                )
                 # record this type for autodiff use only if it is not None
-                func_return_for_autodiff.append(_type)
+                func_return_for_autodiff.append(_argtype)
 
                 # record save for backward activations as arguments of bp compute
-                _activation_arg = NamedArgument(name=MlirSsaId(value=_argname + "_activation", op_no=None), type=_type)
-                activation_save_for_autodiff.append(_activation_arg)
-            # record this type for symbol table use even it is NoneType of self
-            feed_forward_symbol_table.insert(SymbolEntry(_argname, _type))
+                _activation_arg = NamedArgument(
+                    name=MlirSsaId(value=_argname + "_activation", op_no=None), type=_argtype
+                )
 
-        feed_forward_symbol_table.insert(SymbolEntry("AutodiffFuncReturnType", func_return_for_autodiff))
-        feed_forward_symbol_table.insert(SymbolEntry("ActivationSaveForAutodiff", activation_save_for_autodiff))
+                activation_save_for_autodiff.append(_activation_arg)
+                # record this type for symbol table use even it is NoneType of self
+                ValueBuilder.create(_argname, _argtype)
+
+        ValueBuilder.create("AutodiffFuncReturnType", func_return_for_autodiff)
+        ValueBuilder.create("ActivationSaveForAutodiff", activation_save_for_autodiff)
 
         super().generic_visit(node)
         return node
 
     def visit_Assign(self, node: ast.AST) -> ast.AST:
         """handle typing annotation and check, infer the operand and return
-        types by lookuping symbol table; and create corresponding symbol
+        types by builders; and create corresponding symbol
         entries into symbol table.
 
         Args:
@@ -114,28 +99,25 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         _rhs_stmt = node.value
         if isinstance(_rhs_stmt, ast.BinOp):
             # handle c = a + b where '+' is a BinOp
-            _lhs_arg = _rhs_stmt.left
-            _rhs_arg = _rhs_stmt.right
+            _lhs_argname = _rhs_stmt.left.id
+            _rhs_argname = _rhs_stmt.right.id
             _opcode = _rhs_stmt.op
 
             # VERIFY SYMBOL TABLE IF READY FOR THIS OP
-            _lhs_sym_entry = feed_forward_symbol_table.lookup(_lhs_arg.id)
-            _rhs_sym_entry = feed_forward_symbol_table.lookup(_rhs_arg.id)
-            if _lhs_sym_entry is None or _rhs_sym_entry is None:
-                feed_forward_symbol_table.pass_again = True
+            _lhs_type = ValueBuilder.get_type(_lhs_argname)
+            _rhs_type = ValueBuilder.get_type(_rhs_argname)
+            if _lhs_type is None or _rhs_type is None:
                 super().generic_visit(node)
                 return node
 
             # HANDLE OPERAND SHAPE
-            _lhs_type = _lhs_sym_entry.get_type()
-            _rhs_type = _rhs_sym_entry.get_type()
             assert _lhs_type.element_type == _rhs_type.element_type
-            _lhs_shape = _lhs_type.dimensions
-            _rhs_shape = _rhs_type.dimensions
-            assert _lhs_shape == _rhs_shape, "expected same shape of lhs and rhs arguments"
+            # TODO move this check into OP builder
+            # _lhs_shape = _lhs_type.dimensions
+            # _rhs_shape = _rhs_type.dimensions
+            # assert _lhs_shape == _rhs_shape, "expected same shape of lhs and rhs arguments"
             for _ret_op_element in _ret_op:
-                _ret_sym_entry = SymbolEntry(_ret_op_element.id, _lhs_type)
-                feed_forward_symbol_table.insert(_ret_sym_entry)
+                ValueBuilder.create(_ret_op_element.id, _lhs_type)
 
         elif isinstance(_rhs_stmt, ast.Call):
             print(astunparse.dump(_rhs_stmt))
@@ -147,79 +129,57 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
             _call_method = _rhs_stmt.func.attr  # exp or add
             _args = _rhs_stmt.args  # ast.Name, ast.Name
-            _arg_type_entries = [feed_forward_symbol_table.lookup(_argname.id) for _argname in _args]
+            _arg_type_list = [ValueBuilder.get_type(_argname.id) for _argname in _args]
 
             # if any arg types are not inferred, means the infer of this call op is not ready
             # run the pass again
-            for _ in _arg_type_entries:
+            for _ in _arg_type_list:
                 if _ is None:
-                    feed_forward_symbol_table.pass_again = True
                     super().generic_visit(node)
                     return node
 
             # handle accepted function calls and assert for guardian
             # TODO build a builder or conversion or mapping utils
+            # TODO pattern matching or wrap to utils
             if _call_method == "exp" or _call_method == "tanh":
 
-                assert len(_arg_type_entries) == 1, "expected unary, too long of arguments for unaryop call"
-                _result_type = _arg_type_entries[0].get_type()
+                assert len(_arg_type_list) == 1, "expected unary, too long of arguments for unaryop call"
+                _result_type = _arg_type_list[0]
                 for _ret_op_element in _ret_op:
-                    _ret_sym_entry = SymbolEntry(_ret_op_element.id, _result_type)
-                    feed_forward_symbol_table.insert(_ret_sym_entry)
+                    ValueBuilder.create(_ret_op_element.id, _result_type)
 
             elif _call_method == "add" or _call_method == "sub" or _call_method == "mul":
 
-                print(_call_method)
-                assert len(_arg_type_entries) == 2, "expected binary, too long of arguments for unaryop call"
-                _lhs_type = _arg_type_entries[0].get_type()
-                _rhs_type = _arg_type_entries[1].get_type()
+                assert len(_arg_type_list) == 2, "expected binary, too long of arguments for unaryop call"
+                _lhs_type = _arg_type_list[0]
+                _rhs_type = _arg_type_list[1]
                 assert _lhs_type.element_type == _rhs_type.element_type
-                _lhs_shape = _lhs_type.dimensions
-                _rhs_shape = _rhs_type.dimensions
-                assert _lhs_shape == _rhs_shape, "expected same shape of lhs and rhs arguments"
+                assert _lhs_type.dimensions == _rhs_type.dimensions, "expected same shape of lhs and rhs arguments"
                 for _ret_op_element in _ret_op:
-                    _ret_sym_entry = SymbolEntry(_ret_op_element.id, _lhs_type)
-                    feed_forward_symbol_table.insert(_ret_sym_entry)
+                    ValueBuilder.create(_ret_op_element.id, _lhs_type)
             elif _call_method == "linear" or _call_method == "matmul":
-                assert len(_arg_type_entries) == 2, "expected binary, too long of arguments for unaryop call"
-                _lhs_type = _arg_type_entries[0].get_type()
-                _rhs_type = _arg_type_entries[1].get_type()
+                assert len(_arg_type_list) == 2, "expected binary, too long of arguments for unaryop call"
+                _lhs_type = _arg_type_list[0]
+                _rhs_type = _arg_type_list[1]
                 assert _lhs_type.element_type == _rhs_type.element_type
-                _lhs_shape = _lhs_type.dimensions
-                _rhs_shape = _rhs_type.dimensions
                 # anchor
-                _ret_type = RankedTensorType(
-                    dimensions=[
-                        _lhs_shape[0],
-                        _rhs_shape[1],
-                    ],
-                    element_type=_lhs_type.element_type,
+                _ret_type = TypeBuilder.create(
+                    "tensor", from_lhs_tensor=_lhs_type, from_rhs_tensor=_rhs_type, bin_op="matmul"
                 )
-
                 for _ret_op_element in _ret_op:
-                    _ret_sym_entry = SymbolEntry(_ret_op_element.id, _ret_type)
-                    feed_forward_symbol_table.insert(_ret_sym_entry)
+                    ValueBuilder.create(_ret_op_element.id, _ret_type)
             elif _call_method == "conv2d":
-                assert len(_arg_type_entries) == 2, "expected binary, too long of arguments for unaryop call"
-                _lhs_type = _arg_type_entries[0].get_type()
-                _rhs_type = _arg_type_entries[1].get_type()
+                assert len(_arg_type_list) == 2, "expected binary, too long of arguments for unaryop call"
+                _lhs_type = _arg_type_list[0]
+                _rhs_type = _arg_type_list[1]
                 assert _lhs_type.element_type == _rhs_type.element_type
-                _lhs_shape = _lhs_type.dimensions
-                _rhs_shape = _rhs_type.dimensions
                 # TODO + WORKAROUND + HARDCODE, assuming dilation = 1, padding = 0, stride = 1, and with channel_last setting
-                _ret_type = RankedTensorType(
-                    dimensions=[
-                        _lhs_shape[0],
-                        Dimension(_lhs_shape[1].value + 1 - _rhs_shape[0].value),
-                        Dimension(_lhs_shape[2].value + 1 - _rhs_shape[1].value),
-                        _rhs_shape[3],
-                    ],
-                    element_type=_lhs_type.element_type,
+                _ret_type = TypeBuilder.create(
+                    "tensor", from_lhs_tensor=_lhs_type, from_rhs_tensor=_rhs_type, bin_op="conv-nhwc-hwco"
                 )
 
                 for _ret_op_element in _ret_op:
-                    _ret_sym_entry = SymbolEntry(_ret_op_element.id, _ret_type)
-                    feed_forward_symbol_table.insert(_ret_sym_entry)
+                    ValueBuilder.create(_ret_op_element.id, _ret_type)
 
             else:
                 assert 0, "found unsupported call method, please check <annotate_type_visitor>"
@@ -227,44 +187,12 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         else:
             assert 0, "Not support AssignOp with supported RHS value"
 
-        # anchor
-        # TODO pattern matching or wrap to utils
-        """
-        if isinstance(node.value.op, ast.Add):
-            assert 0
-        elif isinstance(node.value.op, ast.Sub):
-            assert 0
-        elif isinstance(node.value.op, ast.Mult):
-            assert 0
-        elif isinstance(node.value.op, ast.Div):
-            assert 0
-        elif isinstance(node.value.op, ast.Mod):
-            assert 0
-        elif isinstance(node.value.op, ast.Pow):
-            assert 0
-        elif isinstance(node.value.op, ast.LShift):
-            assert 0
-        elif isinstance(node.value.op, ast.RShift):
-            assert 0
-        elif isinstance(node.value.op, ast.BitOr):
-            assert 0
-        elif isinstance(node.value.op, ast.BitXor):
-            assert 0
-        elif isinstance(node.value.op, ast.BitAnd):
-            assert 0
-        elif isinstance(node.value.op, ast.FloorDiv):
-            assert 0
-        else:
-            assert 0
-
-        """
-
         super().generic_visit(node)
         return node
 
     def visit_Return(self, node: ast.AST) -> ast.AST:
         """handle typing annotation and check, infer the operand and return
-        types by lookuping symbol table; and create corresponding symbol
+        types by builders; and create corresponding symbol
         entries into symbol table.
 
         Args:
@@ -276,16 +204,13 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         print(self.__str__(), "::visit_Return\n")
         assert isinstance(node.value, ast.Name), "Not handle this type rhs value for AssignOp"
         _argname = node.value.id
-        _ret_sym_entry = feed_forward_symbol_table.lookup(_argname)
-        if _ret_sym_entry is None:
-            feed_forward_symbol_table.pass_again = True
+        _func_ret_type = ValueBuilder.get_type(_argname)
+        if _func_ret_type is None:
             super().generic_visit(node)
             return node
 
         # HANDLE OPERAND SHAPE
-        _func_ret_type = _ret_sym_entry.get_type()
-        _func_ret_sym_entry = SymbolEntry("ReturnTypeForFunctionDef", _func_ret_type)
-        feed_forward_symbol_table.insert(_func_ret_sym_entry)
+        ValueBuilder.create("ReturnTypeForFunctionDef", _func_ret_type)
 
         super().generic_visit(node)
         return node
