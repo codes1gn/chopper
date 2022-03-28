@@ -66,7 +66,8 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
             for i in range(len(_blocks)):
                 _blocks[i].body.clear()
                 for _, operation in enumerate(operations):
-                    _blocks[i].body.append(operation.mast_node)
+                    for _ in operation.mast_node:
+                        _blocks[i].body.append(_)
 
         # handle autodiff logics
         _returnop = node.mast_node_autodiff[0]
@@ -143,12 +144,5 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
         """
 
         super().generic_visit(node)
-        # print(self.__str__(), "Fix handling visit_Return on node\n",
-        #       astunparse.dump(node))
-
-        # fix returnop value
-        # node.mast_node.op.values = node.value
-
-        # print(self.pretty_mlir(node.mast_node))
 
         return node

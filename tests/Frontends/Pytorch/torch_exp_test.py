@@ -20,11 +20,13 @@ def do_test(shape):
         )
         def forward(self, a):
             b = torch.exp(a)
-            return b
+            c = torch.exp(b)
+            return c
 
         def ref_forward(self, a):
             b = torch.exp(a)
-            return b
+            c = torch.exp(b)
+            return c
 
     unary_input_ref = torch.empty(shape, dtype=torch.float32).uniform_().clone().detach().requires_grad_(True)
     unary_input_act = unary_input_ref.clone().detach().requires_grad_(True)

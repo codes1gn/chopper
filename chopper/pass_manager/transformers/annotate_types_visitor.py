@@ -50,13 +50,10 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         func_args = node.args.args
         # HARDCODE TYPE DEFINE FOR AUTODIFF FUNCTION RETURN
         # at bp path, function outputs is equivalent to input arguments
-        func_return_for_autodiff = []
-        activation_save_for_autodiff = []
         for arg_index in range(len(func_args)):
             _argname = func_args[arg_index].arg
             # TODO move this hardcode into base
             # case 1, arguments is float type
-
             if self.arg_annotation[arg_index] is None:
                 _argtype = TypeBuilder.create("none")
             else:
@@ -66,19 +63,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 else:
                     assert 0, "Not support this dtype for annotation"
                 # record this type for autodiff use only if it is not None
-                func_return_for_autodiff.append(_argtype)
-
-                # record save for backward activations as arguments of bp compute
-                _activation_arg = NamedArgument(
-                    name=MlirSsaId(value=_argname + "_activation", op_no=None), type=_argtype
-                )
-
-                activation_save_for_autodiff.append(_activation_arg)
-                # record this type for symbol table use even it is NoneType of self
-                ValueBuilder.create(_argname, _argtype)
-
-        ValueBuilder.create("AutodiffFuncReturnType", func_return_for_autodiff)
-        ValueBuilder.create("ActivationSaveForAutodiff", activation_save_for_autodiff)
+                ValueBuilder.create(_argname, _argtype, mode="forward+backward+savedact+funcret")
 
         super().generic_visit(node)
         return node
@@ -104,20 +89,24 @@ class AnnotateTypesVisitor(NodeVisitorBase):
             _opcode = _rhs_stmt.op
 
             # VERIFY SYMBOL TABLE IF READY FOR THIS OP
-            _lhs_type = ValueBuilder.get_type(_lhs_argname)
-            _rhs_type = ValueBuilder.get_type(_rhs_argname)
+            _lhs_type = ValueBuilder.get_type_or_retry(_lhs_argname)
+            _rhs_type = ValueBuilder.get_type_or_retry(_rhs_argname)
             if _lhs_type is None or _rhs_type is None:
                 super().generic_visit(node)
                 return node
 
+            # save for bp if is mul op
+            if isinstance(_opcode, ast.Mult):
+                ValueBuilder.create(_lhs_argname, _lhs_type, mode="savedact")
+                ValueBuilder.create(_rhs_argname, _rhs_type, mode="savedact")
+
             # HANDLE OPERAND SHAPE
             assert _lhs_type.element_type == _rhs_type.element_type
-            # TODO move this check into OP builder
-            # _lhs_shape = _lhs_type.dimensions
-            # _rhs_shape = _rhs_type.dimensions
-            # assert _lhs_shape == _rhs_shape, "expected same shape of lhs and rhs arguments"
+            assert _lhs_type.dimensions == _rhs_type.dimensions
+
+            # define values according to op
             for _ret_op_element in _ret_op:
-                ValueBuilder.create(_ret_op_element.id, _lhs_type)
+                ValueBuilder.create(_ret_op_element.id, _lhs_type, mode="forward+backward")
 
         elif isinstance(_rhs_stmt, ast.Call):
             print(astunparse.dump(_rhs_stmt))
@@ -129,7 +118,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
             _call_method = _rhs_stmt.func.attr  # exp or add
             _args = _rhs_stmt.args  # ast.Name, ast.Name
-            _arg_type_list = [ValueBuilder.get_type(_argname.id) for _argname in _args]
+            _arg_type_list = [ValueBuilder.get_type_or_retry(_argname.id) for _argname in _args]
 
             # if any arg types are not inferred, means the infer of this call op is not ready
             # run the pass again
@@ -145,10 +134,15 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
                 assert len(_arg_type_list) == 1, "expected unary, too long of arguments for unaryop call"
                 _result_type = _arg_type_list[0]
+
+                # register ins for savedact
+                ValueBuilder.create(_args[0].id, _result_type, mode="savedact")
+
+                # register outs for ft and at
                 for _ret_op_element in _ret_op:
                     ValueBuilder.create(_ret_op_element.id, _result_type)
 
-            elif _call_method == "add" or _call_method == "sub" or _call_method == "mul":
+            elif _call_method == "add" or _call_method == "sub":
 
                 assert len(_arg_type_list) == 2, "expected binary, too long of arguments for unaryop call"
                 _lhs_type = _arg_type_list[0]
@@ -157,10 +151,25 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 assert _lhs_type.dimensions == _rhs_type.dimensions, "expected same shape of lhs and rhs arguments"
                 for _ret_op_element in _ret_op:
                     ValueBuilder.create(_ret_op_element.id, _lhs_type)
+            elif _call_method == "mul":
+
+                assert len(_arg_type_list) == 2, "expected binary, too long of arguments for unaryop call"
+                _lhs_type = _arg_type_list[0]
+                _rhs_type = _arg_type_list[1]
+                # register saved activations for bp
+                ValueBuilder.create(_args[0].id, _lhs_type, mode="savedact")
+                ValueBuilder.create(_args[1].id, _rhs_type, mode="savedact")
+                assert _lhs_type.element_type == _rhs_type.element_type
+                assert _lhs_type.dimensions == _rhs_type.dimensions, "expected same shape of lhs and rhs arguments"
+                for _ret_op_element in _ret_op:
+                    ValueBuilder.create(_ret_op_element.id, _lhs_type)
             elif _call_method == "linear" or _call_method == "matmul":
                 assert len(_arg_type_list) == 2, "expected binary, too long of arguments for unaryop call"
                 _lhs_type = _arg_type_list[0]
                 _rhs_type = _arg_type_list[1]
+                # register saved activations for bp
+                ValueBuilder.create(_args[0].id, _lhs_type, mode="savedact")
+                ValueBuilder.create(_args[1].id, _rhs_type, mode="savedact")
                 assert _lhs_type.element_type == _rhs_type.element_type
                 # anchor
                 _ret_type = TypeBuilder.create(
@@ -172,6 +181,9 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 assert len(_arg_type_list) == 2, "expected binary, too long of arguments for unaryop call"
                 _lhs_type = _arg_type_list[0]
                 _rhs_type = _arg_type_list[1]
+                # register saved activations for bp
+                ValueBuilder.create(_args[0].id, _lhs_type, mode="savedact")
+                ValueBuilder.create(_args[1].id, _rhs_type, mode="savedact")
                 assert _lhs_type.element_type == _rhs_type.element_type
                 # TODO + WORKAROUND + HARDCODE, assuming dilation = 1, padding = 0, stride = 1, and with channel_last setting
                 _ret_type = TypeBuilder.create(
@@ -204,13 +216,13 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         print(self.__str__(), "::visit_Return\n")
         assert isinstance(node.value, ast.Name), "Not handle this type rhs value for AssignOp"
         _argname = node.value.id
-        _func_ret_type = ValueBuilder.get_type(_argname)
+        _func_ret_type = ValueBuilder.get_type_or_retry(_argname)
         if _func_ret_type is None:
             super().generic_visit(node)
             return node
 
         # HANDLE OPERAND SHAPE
-        ValueBuilder.create("ReturnTypeForFunctionDef", _func_ret_type)
+        ValueBuilder.create(_argname, _func_ret_type, mode="funcarg")
 
         super().generic_visit(node)
         return node

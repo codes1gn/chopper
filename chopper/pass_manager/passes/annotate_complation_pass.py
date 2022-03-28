@@ -3,7 +3,8 @@ import ast
 from chopper.pass_manager.transformers import *
 from chopper.pass_manager.passes.pass_base import PassBase
 from chopper.scaffold.utils import *
-from chopper.pass_manager.symbol_table import feed_forward_symbol_table
+from chopper.scaffold.utils.builders import *
+from chopper.pass_manager.symbol_table import *
 
 
 __all__ = [
@@ -86,6 +87,16 @@ class AnnotateCompletionPass(PassBase):
         self.solvers.append(AnnotateTypesVisitor)
         self.arg_annotation = arg_annotation
 
+        # resets all processing symbol tables for compilation
+        feed_forward_symbol_table.reset_symbol_table()
+        autodiff_symbol_table.reset_symbol_table()
+        autodiff_saved_activation_table.reset_symbol_table()
+        autodiff_func_arguments_table.reset_symbol_table()
+        autodiff_func_returns_table.reset_symbol_table()
+
+        # set pass_again init value
+        feed_forward_symbol_table.pass_again = True
+
     def run_pass(self, ast_root: ast.AST) -> ast.AST:
         """Run this pass to convert astnode.
 
@@ -97,10 +108,12 @@ class AnnotateCompletionPass(PassBase):
         """
 
         print("\n====== enter AnnotateCompletionPass =====\n")
-        feed_forward_symbol_table.pass_again = True
+
         for _solver in self.solvers:
             while feed_forward_symbol_table.pass_again == True:
                 feed_forward_symbol_table.pass_again = False
                 ast_root = _solver(self.arg_annotation).visit(ast_root)
+
+        ValueBuilder.verbose_symbol_table()
 
         return ast_root

@@ -177,7 +177,7 @@ def backend(backend_name: str):
             class _Callable_Func(Function):
                 @staticmethod
                 def forward(ctx, *inputs) -> torch.Tensor:
-                    ctx.save_for_backward(*inputs)
+                    # ctx.save_for_backward(*inputs)
                     ctx.arg_count = len(inputs)
                     _inputs = [val.detach().numpy() for val in inputs]
 
@@ -189,7 +189,10 @@ def backend(backend_name: str):
                     VKCTX.add_vm_module(vm_module)
                     # this part to be replaced by dyn naming
                     _callable = VKCTX.modules.module["forward"]
-                    return torch.tensor(_callable(*_inputs), requires_grad=True)
+                    outputs = _callable(*_inputs)
+                    out_tensors = [torch.tensor(grad_output) for grad_output in outputs]
+                    ctx.save_for_backward(*out_tensors[1:])
+                    return out_tensors[0].requires_grad_(True)
 
                 @staticmethod
                 def backward(ctx, grad_output):

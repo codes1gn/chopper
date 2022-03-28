@@ -48,37 +48,127 @@ class OpBuilder(object):
 
 class ValueBuilder(object):
     @classmethod
-    def get_type(cls, value_name: str, expect_exist: bool = False) -> Optional[astnodes.Type]:
-        _type = feed_forward_symbol_table.lookup(value_name, "type")
-        if not expect_exist:
-            if _type is None:
-                # by default, run the passes again if this value is not created
-                feed_forward_symbol_table.pass_again = True
-        else:
-            if _type is None:
-                assert 0, "value {} not created".format(value_name)
+    def get_saved_activations(cls, mode: str = "value+type"):
+        if mode == "value+type":
+            return autodiff_saved_activation_table.get_value_with_type_list()
+        elif mode == "type":
+            return autodiff_saved_activation_table.get_type_list()
 
+    @classmethod
+    def get_func_args_autodiff(cls, mode: str = "value+type"):
+        if mode == "value+type":
+            return autodiff_func_arguments_table.get_value_with_type_list()
+        elif mode == "type":
+            return autodiff_func_arguments_table.get_type_list()
+
+    @classmethod
+    def get_func_rets_autodiff(cls, mode: str = "value+type"):
+        if mode == "value+type":
+            return autodiff_func_returns_table.get_value_with_type_list()
+        elif mode == "type":
+            return autodiff_func_returns_table.get_type_list()
+
+    @classmethod
+    def get_type_or_retry(cls, value_name: str, mode: str = "forward") -> Optional[astnodes.Type]:
+        if "forward" in mode:
+            _type = feed_forward_symbol_table.lookup(value_name, "type")
+        if "backward" in mode:
+            _type = autodiff_symbol_table.lookup(value_name, "type")
+        if "savedact" in mode:
+            _type = autodiff_saved_activation_table.lookup(value_name + "-act", "type")
+        if "funcarg" in mode:
+            _type = autodiff_func_arguments_table.lookup(value_name, "type")
+        if "funcret" in mode:
+            _type = autodiff_func_returns_table.lookup(value_name, "type")
+        if _type is None:
+            # by default, run the passes again if this value is not created
+            feed_forward_symbol_table.pass_again = True
         return _type
 
     @classmethod
-    def get_value(cls, value_name: str) -> Optional[astnodes.Type]:
-        _value = feed_forward_symbol_table.lookup(value_name, "value")
-        if _value is None:
-            assert 0, "value {} not created".format(value_name)
-
-        return _value
+    def get_type(cls, value_name: str, mode: str = "forward") -> Optional[astnodes.Type]:
+        if "forward" in mode:
+            _type = feed_forward_symbol_table.lookup(value_name, "type")
+        if "backward" in mode:
+            _type = autodiff_symbol_table.lookup(value_name, "type")
+        if "savedact" in mode:
+            _type = autodiff_saved_activation_table.lookup(value_name + "-act", "type")
+        if "funcarg" in mode:
+            _type = autodiff_func_arguments_table.lookup(value_name, "type")
+        if "funcret" in mode:
+            _type = autodiff_func_returns_table.lookup(value_name, "type")
+        assert _type is not None, "value {} not created".format(value_name)
+        return _type
 
     @classmethod
+    def get_value_with_type(cls, value_name: str, mode: str = "forward") -> Optional[astnodes.Type]:
+        if "forward" in mode:
+            _value = feed_forward_symbol_table.lookup(value_name, "value")
+            _type = feed_forward_symbol_table.lookup(value_name, "type")
+        if "backward" in mode:
+            _value = autodiff_symbol_table.lookup(value_name, "value")
+            _type = autodiff_symbol_table.lookup(value_name, "type")
+        if "savedact" in mode:
+            _value = autodiff_saved_activation_table.lookup(value_name + "-act", "value")
+            _type = autodiff_saved_activation_table.lookup(value_name + "-act", "type")
+        if "funcarg" in mode:
+            _value = autodiff_func_arguments_table.lookup(value_name, "value")
+            _type = autodiff_func_arguments_table.lookup(value_name, "type")
+        if "funcret" in mode:
+            _value = autodiff_func_returns_table.lookup(value_name, "value")
+            _type = autodiff_func_returns_table.lookup(value_name, "type")
+        assert _value is not None and _type is not None
+        return NamedArgument(name=_value, type=_type)
+
+    @classmethod
+    def get_value(cls, value_name: str, mode: str = "forward") -> Optional[astnodes.Type]:
+        if "forward" in mode:
+            _value = feed_forward_symbol_table.lookup(value_name, "value")
+        if "backward" in mode:
+            _value = autodiff_symbol_table.lookup(value_name, "value")
+        if "savedact" in mode:
+            _value = autodiff_saved_activation_table.lookup(value_name + "-act", "value")
+        if "funcarg" in mode:
+            _value = autodiff_func_arguments_table.lookup(value_name, "value")
+        if "funcret" in mode:
+            _value = autodiff_func_returns_table.lookup(value_name, "value")
+        assert _value is not None
+        return _value
+
+    # forward | backward | savedact | funcarg | funcret
+    @classmethod
     def create(cls, value_name: str, value_type: astnodes.Type, mode: str = "forward+backward"):
-        if feed_forward_symbol_table.lookup(value_name, "type"):
-            assert 0, "error: redefine of value {} with oldtype = {}, newtype = {}".format(
-                value_name, feed_forward_symbol_table.lookup(value_name, "type"), value_type
-            )
-        if mode == "forward+backward" or mode == "forward-only":
+        if "forward" in mode:
+            if feed_forward_symbol_table.lookup(value_name, "type"):
+                assert 0, "error: redefine of value {} with newtype = {}".format(value_name, value_type)
             feed_forward_symbol_table.insert(value_name, value_type)
-        if mode == "forward+backward" or mode == "backward-only":
+        if "backward" in mode:
+            print(value_name)
+            if autodiff_symbol_table.lookup(value_name, "type"):
+                assert 0, "error: redefine of value {} with, newtype = {}".format(value_name, value_type)
             autodiff_symbol_table.insert(value_name, value_type)
+        if "savedact" in mode:
+            if autodiff_saved_activation_table.lookup(value_name + "-act", "type"):
+                print("warning: redefine of value {} with, newtype = {}".format(value_name, value_type))
+                return
+            autodiff_saved_activation_table.insert(value_name + "-act", value_type)
+        if "funcarg" in mode:
+            if autodiff_func_arguments_table.lookup(value_name, "type"):
+                assert 0, "error: redefine of value {} with, newtype = {}".format(value_name, value_type)
+            autodiff_func_arguments_table.insert(value_name, value_type)
+        if "funcret" in mode:
+            if autodiff_func_returns_table.lookup(value_name, "type"):
+                assert 0, "error: redefine of value {} with, newtype = {}".format(value_name, value_type)
+            autodiff_func_returns_table.insert(value_name, value_type)
         return
+
+    @classmethod
+    def verbose_symbol_table(cls):
+        print(feed_forward_symbol_table)
+        print(autodiff_symbol_table)
+        print(autodiff_saved_activation_table)
+        print(autodiff_func_arguments_table)
+        print(autodiff_func_returns_table)
 
 
 class TypeBuilder(object):
