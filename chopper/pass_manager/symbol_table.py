@@ -149,6 +149,9 @@ class ASASymbolTable(object):
     def get_type_list(self) -> List[astnodes.NamedArgument]:
         return [self.type_table.get(key) for key in sorted(self.value_table)]
 
+    def get_value_list(self) -> List[astnodes.SsaId]:
+        return [self.value_table.get(key) for key in sorted(self.value_table)]
+
     # store ssaid and type
     def insert(self, query_name: str, query_type: astnodes.Type):
         self.type_table[query_name] = query_type
@@ -207,6 +210,9 @@ class AFASymbolTable(object):
     def get_type_list(self) -> List[astnodes.NamedArgument]:
         return [self.type_table.get(key) for key in sorted(self.value_table)]
 
+    def get_value_list(self) -> List[astnodes.SsaId]:
+        return [self.value_table.get(key) for key in sorted(self.value_table)]
+
     # store ssaid and type
     def insert(self, query_name: str, query_type: astnodes.Type):
         self.type_table[query_name] = query_type
@@ -264,6 +270,9 @@ class AFRSymbolTable(object):
 
     def get_type_list(self) -> List[astnodes.NamedArgument]:
         return [self.type_table.get(key) for key in sorted(self.value_table)]
+
+    def get_value_list(self) -> List[astnodes.SsaId]:
+        return [self.value_table.get(key) for key in sorted(self.value_table)]
 
     # store ssaid and type
     def insert(self, query_name: str, query_type: astnodes.Type):

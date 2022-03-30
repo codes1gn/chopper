@@ -20,14 +20,16 @@ def do_test(shape):
             ]
         )
         def forward(self, a, b):
-            c = a + b
-            d = a + c
-            return d
+            c = a - b
+            d = a + b
+            e = c * d
+            return e
 
         def ref_forward(self, a, b):
-            c = a + b
-            d = a + c
-            return d
+            c = a - b
+            d = a + b
+            e = c * d
+            return e
 
     lhs_input_ref = torch.empty(shape, dtype=torch.float32).uniform_().clone().detach().requires_grad_(True)
     rhs_input_ref = torch.empty(shape, dtype=torch.float32).uniform_().clone().detach().requires_grad_(True)

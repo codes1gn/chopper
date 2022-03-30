@@ -81,6 +81,7 @@ class StatementConversionPass(PassBase):
         super().__init__()
         self.solvers = []
         self.solvers.append(StmtNodeMappingTransformer)
+        self.solvers.append(AutodiffMergeReplicas)
         self.solvers.append(StmtConversionReadyCheckVisitor)
         self.solvers.append(StmtFixDependencyTransformer)
 
