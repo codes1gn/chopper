@@ -198,7 +198,7 @@ def backend(backend_name: str):
                 def backward(ctx, grad_output):
                     _inputs_activation = ctx.saved_tensors
                     _inputs_activation_to_numpy = [_.contiguous().detach().numpy() for _ in _inputs_activation]
-                    print(ctx.arg_count)
+                    # print(ctx.arg_count)
                     # TODO consider grad or list of grads
                     _grad = grad_output.contiguous().detach().numpy()
 

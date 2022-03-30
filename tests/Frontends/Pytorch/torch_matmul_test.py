@@ -1,5 +1,6 @@
 # RUN: python %s 2>&1 | FileCheck %s -dump-input=fail
 
+
 import torch
 import numpy as np
 
@@ -59,6 +60,7 @@ do_test((3, 3), (3, 3))
 # CHECK: BP LHS TEST RESULT = True
 # CHECK: BP RHS TEST RESULT = True
 do_test((7, 5), (5, 2))
+do_test((32, 784), (784, 50))
 # CHECK: FF TEST RESULT = True
 # CHECK: BP LHS TEST RESULT = True
 # CHECK: BP RHS TEST RESULT = True
