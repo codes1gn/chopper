@@ -12,9 +12,12 @@ class PastToMlirPassManager(PassManagerBase):
     Attributions:
         None.
     """
+
+    def __init__(self):
+        super().__init__()
+
     def register_passes(self):
-        """Register passes via add_pass func in PassManagerBase.
-        """
+        """Register passes via add_pass func in PassManagerBase."""
         # this pass is used for develop template, deprecated
         # self.add_pass(IdenticalPastPass)
         self.add_pass(StatementConversionPass)

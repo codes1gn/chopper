@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 from torch.autograd import Variable
+import time
 
 import numpy as np
 
@@ -20,8 +21,10 @@ batch_size = 32
 
 train_dataset = datasets.MNIST("./data", train=True, download=True, transform=transforms.ToTensor())
 validation_dataset = datasets.MNIST("./data", train=False, transform=transforms.ToTensor())
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-validation_loader = torch.utils.data.DataLoader(dataset=validation_dataset, batch_size=batch_size, shuffle=False)
+train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+validation_loader = torch.utils.data.DataLoader(
+    dataset=validation_dataset, batch_size=batch_size, shuffle=False, drop_last=True
+)
 
 """
     @backend("IREE")
@@ -55,7 +58,8 @@ class MLP_Layer1(nn.Module):
     )
     def forward(self, x, x1):
         y = torch.matmul(x, x1)
-        return y
+        y1 = torch.tanh(y)
+        return y1
 
 
 class MLP_Layer2(nn.Module):
@@ -77,7 +81,8 @@ class MLP_Layer2(nn.Module):
     )
     def forward(self, x, x1):
         y = torch.matmul(x, x1)
-        return y
+        y1 = torch.tanh(y)
+        return y1
 
 
 class MLP_Layer3(nn.Module):
@@ -99,7 +104,8 @@ class MLP_Layer3(nn.Module):
     )
     def forward(self, x, x1):
         y = torch.matmul(x, x1)
-        return y
+        y1 = torch.tanh(y)
+        return y1
 
 
 class Net(nn.Module):
@@ -130,10 +136,11 @@ criterion = nn.CrossEntropyLoss()
 print(model)
 
 
-def train(epoch, log_interval=200):
+def train(epoch, log_interval=20):
     # Set model to training mode
     model.train()
 
+    timer = time.time()
     # Loop over each batch from the training set
     for batch_idx, (data, target) in enumerate(train_loader):
         # Copy data to GPU if needed
@@ -157,12 +164,17 @@ def train(epoch, log_interval=200):
                     loss.data.item(),
                 )
             )
+    cur_time = time.time()
+    cur_duration = cur_time - timer
+    timer = cur_time
+    print("Time Cost = {} sec".format(cur_duration))
 
 
 def validate(loss_vector, accuracy_vector):
     model.eval()
     val_loss, correct = 0, 0
     for data, target in validation_loader:
+        data = data.view(-1, 28 * 28)
         data = data.to(device)
         target = target.to(device)
         output = model(data)

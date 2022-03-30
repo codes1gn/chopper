@@ -34,6 +34,17 @@ class UnitTensorType(TensorType):
 
 
 @dataclass
+class ModuleName(Node):
+    value: str
+
+    def dump(self, indent: int = 0):
+        return "%s" % self.value
+
+    def __str__(self):
+        return self.dump()
+
+
+@dataclass
 class ATIR_ConstOp(DialectOp):
     """AST node for an operation with an optional value."""
 

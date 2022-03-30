@@ -184,4 +184,4 @@ class TorchJitCompiler:
         pass_manager.register_passes()
         pass_manager.run(pyast)
 
-        return pyast.mast_node, autodiff_symbol_table.get_autodiff_graph()
+        return pyast.mast_node, pyast.mast_node_autodiff

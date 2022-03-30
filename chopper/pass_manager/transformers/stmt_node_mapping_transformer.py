@@ -18,6 +18,7 @@ from mlir.astnodes import (
 from mlir.dialects.standard import ReturnOperation, ConstantOperation
 from chopper.scaffold.mlir_dialects.dialect_tcf import TCF_AddOp, TCF_ExpOp
 from chopper.scaffold.mlir_dialects.dialect_atir import (
+    ModuleName,
     ATIR_ConstOp,
     ATIR_IdentityOp,
     ATIR_NegateOp,
@@ -111,9 +112,15 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         super().generic_visit(node)
         _block = astnodes.Block(label=None, body=[None])
         _region = astnodes.Region(body=[_block])
-        _module = astnodes.Module(name=None, attributes=None, region=_region, location=None)
+        _module = astnodes.Module(name=astnodes.SymbolRefId(value=unique_module_name.get_forward()), attributes=None, region=_region, location=None)
         _mlirfile = astnodes.MLIRFile(definitions=[], modules=[_module])
+
+        _block_bp = astnodes.Block(label=None, body=[None])
+        _region_bp = astnodes.Region(body=[_block_bp])
+        _module_bp = astnodes.Module(name=astnodes.SymbolRefId(value=unique_module_name.get_backward()), attributes=None, region=_region_bp, location=None)
+        _mlirfile_bp = astnodes.MLIRFile(definitions=[], modules=[_module_bp])
         setattr(node, "mast_node", _mlirfile)
+        setattr(node, "mast_node_autodiff", _mlirfile_bp)
 
         return node
 

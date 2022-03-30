@@ -92,10 +92,10 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
 
         # append return op and its deps at the bottom locs
         _autodiff_root.op.region.body[0].body += node.mast_node_autodiff
-        print(_autodiff_root.dump())
         # assert 0
         autodiff_symbol_table.reset_autodiff_graph()
         autodiff_symbol_table.set_autodiff_graph(_autodiff_root)
+        setattr(node, "autodiff_graph", _autodiff_root)
 
         return node
 
@@ -121,6 +121,11 @@ class StmtFixDependencyTransformer(NodeTransformerBase):
             for _block in _module.region.body:
                 for index in range(len(_block.body)):
                     _block.body[index] = node.body[index].mast_node
+
+        for _module in node.mast_node_autodiff.modules:
+            for _block in _module.region.body:
+                for index in range(len(_block.body)):
+                    _block.body[index] = node.body[index].autodiff_graph
 
         # handle autodiff mastnodes, since its bodies are FunctionDef, they all
         # set with mast_node_autodiff

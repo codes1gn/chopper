@@ -14,13 +14,14 @@ import chopper.iree.runtime as ireert
 from .torch_jit_compiler import *
 from chopper.scaffold.utils import *
 from chopper.pass_manager.symbol_table import feed_forward_symbol_table
+import time
 
 __all__ = [
     "annotate_arguments",
     "backend",
 ]
 
-# VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
+VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
 
 # todo(albert) refactoring
 # this part of code snippets are borrows from torch-mlir to ensure the util
@@ -63,6 +64,14 @@ def backend(backend_name: str):
         print("------ PYTHON SRC -------")
         print(tjcompiler.dump_python(ast_source))
 
+        uid = uuid.uuid4().hex
+        TMP_FILE_ATIR = "/tmp/atir." + uid
+        TMP_FILE_ATIR_AD = "/tmp/atir_ad." + uid
+        TMP_FILE_TOSA = "/tmp/tosa." + uid
+        TMP_FILE_TOSA_AD = "/tmp/tosa_ad." + uid
+        unique_module_name.set_forward("forward_" + uid)
+        unique_module_name.set_backward("backward_" + uid)
+
         # reset symbol table
         # TODO avoid this action here, make it lazy_load and add scope support,
         # bind the lifetime with the whole compiler
@@ -77,11 +86,6 @@ def backend(backend_name: str):
         print(textual_atir_autodiff)
 
         # STAGE 2 :: mlir atir dialects => TOSA
-        uid = uuid.uuid4().hex
-        TMP_FILE_ATIR = "/tmp/atir." + uid
-        TMP_FILE_ATIR_AD = "/tmp/atir_ad." + uid
-        TMP_FILE_TOSA = "/tmp/tosa." + uid
-        TMP_FILE_TOSA_AD = "/tmp/tosa_ad." + uid
 
         # write atir to tmp file
         atir_file = open(TMP_FILE_ATIR, "w")
@@ -157,6 +161,10 @@ def backend(backend_name: str):
         subprocess.run(["rm", TMP_FILE_TOSA_AD])
         # anchor
         # assert 0
+        VKCTX.add_vm_module(vm_module)
+        VKCTX.add_vm_module(vm_module_ad)
+        _forward_callable = VKCTX.modules[unique_module_name.get_forward()]["forward"]
+        _backward_callable = VKCTX.modules[unique_module_name.get_backward()]["bpfunction"]
 
         # TODO mock with arg0 as self, anyway this are not used
         # result = _callable(arg0, arg0, arg1)
@@ -185,11 +193,11 @@ def backend(backend_name: str):
                     # some entity of the chopper instance to manage it, but has to avoid
                     # duplicate naming of function entries.
                     # shall support uid or hashing for mangling functions
-                    VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
-                    VKCTX.add_vm_module(vm_module)
+                    # VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
+                    # VKCTX.add_vm_module(vm_module)
                     # this part to be replaced by dyn naming
-                    _callable = VKCTX.modules.module["forward"]
-                    outputs = _callable(*_inputs)
+                    # _callable = VKCTX.modules.module["forward"]
+                    outputs = _forward_callable(*_inputs)
                     out_tensors = [torch.tensor(grad_output) for grad_output in outputs]
                     ctx.save_for_backward(*out_tensors[1:])
                     return out_tensors[0].requires_grad_(True)
@@ -205,17 +213,7 @@ def backend(backend_name: str):
                     # TODO considering change the lifetime of CTX into higher level and let
                     # some entity of the chopper instance to manage it, but has to avoid
                     # duplicate naming of function entries.
-                    # shall support uid or hashing for mangling functions
-                    VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
-                    VKCTX.add_vm_module(vm_module_ad)
-                    # this part to be replaced by dyn naming
-                    _callable = VKCTX.modules.module["bpfunction"]
-
-                    # _fake_grad = np.array([[1.0, 2.0, 3.0], [1.0, 2.0, 3.0]], np.float32)
-                    # print(type(_fake_grad))
-                    # print(type(_grad))
-                    # outputs = _callable(_fake_grad)
-                    outputs = _callable(_grad, *_inputs_activation_to_numpy)
+                    outputs = _backward_callable(_grad, *_inputs_activation_to_numpy)
                     if ctx.arg_count == 1:
                         return torch.tensor(outputs)
                     else:
