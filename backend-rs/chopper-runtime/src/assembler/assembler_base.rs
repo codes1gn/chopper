@@ -12,6 +12,7 @@ pub enum Token {
     // TODO maybe support Variable { symbol: String },
     I32Literal { value: i32 },
     F32Literal { value: f32 },
+    Tensor { raw_data: Vec<f32>, shape: Vec<i32> },
     DType { element_type: ElementType },
 }
 
