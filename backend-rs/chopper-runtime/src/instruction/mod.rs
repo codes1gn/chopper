@@ -19,6 +19,7 @@ pub enum OpCode {
     SUBF32, // 9
     MULF32, // 10
     DIVF32, // 11
+    CONSTTENSOR, // 12
 
     // ILLEGAL op always id at last index
     ILLEGAL, // rest
@@ -71,6 +72,7 @@ impl From<CompleteStr<'_>> for OpCode {
             CompleteStr("crt.floordiv.i32") => OpCode::FLOORDIVI32,
             CompleteStr("crt.literal.const.i32") => OpCode::CONSTI32,
             CompleteStr("crt.literal.const.f32") => OpCode::CONSTF32,
+            CompleteStr("crt.literal.const.tensor") => OpCode::CONSTTENSOR,
             CompleteStr("crt.add.f32") => OpCode::ADDF32,
             CompleteStr("crt.sub.f32") => OpCode::SUBF32,
             CompleteStr("crt.mul.f32") => OpCode::MULF32,
@@ -158,6 +160,9 @@ impl From<u8> for OpCode {
             11 => {
                 return OpCode::DIVF32;
             }
+            12 => {
+                return OpCode::CONSTTENSOR;
+            }
             _ => {
                 return OpCode::ILLEGAL;
             }
@@ -206,6 +211,9 @@ mod tests {
 
         let opcode = OpCode::CONSTF32;
         assert_eq!(opcode, OpCode::CONSTF32);
+
+        let opcode = OpCode::CONSTTENSOR;
+        assert_eq!(opcode, OpCode::CONSTTENSOR);
     }
 
     #[test]
@@ -221,5 +229,9 @@ mod tests {
         let opcode = OpCode::CONSTI32;
         let inst = Instruction::new(opcode);
         assert_eq!(inst.opcode, OpCode::CONSTI32);
+
+        let opcode = OpCode::CONSTTENSOR;
+        let inst = Instruction::new(opcode);
+        assert_eq!(inst.opcode, OpCode::CONSTTENSOR);
     }
 }
