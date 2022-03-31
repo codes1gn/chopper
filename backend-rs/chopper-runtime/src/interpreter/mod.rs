@@ -519,19 +519,79 @@ mod tests {
         // TODO package this assert macro into utils, hide rmax_all setting from hardcode
         assert_float_eq!(*ipt.vm.get_fdata(5), vec![3.2], rmax_all <= 0.00001);
     }
+
     #[test]
-    // TODO fix integer end2end pipeline
-    fn test_mock_bytecode_load_tensor() {
+    fn test_mock_bytecode_tensor_add() {
         let ist = DeviceInstance::new();
         let mut ipt = Interpreter::new(&ist);
         // ok
-        let status = ipt.mock_operation("%0 = crt.literal.const.f32! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n");
+        let status = ipt.mock_operation("%0 = crt.literal.const.tensor! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n");
+        let status = ipt.mock_operation("%1 = crt.literal.const.tensor! dense<[2.2 3.3 3.3 1.1 3.3 2.2], shape=[2 3]>\n");
         assert_eq!(status.is_ok(), true);
         let status_code = status.unwrap();
         assert_eq!(status_code, 0);
 
         // inspect data valid
-        // assert_float_eq!(*ipt.vm.get_tensor_data(0).raw_data, vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6], rmax_all <= 0.00001);
-        // assert_float_eq!(*ipt.vm.get_tensor_data(0).shape, vec![2, 3], rmax_all <= 0.00001);
+        assert_float_eq!(*ipt.vm.get_fdata(0), vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6], rmax_all <= 0.00001);
+        assert_eq!(*ipt.vm.get_fshape(0), vec![2, 3]);
+        assert_float_eq!(*ipt.vm.get_fdata(1), vec![2.2, 3.3, 3.3, 1.1, 3.3, 2.2], rmax_all <= 0.00001);
+        assert_eq!(*ipt.vm.get_fshape(1), vec![2, 3]);
+
+        // add
+        let status = ipt.mock_operation("%4 = crt.add.f32! %0, %1 : f32\n");
+        assert_eq!(status.is_ok(), true);
+        let status_code = status.unwrap();
+        assert_eq!(status_code, 0);
+        assert_float_eq!(*ipt.vm.get_fdata(4), vec![3.3, 5.5, 6.6, 5.5, 8.8, 8.8], rmax_all <= 0.00001);
+    }
+
+    #[test]
+    fn test_mock_bytecode_tensor_sub() {
+        let ist = DeviceInstance::new();
+        let mut ipt = Interpreter::new(&ist);
+        // ok
+        let status = ipt.mock_operation("%9 = crt.literal.const.tensor! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n");
+        let status = ipt.mock_operation("%7 = crt.literal.const.tensor! dense<[2.2 3.3 3.3 1.1 3.3 2.2], shape=[2 3]>\n");
+        assert_eq!(status.is_ok(), true);
+        let status_code = status.unwrap();
+        assert_eq!(status_code, 0);
+
+        // inspect data valid
+        assert_float_eq!(*ipt.vm.get_fdata(9), vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6], rmax_all <= 0.00001);
+        assert_eq!(*ipt.vm.get_fshape(9), vec![2, 3]);
+        assert_float_eq!(*ipt.vm.get_fdata(7), vec![2.2, 3.3, 3.3, 1.1, 3.3, 2.2], rmax_all <= 0.00001);
+        assert_eq!(*ipt.vm.get_fshape(7), vec![2, 3]);
+
+        // sub
+        let status = ipt.mock_operation("%5 = crt.sub.f32! %7, %9 : f32\n");
+        assert_eq!(status.is_ok(), true);
+        let status_code = status.unwrap();
+        assert_eq!(status_code, 0);
+        assert_float_eq!(*ipt.vm.get_fdata(5), vec![1.1, 1.1, 0.0, -3.3, -2.2, -4.4], rmax_all <= 0.00001);
+    }
+
+    #[test]
+    fn test_mock_bytecode_tensor_matmul() {
+        let ist = DeviceInstance::new();
+        let mut ipt = Interpreter::new(&ist);
+        // ok
+        let status = ipt.mock_operation("%9 = crt.literal.const.tensor! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n");
+        let status = ipt.mock_operation("%7 = crt.literal.const.tensor! dense<[2.2 3.3 3.3 1.1 3.3 2.2], shape=[2 3]>\n");
+        assert_eq!(status.is_ok(), true);
+        let status_code = status.unwrap();
+        assert_eq!(status_code, 0);
+
+        // inspect data valid
+        assert_float_eq!(*ipt.vm.get_fdata(9), vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6], rmax_all <= 0.00001);
+        assert_eq!(*ipt.vm.get_fshape(9), vec![2, 3]);
+        assert_float_eq!(*ipt.vm.get_fdata(7), vec![2.2, 3.3, 3.3, 1.1, 3.3, 2.2], rmax_all <= 0.00001);
+        assert_eq!(*ipt.vm.get_fshape(7), vec![2, 3]);
+
+        // matmul, temparilly faked with add
+        let status = ipt.mock_operation("%5 = crt.matmul.f32! %7, %9 : f32\n");
+        assert_eq!(status.is_ok(), true);
+        let status_code = status.unwrap();
+        assert_eq!(status_code, 0);
+        assert_float_eq!(*ipt.vm.get_fdata(5), vec![3.3, 5.5, 6.6, 5.5, 8.8, 8.8], rmax_all <= 0.00001);
     }
 }

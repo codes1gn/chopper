@@ -20,6 +20,7 @@ pub enum OpCode {
     MULF32, // 10
     DIVF32, // 11
     CONSTTENSOR, // 12
+    MATMULF32, // 13
 
     // ILLEGAL op always id at last index
     ILLEGAL, // rest
@@ -34,7 +35,8 @@ impl OpCode {
             }
 
             // f32 types
-            OpCode::ADDF32 | OpCode::SUBF32 | OpCode::MULF32 | OpCode::DIVF32 => {
+            // TODO(tianyu), this file specify the kernel code file name
+            OpCode::ADDF32 | OpCode::SUBF32 | OpCode::MULF32 | OpCode::DIVF32 | OpCode::MATMULF32 => {
                 String::from("binary_arithmetic_f32")
             }
 
@@ -56,6 +58,9 @@ impl OpCode {
             // floordiv
             OpCode::FLOORDIVI32 | OpCode::DIVF32 => 3_u32,
 
+            // TODO(tianyu): change matmul opcode into add opcode to fake the compute
+            OpCode::MATMULF32 => 0_u32,
+
             _ => panic!("unsupported opcode for specilising kernels"),
         }
     }
@@ -76,6 +81,7 @@ impl From<CompleteStr<'_>> for OpCode {
             CompleteStr("crt.add.f32") => OpCode::ADDF32,
             CompleteStr("crt.sub.f32") => OpCode::SUBF32,
             CompleteStr("crt.mul.f32") => OpCode::MULF32,
+            CompleteStr("crt.matmul.f32") => OpCode::MATMULF32,
             CompleteStr("crt.div.f32") => OpCode::DIVF32,
             _ => OpCode::ILLEGAL,
         }
@@ -163,6 +169,9 @@ impl From<u8> for OpCode {
             12 => {
                 return OpCode::CONSTTENSOR;
             }
+            13 => {
+                return OpCode::MATMULF32;
+            }
             _ => {
                 return OpCode::ILLEGAL;
             }
@@ -233,5 +242,9 @@ mod tests {
         let opcode = OpCode::CONSTTENSOR;
         let inst = Instruction::new(opcode);
         assert_eq!(inst.opcode, OpCode::CONSTTENSOR);
+
+        let opcode = OpCode::MATMULF32;
+        let inst = Instruction::new(opcode);
+        assert_eq!(inst.opcode, OpCode::MATMULF32);
     }
 }

@@ -2,6 +2,8 @@ extern crate backend_vulkan as concrete_backend;
 
 use std::collections::HashMap;
 
+use serde::{Serialize, Deserialize};
+
 use crate::base::errors::EmptyCmdBufferError;
 use crate::base::errors::RuntimeStatusError;
 use crate::base::*;
@@ -50,6 +52,39 @@ impl<'a> VM<'a> {
         let opcode = OpCode::from(self.command_buffer[self.program_counter]);
         self.program_counter += 1;
         Ok(opcode)
+    }
+
+    // TODO pack below functions into decode a tensor
+    fn decode_two_bytes_as_vec_size(&mut self) -> u16 {
+        let encoded = vec![self.command_buffer[self.program_counter], self.command_buffer[self.program_counter+1]];
+        println!("decoding data len {:?}", encoded);
+        self.program_counter += 2;
+        let decoded: u16 = bincode::deserialize(&encoded).unwrap();
+        decoded
+    }
+
+    fn decode_n_bytes_as_f32_vec(&mut self, lens: usize) -> Vec<f32> {
+        let mut encoded: Vec<u8> = vec![];
+        for _ in 0..lens {
+            encoded.push(self.command_buffer[self.program_counter]);
+            self.program_counter += 1;
+        }
+        println!("decoding data bytes {:?}", encoded);
+        let decoded: Vec<f32> = bincode::deserialize(&encoded).unwrap();
+        println!("{:?}", decoded);
+        decoded
+    }
+
+    fn decode_n_bytes_as_usize_vec(&mut self, lens: usize) -> Vec<usize> {
+        let mut encoded: Vec<u8> = vec![];
+        for _ in 0..lens {
+            encoded.push(self.command_buffer[self.program_counter]);
+            self.program_counter += 1;
+        }
+        println!("decoding shape bytes {:?}", encoded);
+        let decoded: Vec<usize> = bincode::deserialize(&encoded).unwrap();
+        println!("{:?}", decoded);
+        decoded
     }
 
     fn get_next_byte(&mut self) -> u8 {
@@ -224,6 +259,21 @@ impl<'a> VM<'a> {
                 self.data_buffer_f32.insert(operand_out, outs);
                 Ok(0)
             }
+            OpCode::MATMULF32 => {
+                let operand_out = self.get_next_byte() as usize;
+                let operand_lhs = self.get_next_byte() as usize;
+                let operand_rhs = self.get_next_byte() as usize;
+                let lhs_dataview = self.data_buffer_f32.remove(&operand_lhs).unwrap();
+                let rhs_dataview = self.data_buffer_f32.remove(&operand_rhs).unwrap();
+                // println!("{:?}", lhs_dataview);
+                // println!("{:?}", rhs_dataview);
+                let opcode = OpCode::MATMULF32;
+                let outs = self
+                    .session
+                    .benchmark_run::<f32>(opcode, lhs_dataview, rhs_dataview);
+                self.data_buffer_f32.insert(operand_out, outs);
+                Ok(0)
+            }
             OpCode::CONSTI32 => {
                 // TODO do some action, add data_buffer
                 // create lhs dataview
@@ -244,6 +294,12 @@ impl<'a> VM<'a> {
                 Ok(0)
             }
             OpCode::CONSTTENSOR => {
+                let operand_out = self.get_next_byte() as usize;
+                let data_size = self.decode_two_bytes_as_vec_size() as usize;
+                let raw_data_vec = self.decode_n_bytes_as_f32_vec(data_size);
+                let shape_size = self.decode_two_bytes_as_vec_size() as usize;
+                let raw_shape_vec = self.decode_n_bytes_as_usize_vec(shape_size);
+                self.push_tensor_buffer(operand_out, raw_data_vec, raw_shape_vec);
                 Ok(0)
             }
             _ => {
@@ -272,6 +328,7 @@ impl<'a> VM<'a> {
 
     // TODO to be moved into parametric arguments => push_data<T>(data: Vec<T>)
     pub fn push_data_buffer_i32(&mut self, index: usize, data: Vec<i32>) {
+        let data_shape = vec![data.len()];
         let mut data_buffer = DataView::<concrete_backend::Backend, i32>::new(
             &self.session.device_context.device,
             &self
@@ -281,6 +338,7 @@ impl<'a> VM<'a> {
                 .memory_types,
             data,
             ElementType::I32,
+            data_shape,
         );
         self.data_buffer_i32.insert(index, data_buffer);
     }
@@ -289,7 +347,12 @@ impl<'a> VM<'a> {
         &self.data_buffer_f32[&index].raw_data
     }
 
+    pub fn get_fshape(&self, index: usize) -> &Vec<usize> {
+        &self.data_buffer_f32[&index].shape
+    }
+
     pub fn push_data_buffer_f32(&mut self, index: usize, data: Vec<f32>) {
+        let data_shape = vec![data.len()];
         let mut data_buffer = DataView::<concrete_backend::Backend, f32>::new(
             &self.session.device_context.device,
             &self
@@ -299,6 +362,22 @@ impl<'a> VM<'a> {
                 .memory_types,
             data,
             ElementType::F32,
+            data_shape,
+        );
+        self.data_buffer_f32.insert(index, data_buffer);
+    }
+
+    pub fn push_tensor_buffer(&mut self, index: usize, data: Vec<f32>, shape: Vec<usize>) {
+        let mut data_buffer = DataView::<concrete_backend::Backend, f32>::new(
+            &self.session.device_context.device,
+            &self
+                .session
+                .device_instance_ref
+                .memory_property()
+                .memory_types,
+            data,
+            ElementType::F32,
+            shape,
         );
         self.data_buffer_f32.insert(index, data_buffer);
     }
@@ -418,7 +497,7 @@ mod tests {
         assert_eq!(0, 0);
     }
 
-    // TODO to support int for DataView
+
     #[test]
     fn test_vm_push_data_i32() {
         assert_eq!(0, 0);

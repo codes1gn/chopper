@@ -110,18 +110,22 @@ mod tests {
         se.init();
         let lhs = vec![1.0, 2.0, 3.0];
         let rhs = vec![11.0, 13.0, 17.0];
+        let lhs_shape = vec![lhs.len()];
+        let rhs_shape = vec![lhs.len()];
         // create lhs dataview
         let mut lhs_dataview = DataView::<concrete_backend::Backend, f32>::new(
             &se.device_context.device,
             &se.device_instance_ref.memory_property().memory_types,
             lhs,
             ElementType::F32,
+            lhs_shape,
         );
         let mut rhs_dataview = DataView::<concrete_backend::Backend, f32>::new(
             &se.device_context.device,
             &se.device_instance_ref.memory_property().memory_types,
             rhs,
             ElementType::F32,
+            rhs_shape,
         );
         let opcode = OpCode::ADDF32;
         let mut result_buffer = se.benchmark_run(opcode, lhs_dataview, rhs_dataview);
@@ -135,18 +139,22 @@ mod tests {
         se.init();
         let lhs = vec![1.0, 2.0, 3.0];
         let rhs = vec![11.0, 13.0, 17.0];
+        let lhs_shape = vec![lhs.len()];
+        let rhs_shape = vec![lhs.len()];
         // create lhs dataview
         let mut lhs_dataview = DataView::<concrete_backend::Backend, f32>::new(
             &se.device_context.device,
             &se.device_instance_ref.memory_property().memory_types,
             lhs,
             ElementType::F32,
+            lhs_shape,
         );
         let mut rhs_dataview = DataView::<concrete_backend::Backend, f32>::new(
             &se.device_context.device,
             &se.device_instance_ref.memory_property().memory_types,
             rhs,
             ElementType::F32,
+            rhs_shape,
         );
         let opcode = OpCode::SUBF32;
         let mut result_buffer = se.benchmark_run(opcode, lhs_dataview, rhs_dataview);

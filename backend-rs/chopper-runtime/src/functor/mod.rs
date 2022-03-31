@@ -86,6 +86,7 @@ impl Functor {
             &device_instance_ref.memory_property().memory_types,
             vec![Default::default(); lhs_buffer_functor.data_size],
             ElementType::F32,
+            lhs_buffer_functor.shape,
         );
 
         // TODO refactor into BufferView

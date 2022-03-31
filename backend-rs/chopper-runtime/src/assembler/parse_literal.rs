@@ -55,12 +55,12 @@ named!(pub parse_raw_float_literal<CompleteStr, f32>,
     )
 );
 
-named!(pub parse_integer_list<CompleteStr, Vec<i32>>,
+named!(pub parse_integer_list<CompleteStr, Vec<usize>>,
     do_parse!(
         _s: space0 >>
         tag!("[") >>
         data: many1!(
-            parse_raw_integer_literal
+            parse_usize_literal
         ) >>
         tag!("]") >>
         (
@@ -69,12 +69,12 @@ named!(pub parse_integer_list<CompleteStr, Vec<i32>>,
     )
 );
 
-named!(pub parse_raw_integer_literal<CompleteStr, i32>,
+named!(pub parse_usize_literal<CompleteStr, usize>,
     do_parse!(
         _s: space0 >>
         data: digit >>
         (
-            data.parse::<i32>().unwrap()
+            data.parse::<usize>().unwrap()
         )
     )
 );
@@ -141,15 +141,15 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_raw_integer_literal() {
+    fn test_parse_usize_literal() {
         // w.o. \n
-        let result = parse_raw_integer_literal(CompleteStr("23"));
+        let result = parse_usize_literal(CompleteStr("23"));
         assert_eq!(result.is_ok(), true);
         let _bytes_result = result.unwrap().1;
         assert_eq!(_bytes_result, 23);
 
         // w. \n
-        let result = parse_raw_integer_literal(CompleteStr(" 23\n"));
+        let result = parse_usize_literal(CompleteStr(" 23\n"));
         assert_eq!(result.is_ok(), true);
         let _bytes_result = result.unwrap().1;
         assert_eq!(_bytes_result, 23);

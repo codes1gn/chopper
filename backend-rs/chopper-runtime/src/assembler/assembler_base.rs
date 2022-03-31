@@ -14,7 +14,7 @@ pub enum Token {
     // TODO maybe support Variable { symbol: String },
     I32Literal { value: i32 },
     F32Literal { value: f32 },
-    Tensor { raw_data: Vec<f32>, shape: Vec<i32> },
+    Tensor { raw_data: Vec<f32>, shape: Vec<usize> },
     DType { element_type: ElementType },
 }
 
@@ -129,7 +129,10 @@ impl AsmInstruction {
                     let shape_len = shape_bytes.len() as u16;
                     let shape_len_bytes = shape_len.to_le_bytes();
                     // println!("{:?}", data_len);
-                    // println!("{:?}", shape_bytes);
+                    println!("encoding data len {:?}", data_len_bytes);
+                    println!("encoding data bytes {:?}", data_bytes);
+                    println!("encoding shape len {:?}", shape_len_bytes);
+                    println!("encoding shape bytes {:?}", shape_bytes);
                     // println!("{:?}", shape_len);
                     // assert_eq!(0, 1);
                     // println!("{:?}", data_len_bytes.len());

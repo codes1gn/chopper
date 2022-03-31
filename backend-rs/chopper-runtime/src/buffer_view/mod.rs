@@ -24,6 +24,7 @@ pub(crate) struct DataView<B: hal::Backend, T> {
     pub device_buffer: BufferView<B>,
     pub raw_data: Vec<T>,
     pub data_size: usize,
+    pub shape: Vec<usize>,
 }
 
 impl<B: hal::Backend, T> DataView<B, T> {
@@ -32,9 +33,13 @@ impl<B: hal::Backend, T> DataView<B, T> {
         memory_types: &[MemoryType],
         data: Vec<T>,
         dtype: ElementType,
+        shape: Vec<usize>,
     ) -> DataView<B, T> {
         // TODO tobe handled by constant parameter
         let dsize = data.len();
+        // TODO remove this assertion and make new constructor more adaptive
+        // assert_eq!(dsize, data_size);
+
         let mut host_buffer =
             BufferView::<B>::new(device, memory_types, BufferType::HOST, dsize as u64, dtype);
         let mut device_buffer = BufferView::<B>::new(
@@ -61,6 +66,7 @@ impl<B: hal::Backend, T> DataView<B, T> {
             device_buffer: device_buffer,
             raw_data: data,
             data_size: dsize,
+            shape: shape,
         };
     }
 

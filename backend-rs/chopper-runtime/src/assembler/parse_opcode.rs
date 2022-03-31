@@ -31,6 +31,8 @@ mod tests {
         assert_eq!(opcode, OpCode::SUBI32);
         let opcode = OpCode::from(CompleteStr("crt.mul.i32"));
         assert_eq!(opcode, OpCode::MULI32);
+        let opcode = OpCode::from(CompleteStr("crt.matmul.f32"));
+        assert_eq!(opcode, OpCode::MATMULF32);
     }
 
     #[test]
