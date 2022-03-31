@@ -34,6 +34,9 @@ use session::*;
 
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
+use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
+use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn, PyArray2};
+use pyo3::{pymodule, types::PyModule, PyResult, Python};
 
 #[pymodule]
 fn Runtime(py: Python, m: &PyModule) -> PyResult<()> {
@@ -65,6 +68,12 @@ fn Runtime(py: Python, m: &PyModule) -> PyResult<()> {
         assert_eq!(status_code, 0);
         // TODO package this assert macro into utils, hide rmax_all setting from hardcode
         31415926
+    }
+
+    #[pyfn(m)]
+    fn testing(operand: &PyArray2<f32>) -> Vec<f32> {
+        println!("{}", operand);
+        vec![1.1]
     }
 
     #[pyfn(m)]
