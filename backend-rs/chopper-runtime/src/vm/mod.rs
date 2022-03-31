@@ -243,6 +243,9 @@ impl<'a> VM<'a> {
                 self.push_data_buffer_f32(operand_out, vec![operand_in_f32]);
                 Ok(0)
             }
+            OpCode::CONSTTENSOR => {
+                Ok(0)
+            }
             _ => {
                 panic!("Not Implemented Error Execution Step Code");
             }

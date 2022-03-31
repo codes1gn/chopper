@@ -519,4 +519,19 @@ mod tests {
         // TODO package this assert macro into utils, hide rmax_all setting from hardcode
         assert_float_eq!(*ipt.vm.get_fdata(5), vec![3.2], rmax_all <= 0.00001);
     }
+    #[test]
+    // TODO fix integer end2end pipeline
+    fn test_mock_bytecode_load_tensor() {
+        let ist = DeviceInstance::new();
+        let mut ipt = Interpreter::new(&ist);
+        // ok
+        let status = ipt.mock_operation("%0 = crt.literal.const.f32! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n");
+        assert_eq!(status.is_ok(), true);
+        let status_code = status.unwrap();
+        assert_eq!(status_code, 0);
+
+        // inspect data valid
+        // assert_float_eq!(*ipt.vm.get_tensor_data(0).raw_data, vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6], rmax_all <= 0.00001);
+        // assert_float_eq!(*ipt.vm.get_tensor_data(0).shape, vec![2, 3], rmax_all <= 0.00001);
+    }
 }

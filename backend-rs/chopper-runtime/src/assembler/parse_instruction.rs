@@ -194,10 +194,10 @@ mod tests {
     #[test]
     fn test_instruction_tensor_literal() {
         // w. \n
-        let result = parse_instruction(CompleteStr("%0 = crt.literal.const.f32! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n"));
+        let result = parse_instruction(CompleteStr("%0 = crt.literal.const.tensor! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n"));
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
         let _bytes_result = result.unwrap().1.to_bytes();
-        assert_eq!(_bytes_result, vec![7, 0, 32, 0, 6, 0, 0, 0, 0, 0, 0, 0, 205, 204, 140, 63, 205, 204, 12, 64, 51, 51, 83, 64, 205, 204, 140, 64, 0, 0, 176, 64, 51, 51, 211, 64, 16, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0])
+        assert_eq!(_bytes_result, vec![12, 0, 32, 0, 6, 0, 0, 0, 0, 0, 0, 0, 205, 204, 140, 63, 205, 204, 12, 64, 51, 51, 83, 64, 205, 204, 140, 64, 0, 0, 176, 64, 51, 51, 211, 64, 16, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0])
     }
 }
