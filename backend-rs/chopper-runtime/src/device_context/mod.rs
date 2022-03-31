@@ -31,7 +31,7 @@ impl DeviceContext {
         let mut device_and_queue = di.device_and_queue();
         let mut descriptor_pool = unsafe {
             device_and_queue.device.create_descriptor_pool(
-                10, // TODO count of desc sets which below max_sets
+                100, // TODO count of desc sets which below max_sets
                 iter::once(pso::DescriptorRangeDesc {
                     ty: pso::DescriptorType::Buffer {
                         ty: pso::BufferDescriptorType::Storage { read_only: false },
