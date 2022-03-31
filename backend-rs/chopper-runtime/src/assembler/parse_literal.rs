@@ -9,7 +9,7 @@ use super::parse_type::*;
 named!(pub parse_numeric_literal<CompleteStr, Token>,
     do_parse!(
         token: alt!(
-            parse_float_literal | parse_integer_literal
+            parse_tensor_literal | parse_float_literal | parse_integer_literal
             // TODO, match float first then integer, parse_integer_literal | parse_float_literal
         ) >>
         ( token )

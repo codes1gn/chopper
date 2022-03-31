@@ -10,3 +10,4 @@ pub const I32STRIDE: buffer::Stride = std::mem::size_of::<i32>() as buffer::Stri
 
 // const attributes for unsigned integer data types
 pub const U8STRIDE: buffer::Stride = std::mem::size_of::<u8>() as buffer::Stride;
+

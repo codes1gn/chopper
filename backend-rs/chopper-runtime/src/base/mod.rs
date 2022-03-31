@@ -3,8 +3,9 @@ pub mod errors;
 pub mod kernel;
 
 use nom::types::CompleteStr;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum ElementType {
     I32,
     F32,

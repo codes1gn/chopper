@@ -1,11 +1,13 @@
 use nom::types::CompleteStr;
 use nom::*;
 
+use serde::{Serialize, Deserialize};
+
 use crate::base::*;
 use crate::instruction::OpCode;
 
 // enum type can accept struct-like value.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Token {
     BytecodeOpCode { code: OpCode },
     Variable { symbol: u8 },
@@ -65,6 +67,33 @@ impl AsmInstruction {
                         results.push(_value);
                     }
                 }
+                Token::Tensor { raw_data, shape } => {
+                    let data_bytes: Vec<u8> = bincode::serialize(&raw_data).unwrap();
+                    let shape_bytes: Vec<u8> = bincode::serialize(&shape).unwrap();
+                    let data_len = data_bytes.len() as u16;
+                    let data_len_bytes = data_len.to_le_bytes();
+                    let shape_len = shape_bytes.len() as u16;
+                    let shape_len_bytes = shape_len.to_le_bytes();
+                    // println!("{:?}", data_len);
+                    // println!("{:?}", shape_bytes);
+                    // println!("{:?}", shape_len);
+                    // assert_eq!(0, 1);
+                    // println!("{:?}", data_len_bytes.len());
+                    // assert_eq!(0, 1);
+                    for _data_len in data_len_bytes {
+                        results.push(_data_len);
+                    }
+                    for _data in data_bytes {
+                        results.push(_data)
+                    }
+                    for _shape_len in shape_len_bytes {
+                        results.push(_shape_len);
+                    }
+                    for _shape in shape_bytes {
+                        results.push(_shape)
+                    }
+
+                }
                 _ => {
                     panic!("register or literal/operand only");
                 }
@@ -92,6 +121,33 @@ impl AsmInstruction {
                         results.push(_value);
                     }
                 }
+                Token::Tensor { raw_data, shape } => {
+                    let data_bytes: Vec<u8> = bincode::serialize(&raw_data).unwrap();
+                    let shape_bytes: Vec<u8> = bincode::serialize(&shape).unwrap();
+                    let data_len = data_bytes.len() as u16;
+                    let data_len_bytes = data_len.to_le_bytes();
+                    let shape_len = shape_bytes.len() as u16;
+                    let shape_len_bytes = shape_len.to_le_bytes();
+                    // println!("{:?}", data_len);
+                    // println!("{:?}", shape_bytes);
+                    // println!("{:?}", shape_len);
+                    // assert_eq!(0, 1);
+                    // println!("{:?}", data_len_bytes.len());
+                    // assert_eq!(0, 1);
+                    for _data_len in data_len_bytes {
+                        results.push(_data_len);
+                    }
+                    for _data in data_bytes {
+                        results.push(_data)
+                    }
+                    for _shape_len in shape_len_bytes {
+                        results.push(_shape_len);
+                    }
+                    for _shape in shape_bytes {
+                        results.push(_shape)
+                    }
+
+                }
                 _ => {
                     panic!("register or literal/operand only");
                 }
@@ -116,6 +172,33 @@ impl AsmInstruction {
                     for _value in values {
                         results.push(_value);
                     }
+                }
+                Token::Tensor { raw_data, shape } => {
+                    let data_bytes: Vec<u8> = bincode::serialize(&raw_data).unwrap();
+                    let shape_bytes: Vec<u8> = bincode::serialize(&shape).unwrap();
+                    let data_len = data_bytes.len() as u16;
+                    let data_len_bytes = data_len.to_le_bytes();
+                    let shape_len = shape_bytes.len() as u16;
+                    let shape_len_bytes = shape_len.to_le_bytes();
+                    // println!("{:?}", data_len);
+                    // println!("{:?}", shape_bytes);
+                    // println!("{:?}", shape_len);
+                    // assert_eq!(0, 1);
+                    // println!("{:?}", data_len_bytes.len());
+                    // assert_eq!(0, 1);
+                    for _data_len in data_len_bytes {
+                        results.push(_data_len);
+                    }
+                    for _data in data_bytes {
+                        results.push(_data)
+                    }
+                    for _shape_len in shape_len_bytes {
+                        results.push(_shape_len);
+                    }
+                    for _shape in shape_bytes {
+                        results.push(_shape)
+                    }
+
                 }
                 _ => {
                     panic!("register or literal/operand only");

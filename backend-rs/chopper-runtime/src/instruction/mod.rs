@@ -1,6 +1,7 @@
 use nom::types::CompleteStr;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum OpCode {
     HALT, // 0
     LOAD, // 1
