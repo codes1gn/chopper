@@ -26,9 +26,9 @@ pub struct VM<'a> {
     // value -> device instance
     session: Session<'a>,
     // data_buffer_f32: Vec<DataView<concrete_backend::Backend, f32>>,
-    data_buffer_f32: HashMap<usize, DataView<concrete_backend::Backend, f32>>,
+    pub data_buffer_f32: HashMap<usize, DataView<concrete_backend::Backend, f32>>,
     // data_buffer_i32: Vec<DataView<concrete_backend::Backend, i32>>,
-    data_buffer_i32: HashMap<usize, DataView<concrete_backend::Backend, i32>>,
+    pub data_buffer_i32: HashMap<usize, DataView<concrete_backend::Backend, i32>>,
 }
 
 impl<'a> VM<'a> {

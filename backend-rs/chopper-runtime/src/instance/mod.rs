@@ -6,12 +6,24 @@ use std::{borrow::Cow, fs, iter, ptr, slice, str::FromStr, sync::Arc};
 use hal::prelude::*;
 use hal::{adapter::*, buffer, command, memory, pool, prelude::*, pso, query::Type};
 
+use pyo3::prelude::*;
+use pyo3::wrap_pyfunction;
+
 // TODO add id and versioning
 #[derive(Debug)]
+#[pyclass]
 pub struct DeviceInstance {
     instance: concrete_backend::Instance,
     memory_property: MemoryProperties,
     queue_family: concrete_backend::QueueFamily,
+}
+
+#[pymethods]
+impl DeviceInstance {
+    #[new]
+    pub fn py_new() -> PyResult<Self> {
+        Ok(DeviceInstance::new())
+    }
 }
 
 impl DeviceInstance {

@@ -17,7 +17,7 @@ use crate::vm::VM;
 #[derive(Debug)]
 pub struct Interpreter<'a> {
     history: Vec<String>,
-    vm: VM<'a>,
+    pub vm: VM<'a>,
 }
 
 impl<'a> Interpreter<'a> {
@@ -66,6 +66,11 @@ impl<'a> Interpreter<'a> {
     // interface wrapped for tests on interpreter
     pub fn mock_operation(&mut self, cmd_buffer: &str) -> Result<u8, RuntimeStatusError> {
         let status = self.consume_command(cmd_buffer);
+        status
+    }
+
+    pub fn run_bytecode(&mut self, cmd_buffer: String) -> Result<u8, RuntimeStatusError> {
+        let status = self.consume_command(cmd_buffer.as_str());
         status
     }
 

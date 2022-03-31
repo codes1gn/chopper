@@ -34,7 +34,7 @@ class CMakeBuild(build_ext):
         if not build_dir.endswith(os.path.sep):
             build_dir += os.path.sep
 
-        new_dir = build_dir +"chopper/iree"
+        new_dir = build_dir + "chopper/iree"
 
         mkdir_cmd_str = "mkdir -p " + new_dir
         subprocess.call(
@@ -42,7 +42,9 @@ class CMakeBuild(build_ext):
             shell=True,
         )
 
-        cp_cmd_str = "cp -r " + os.getcwd() + "/build/iree_build/compiler-api/python_package/iree/compiler" + " " + new_dir
+        cp_cmd_str = (
+            "cp -r " + os.getcwd() + "/build/iree_build/compiler-api/python_package/iree/compiler" + " " + new_dir
+        )
         subprocess.call(
             cp_cmd_str,
             shell=True,
@@ -53,7 +55,7 @@ class CMakeBuild(build_ext):
         if not build_dir.endswith(os.path.sep):
             build_dir += os.path.sep
 
-        new_dir = build_dir +"chopper/iree"
+        new_dir = build_dir + "chopper/iree"
 
         mkdir_cmd_str = "mkdir -p " + new_dir
         subprocess.call(
@@ -141,7 +143,7 @@ setup(
     python_requires=">=3.6.12",
     rust_extensions=[
         RustExtension(
-            "chopper.crt.rust",
+            "chopper.crt.Runtime",
             path="./backend-rs/chopper-runtime/Cargo.toml",
             binding=Binding.PyO3,
             debug=True,

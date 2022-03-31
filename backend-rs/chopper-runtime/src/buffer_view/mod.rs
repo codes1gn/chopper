@@ -11,15 +11,19 @@ use crate::device_context::*;
 
 use crate::base::*;
 
+// TODO workaround as pub rather than pub(crate) for demo purpose temperarilly,
+// consider replace with a functions to fetch data
 #[derive(Debug)]
-pub(crate) enum BufferType {
+pub enum BufferType {
     HOST,
     DEVICE,
 }
 
 // Buffer Functor of a collection of a BufferRef at differing memory hierachy
+// TODO workaround as pub rather than pub(crate) for demo purpose temperarilly,
+// consider replace with a functions to fetch data
 #[derive(Debug)]
-pub(crate) struct DataView<B: hal::Backend, T> {
+pub struct DataView<B: hal::Backend, T> {
     pub host_buffer: BufferView<B>,
     pub device_buffer: BufferView<B>,
     pub raw_data: Vec<T>,
@@ -86,8 +90,9 @@ impl<B: hal::Backend, T> DataView<B, T> {
 }
 
 // Buffer Functor that represent a collection of a buffer + memory object and its attributes
+// TODO same, pub(crate) => pub for now
 #[derive(Debug)]
-pub(crate) struct BufferView<B: hal::Backend> {
+pub struct BufferView<B: hal::Backend> {
     pub buffer_type: BufferType,
     pub buffer: B::Buffer,
     pub memory: B::Memory,
