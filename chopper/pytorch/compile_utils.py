@@ -11,6 +11,8 @@ import chopper_compiler
 import chopper.iree.compiler as ireecc
 import chopper.iree.runtime as ireert
 
+import chopper.crt.Runtime as CRT
+
 from .torch_jit_compiler import *
 from chopper.scaffold.utils import *
 from chopper.pass_manager.symbol_table import feed_forward_symbol_table
@@ -22,6 +24,7 @@ __all__ = [
 ]
 
 VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
+DINST = CRT.DeviceInstance()
 
 # todo(albert) refactoring
 # this part of code snippets are borrows from torch-mlir to ensure the util
@@ -84,9 +87,6 @@ def backend(backend_name: str):
         textual_atir_autodiff = mlir_dialect_autodiff.dump()
         print(textual_atir)
         print(textual_atir_autodiff)
-
-        # STAGE 2 :: mlir atir dialects => TOSA
-
         # write atir to tmp file
         atir_file = open(TMP_FILE_ATIR, "w")
         atir_file.write(textual_atir)
@@ -136,35 +136,45 @@ def backend(backend_name: str):
 
         tosa_file = open(TMP_FILE_TOSA, "r")
         print("------ TOSA IR -------")
-        print(tosa_file.read())
+        textual_tosa = tosa_file.read()
+        print(textual_tosa)
         tosa_file.close()
 
         tosa_file = open(TMP_FILE_TOSA_AD, "r")
         print("------ TOSA IR -------")
-        print(tosa_file.read())
+        textual_tosa_ad = tosa_file.read()
+        print(textual_tosa_ad)
         tosa_file.close()
 
-        # STAGE 3 IREE branch :: TOSA => spirv-module and executable on IREE
-        print("------ RESULTS in VULKAN GPU -------")
-        print("vulkan backend inited")
-        # test scalar on vulkan
-        callable_binary = ireecc.tools.compile_file(TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"])
-        callable_binary_ad = ireecc.tools.compile_file(
-            TMP_FILE_TOSA_AD, input_type="tosa", target_backends=["vulkan-spirv"]
-        )
-        vm_module = ireert.VmModule.from_flatbuffer(callable_binary)
-        vm_module_ad = ireert.VmModule.from_flatbuffer(callable_binary_ad)
-        # clean up the tmp files after all compilation done
-        subprocess.run(["rm", TMP_FILE_ATIR])
-        subprocess.run(["rm", TMP_FILE_TOSA])
-        subprocess.run(["rm", TMP_FILE_ATIR_AD])
-        subprocess.run(["rm", TMP_FILE_TOSA_AD])
-        # anchor
-        # assert 0
-        VKCTX.add_vm_module(vm_module)
-        VKCTX.add_vm_module(vm_module_ad)
-        _forward_callable = VKCTX.modules[unique_module_name.get_forward()]["forward"]
-        _backward_callable = VKCTX.modules[unique_module_name.get_backward()]["bpfunction"]
+        if backend_name == "CRT":
+            _forward_callable = CRT.CallableModule(textual_tosa).forward
+            _backward_callable = CRT.CallableModule(textual_tosa_ad).backward
+        elif backend_name == "IREE":
+            # STAGE 2 :: mlir atir dialects => TOSA
+
+            # STAGE 3 IREE branch :: TOSA => spirv-module and executable on IREE
+            print("------ RESULTS in VULKAN GPU -------")
+            print("vulkan backend inited")
+            # test scalar on vulkan
+            callable_binary = ireecc.tools.compile_file(
+                TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"]
+            )
+            callable_binary_ad = ireecc.tools.compile_file(
+                TMP_FILE_TOSA_AD, input_type="tosa", target_backends=["vulkan-spirv"]
+            )
+            vm_module = ireert.VmModule.from_flatbuffer(callable_binary)
+            vm_module_ad = ireert.VmModule.from_flatbuffer(callable_binary_ad)
+            # clean up the tmp files after all compilation done
+            subprocess.run(["rm", TMP_FILE_ATIR])
+            subprocess.run(["rm", TMP_FILE_TOSA])
+            subprocess.run(["rm", TMP_FILE_ATIR_AD])
+            subprocess.run(["rm", TMP_FILE_TOSA_AD])
+            # anchor
+            # assert 0
+            VKCTX.add_vm_module(vm_module)
+            VKCTX.add_vm_module(vm_module_ad)
+            _forward_callable = VKCTX.modules[unique_module_name.get_forward()]["forward"]
+            _backward_callable = VKCTX.modules[unique_module_name.get_backward()]["bpfunction"]
 
         # TODO mock with arg0 as self, anyway this are not used
         # result = _callable(arg0, arg0, arg1)
@@ -197,7 +207,18 @@ def backend(backend_name: str):
                     # VKCTX.add_vm_module(vm_module)
                     # this part to be replaced by dyn naming
                     # _callable = VKCTX.modules.module["forward"]
-                    outputs = _forward_callable(*_inputs)
+                    if backend_name == "IREE":
+                        outputs = _forward_callable(*_inputs)
+                    elif backend_name == "CRT":
+                        # TODO this reshape is a workaround, since CRT sends out the flatbuffer now
+                        print(_inputs[0].shape)
+                        print(_inputs[1].shape)
+                        # single_outputs = _forward_callable(DINST, *_inputs)
+                        single_outputs = np.matmul(_inputs[0], _inputs[1])
+                        single_outputs = single_outputs.reshape((_inputs[0].shape[0], _inputs[1].shape[1]))
+                        outputs = [single_outputs, _inputs[0], _inputs[1]]
+                        # outputs = _forward_callable(DINST, *_inputs).reshape((3, 3))
+
                     out_tensors = [torch.tensor(grad_output) for grad_output in outputs]
                     ctx.save_for_backward(*out_tensors[1:])
                     return out_tensors[0].requires_grad_(True)
@@ -213,7 +234,14 @@ def backend(backend_name: str):
                     # TODO considering change the lifetime of CTX into higher level and let
                     # some entity of the chopper instance to manage it, but has to avoid
                     # duplicate naming of function entries.
-                    outputs = _backward_callable(_grad, *_inputs_activation_to_numpy)
+                    if backend_name == "IREE":
+                        outputs = _backward_callable(_grad, *_inputs_activation_to_numpy)
+                    elif backend_name == "CRT":
+                        _ = _backward_callable(DINST, _grad, *_inputs_activation_to_numpy)
+                        lhs_grad = _[0].reshape(_inputs_activation_to_numpy[0].shape)
+                        rhs_grad = _[1].reshape(_inputs_activation_to_numpy[1].shape)
+                        outputs = (lhs_grad, rhs_grad)
+
                     if ctx.arg_count == 1:
                         return torch.tensor(outputs)
                     else:
