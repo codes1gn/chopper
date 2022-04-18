@@ -4,33 +4,38 @@
 
 </div>
 
-# Introduction: The Chopper - Composable Computing Frameworks targeting Large-scale Heterogeneous Computing
+# Chopper - Composable Computing Frameworks targeting Large-scale Heterogeneous Computing
 
 Chopper is a computing framework prototype that is built with composite modularized design to achieve decoupleness between modules and ensure rapid prototyping and evolution speed. It builds with more flexible ways that allows you register new breed of frontend/backend implementations and compare with each other. It also relies on MLIR to provide fruitful manifolds and toolchains that allows you play with the IR design of the compiler part, the architecture is shown below. The runtime is built with RUST for maximal confidence in both memory and thread safety, and hence leverage the human hassles and efforts for maintainness largely.
 
 # Getting Started
 
-## Step 1 - build and install requirements
+## Step 1 - build and install prerequisites
 Currently, chopper is tested on Ubuntu 18.04 & 16.04, it should still work on other distribution versions of Ubuntu system, but not tested and verified yet.
 
 Check if your develop environments fulfills:
 * Python >= 3.6.9
 * Cmake >= 3.13.4
 * Rust >= 1.42.1
+* Ninja >= 1.7.0
 
 Then you can go to the root directory and run
 ``` sh
 pip3 install -r requirements.txt
+sudo apt install cmake ninja-build clang lld
 ```
 to install the related preliminaries.
 
+If you want to enable the GPU card, check this website https://vulkan.lunarg.com/doc/sdk/1.2.198.1/linux/getting_started_ubuntu.html to install the Vulkan API and its related requirements.
 
-## Step 2 - build chopper with cmake
+Please make sure you have already installed a compatible version of driver before install the Vulkan SDK. Normally, you can find it at the GPU vendor's website, i.e., Nvidia's official websites.
+
+## Step 2 - build chopper
 It support the a simple `python-like` installation with setuptools. This will install the standalone python modules into your OS envs.
 
 To ensure that the entire project builds successfully, you need to make sure that the particular dependency version is installed correctly in advance, version requirements are available [here](https://llvm.org/docs/GettingStarted.html#requirements). Of course, you can also use clang & clang++(chosen and version is 11.1.0+) as the compiler instead of gcc/g++.
 
-For convenience, there is a script that automatically installs the LLVM nightly toolchain packages on the different Debian and Ubuntu versions (refer [here](https://apt.llvm.org/)). If you want to install a sepcific version of LLVM, for example, install version 11 as follow
+For convenience, there is a all-in-one script that automatically installs the LLVM nightly toolchain packages on the different Debian and Ubuntu versions (refer [here](https://apt.llvm.org/)). If you want to install a sepcific version of LLVM, for example, install version 11 as follow
 
 ```sh
 wget https://apt.llvm.org/llvm.sh
@@ -53,20 +58,17 @@ After cloning is complete, llvm-project, pybind11 and pymlir will appear in the 
 
 ```shell
 cd Chopper/
-bash script/build_and_install.sh
+bash script/build_all.sh
+bash script/install_all.sh
 ```
 
-After build successfully, please check contents as follow.
+After build successfully, you can check the correctness by start the test script.
+```shell
+cd Chopper/
+bash script/test_all.sh
+```
 
-- There executable binaries that included `chopper-opt`/`chopper-translate`/`chopper-compiler-runmlir`will be successfully generated in `Chopper/build/bin/` directory;
-
-- The static library named `chopper-compiler-runmlir-capi` will be successfully generated in `Chopper/build/lib/` directory;
-
-- The `mlir-doc` documentation that according to `.td` table declarations will be successfully generated in `Chopper/build/docs` directory.
-
-<!-- * use `scripts/build_python_pkg.sh` to build the python wheel distribution package. -->
-
-More detailly, build **LLVM + MLIR** and **Chopper** seperately as shown below.
+Alternatively, you can also build **LLVM + MLIR** and **Chopper** seperately as shown below.
 
 ### Build LLVM + MLIR
 
@@ -100,7 +102,7 @@ cmake -G Ninja \
 - Make sure to pass `-DLLVM_INSTALL_UTILS=ON` when building LLVM with CMake in order to install `FileCheck` to the chosen installation prefix.
   More easily, use `pip install filecheck && ln -s ${which filecheck} /usr/bin/FileCheck` to given the executable path of filecheck to cmake.
 
-### Build Chopper
+### Build Chopper Compiler
 
 The prerequisite for a successful Chopper build is to ensure the successful LLVM + MLIR build. This setup assumes that you have built LLVM and MLIR in `$BUILD_DIR` and installed them to `$PREFIX`. To build Chopper as follow.
 
@@ -116,7 +118,7 @@ To build the documentation from the TableGen description of the dialect operatio
 cmake --build . --target mlir-doc
 ```
 
-## Chopper Frontend
+### Build Chopper Frontend
 
 Chopper is a multi-frontend design with preferred support for `native python` and `numpy+scipy`, And strive to design the frontend as uniformly functional expression as possible. The **Frontend Technology Route** is shown below.
 
@@ -128,135 +130,44 @@ Chopper is a multi-frontend design with preferred support for `native python` an
 
 Let's try using `native python` firstly to implement front-end functionality, as follow.
 
-**STEP1**: Build and install python package
+Build and install python package
 
 ```sh
 cd Chopper/
-bash scripts/_build_python_package.sh
-bash scripts/_install_python_package.sh
+python3 setup.py install --record install_cache.txt
 ```
 
-**STEP2**: After install python package successfully, can run the following script to test frontend functionality.
+Now you should be able to run arbitrary python source
+
+### Build Chopper Backend
+
+In the seperated setting, you can clone and build the Chopper rust backend/runtime from source.
+
+First do the clone and build with cargo
 
 ```sh
-bash scripts/python_test.sh
+git clone git@git.enflame.cn:heng.shi/chopper-runtime.git
+cargo build
+```
+Then you can run the regression test of Chopper-runtime by
+```sh
+cargo test
 ```
 
-More detailly, For given a simple python native code:
-
-```python
-def constant3() -> float:
-    var1 = 1.0
-    return var1
+or run the runtime interpreter in interactive fashion by
+```sh
+cargo run --bin chopper-runtime
 ```
 
-Generate the following corresponding python native [AST](https://docs.python.org/3/library/ast.html) node.
 
-```python
-Module(
-  body=[FunctionDef(
-    name='constant3',
-    args=arguments(
-      posonlyargs=[],
-      args=[],
-      vararg=None,
-      kwonlyargs=[],
-      kw_defaults=[],
-      kwarg=None,
-      defaults=[]),
-    body=[
-      Assign(
-        targets=[Name(
-          id='var1',
-          ctx=Store())],
-        value=Constant(
-          value=1.0,
-          kind=None),
-        type_comment=None),
-      Return(value=Name(
-        id='var1',
-        ctx=Load()))],
-    decorator_list=[],
-    returns=Name(
-      id='float',
-      ctx=Load()),
-    type_comment=None)],
-  type_ignores=[])
-```
-
-Then，constructs the following [MLIR AST](https://github.com/llvm/llvm-project/blob/5b4a01d4a63cb66ab981e52548f940813393bf42/mlir/docs/LangRef.md) node based on above python native AST node.
-
-```python
-MLIRFile(
-  definitions=[],
-  modules=[
-    Module(
-      name=None,
-      attributes=None,
-      region=Region(
-        body=[
-          Block(
-            label=None,
-            body=[
-              Operation(
-                result_list=[],
-                op=Function(
-                  name=SymbolRefId(
-                    value='constant3'),
-                  args=None,
-                  result_types=None,
-                  attributes=None,
-                  region=Region(
-                    body=[
-                      Block(
-                        label=None,
-                        body=[
-                          Operation(
-                            result_list=[
-                              OpResult(
-                                value=SsaId(
-                                  value='var1',
-                                  op_no=None),
-                                count=None)],
-                            op=ConstantOperation(
-                              match=0,
-                              value=1.0,
-                              type=FloatType(
-                                type=<FloatTypeEnum.f32:'f32'>)),
-                            location=None),
-                          Operation(
-                            result_list=None,
-                            op=ReturnOperation(
-                              match=1,
-                              values=[
-                                SsaId(
-                                  value='var1',
-                                  op_no=None)],
-                              types=[
-                                FloatType(
-                                  type=<FloatTypeEnum.f32:'f32'>)]),
-                            location=None)])]),
-                  location=None),
-                location=None)])]),
-      location=None)])
-```
-
-Finally, generate the following IR (namely Textual IR) from MLIR ast node above.
-
-```python
-func @constant3() {
-  %var1 = constant 1.0 : f32
-  return %var1 : f32
-}
-```
 # Design and Implementation
-<div align=center>
 
-![Chopper architecture](docs/source/Artifacts/Chopper Arch Figure.png)
+TODO
+1. motivation
+2. thanks for projects
+3. key features
+4. support matrix
 
-</div>
-
-This is an example of an out-of-tree [MLIR](https://mlir.llvm.org/) dialect along with a standalone `opt`-like tool to operate on that dialect.
 
 This projects also refers to the idea and implementations of some similar works, including:
 
@@ -264,3 +175,9 @@ This projects also refers to the idea and implementations of some similar works,
 2. Jax: https://github.com/google/jax
 3. Swift for Tensorflow: https://github.com/tensorflow/swift
 4. MLIR.jl: https://github.com/vchuravy/MLIR.jl
+5. 
+<div align=center>
+
+![Chopper architecture](docs/source/Artifacts/Chopper Arch Figure.png)
+
+</div>
