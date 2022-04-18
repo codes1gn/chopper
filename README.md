@@ -1,30 +1,31 @@
 <div align=center>
 
-![Capture](https://user-images.githubusercontent.com/68119751/123550638-119adb80-d7a1-11eb-9d5a-88c6048e36ed.JPG)
+![Capture](docs/source/Artifacts/icon.jpg)
 
 </div>
 
-# Introduction: Composite AI Compiler Experiment Platform
+# Introduction: The Chopper - Composable Computing Frameworks targeting Large-scale Heterogeneous Computing
 
-The Composite AI Compiler Experiment Platform (Chopper) built with composite modularized frontend, midware and runtime backend. It builds with more flexible ways that allows you register new breed of frontend/backend implementations and compare with each other. It also relies on MLIR to provide fruitful manifolds and toolchains that allows you play with the IR design of the compiler part, the architecture is shown below.
+Chopper is a computing framework prototype that is built with composite modularized design to achieve decoupleness between modules and ensure rapid prototyping and evolution speed. It builds with more flexible ways that allows you register new breed of frontend/backend implementations and compare with each other. It also relies on MLIR to provide fruitful manifolds and toolchains that allows you play with the IR design of the compiler part, the architecture is shown below. The runtime is built with RUST for maximal confidence in both memory and thread safety, and hence leverage the human hassles and efforts for maintainness largely.
 
-<div align=center>
+# Getting Started
 
-![Chopper architecture](docs/source/Artifacts/Cancer_Architecture.png)
+## Step 1 - build and install requirements
+Currently, chopper is tested on Ubuntu 18.04 & 16.04, it should still work on other distribution versions of Ubuntu system, but not tested and verified yet.
 
-</div>
+Check if your develop environments fulfills:
+* Python >= 3.6.9
+* Cmake >= 3.13.4
+* Rust >= 1.42.1
 
-This is an example of an out-of-tree [MLIR](https://mlir.llvm.org/) dialect along with a standalone `opt`-like tool to operate on that dialect.
+Then you can go to the root directory and run
+``` sh
+pip3 install -r requirements.txt
+```
+to install the related preliminaries.
 
-This projects also refers to the idea and implementations of some similar works, including:
 
-1. mlir-npcomp: https://github.com/google/mlir-npcomp
-2. Jax: https://github.com/google/jax
-3. Swift for Tensorflow: https://github.com/tensorflow/swift
-4. MLIR.jl: https://github.com/vchuravy/MLIR.jl
-
-## Build Chopper
-
+## Step 2 - build chopper with cmake
 It support the a simple `python-like` installation with setuptools. This will install the standalone python modules into your OS envs.
 
 To ensure that the entire project builds successfully, you need to make sure that the particular dependency version is installed correctly in advance, version requirements are available [here](https://llvm.org/docs/GettingStarted.html#requirements). Of course, you can also use clang & clang++(chosen and version is 11.1.0+) as the compiler instead of gcc/g++.
@@ -248,3 +249,18 @@ func @constant3() {
   return %var1 : f32
 }
 ```
+# Design and Implementation
+<div align=center>
+
+![Chopper architecture](docs/source/Artifacts/Chopper Arch Figure.png)
+
+</div>
+
+This is an example of an out-of-tree [MLIR](https://mlir.llvm.org/) dialect along with a standalone `opt`-like tool to operate on that dialect.
+
+This projects also refers to the idea and implementations of some similar works, including:
+
+1. mlir-npcomp: https://github.com/google/mlir-npcomp
+2. Jax: https://github.com/google/jax
+3. Swift for Tensorflow: https://github.com/tensorflow/swift
+4. MLIR.jl: https://github.com/vchuravy/MLIR.jl
