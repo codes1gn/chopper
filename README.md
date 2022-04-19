@@ -210,7 +210,12 @@ python experimental/end2end_pytorch/mnist_training_iree.py
 python experimental/end2end_pytorch/mnist_training_crt.py
 ```
 And you will get similar verbose prints as belows.
-![Results](docs/source/Artifacts/results.jpg)
+<div align=center>
+    
+![result](docs/source/Artifacts/results.JPG)
+
+</div>
+
 
 # Design and Implementation
 
@@ -222,8 +227,8 @@ To the constrast, it fully equips with modularised functionalities and toolchain
 
 The overall architecture design of Chopper system is demonstrated below.
 <div align=center>
-
-![Chopper architecture](docs/source/Artifacts/Chopper Arch Figure.png)
+    
+![arch](docs/source/Artifacts/chopper_arch.jpg)
 
 </div>
 
