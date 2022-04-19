@@ -228,7 +228,7 @@ To the constrast, it fully equips with modularised functionalities and toolchain
 The overall architecture design of Chopper system is demonstrated below.
 <div align=center>
     
-![arch](docs/source/Artifacts/chopper_arch.jpg)
+![arch](docs/source/Artifacts/chopper_arch.png)
 
 </div>
 
