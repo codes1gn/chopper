@@ -260,7 +260,9 @@ And you will get similar verbose prints as belows.
 
 <div align=center>
     
-![result](docs/source/Artifacts/results.JPG)
+<center>
+<img src="docs/source/Artifacts/results.JPG" width="50%" height="50%" />
+</center>
 
 </div>
 
@@ -277,8 +279,7 @@ The overall architecture design of Chopper system is demonstrated below.
 <div align=center>
     
 <center>
-<img src="docs/source/Artifacts/chopper_arch.png" width="25%" height="25%" />
-Figure chopper architecture
+<img src="docs/source/Artifacts/chopper_arch.png" width="50%" height="50%" />
 </center>
 
 </div>
