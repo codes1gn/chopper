@@ -276,7 +276,10 @@ The overall architecture design of Chopper system is demonstrated below.
 
 <div align=center>
     
-![arch](docs/source/Artifacts/chopper_arch.png)
+<center>
+<img src="docs/source/Artifacts/chopper_arch.png" width="25%" height="25%" />
+Figure chopper architecture
+</center>
 
 </div>
 
