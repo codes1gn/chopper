@@ -8,6 +8,49 @@
 
 Chopper is a computing framework prototype that is built with composite modularized design to achieve decoupleness between modules and ensure rapid prototyping and evolution speed. It builds with more flexible ways that allows you register new breed of frontend/backend implementations and compare with each other. It also relies on MLIR to provide fruitful manifolds and toolchains that allows you play with the IR design of the compiler part, the architecture is shown below. The runtime is built with RUST for maximal confidence in both memory and thread safety, and hence leverage the human hassles and efforts for maintainness largely.
 
+# Status
+
+## Key Features
+- [x] A whole stack textual round-trippable IR system to enable easy debug and maintain
+- [x] Decoupled build system setting, allows less-deps build and dev
+- [x] Toolchains independently set up in frontend, compiler and runtime modules
+- [x] Autodiff compilation
+- [x] A decoupled and unified HAL design
+- [x] Support plug-in for multiple frontends and backends
+- [x] IREE supported as reference backend
+- [x] additional runtime safety by pure Rust implementation
+
+## Support Matrix
+* Frontends
+- [x] Torch
+- [ ] Tensorflow
+- [ ] Tensorflow Eager
+- [ ] TVM
+- [x] Native Python - frontend
+
+* Compilation Specs
+- [x] TOSA
+- [ ] Spir-V
+
+* Runtime
+- [x] Vulkan GPU
+- [ ] CUDA GPU
+- [ ] Rocm
+- [ ] Mali
+- [x] X86
+- [ ] Enflame DTU
+
+## Upcoming Features
+- [ ] Profiling
+- [ ] Debug Info
+- [ ] Auto-parallel
+- [ ] Probabilistic Types and Compilation Support
+- [ ] Differentiable Types and Compilation Support
+- [ ] Transactional Actor Model for Concurrency Execution
+- [ ] Structured Concurrecy Semantics in IR support
+- [ ] Dynamic Resource Managements
+- [ ] HAL refactored for GPU + DTU
+
 # Getting Started
 
 ## Step 1 - build and install prerequisites
@@ -124,7 +167,7 @@ Chopper is a multi-frontend design with preferred support for `native python` an
 
 <div align=center>
 
-![Frontend Technology Route](docs/source/artifacts/Frontend_Arc.jpg)
+![Frontend Technology Route](docs/source/Artifacts/Frontend_Arc.jpg)
 
 </div>
 
@@ -158,26 +201,48 @@ or run the runtime interpreter in interactive fashion by
 ```sh
 cargo run --bin chopper-runtime
 ```
-
+# Example
+run the follow mnist training example source by python
+```sh
+python experimental/end2end_pytorch/mnist_training_iree.py
+```
+```sh
+python experimental/end2end_pytorch/mnist_training_crt.py
+```
+And you will get similar verbose prints as belows.
+![Results](docs/source/Artifacts/results.jpg)
 
 # Design and Implementation
 
-TODO
-1. motivation
-2. thanks for projects
-3. key features
-4. support matrix
+Chopper project is raise by Enflame Evolutionary Academy, in order to construct a fast pace experimental platform to maximize the possibility to explore technical frontiers of computing frameworks with concrete prototyping work and ablation studies.
 
+To this end, this project is the scaffolds for future research works and hence lack of many implementation details to boost the preformance at the early stage.
 
-This projects also refers to the idea and implementations of some similar works, including:
+To the constrast, it fully equips with modularised functionalities and toolchains to make your prototyping work delightful and straight-forward.
 
-1. mlir-npcomp: https://github.com/google/mlir-npcomp
-2. Jax: https://github.com/google/jax
-3. Swift for Tensorflow: https://github.com/tensorflow/swift
-4. MLIR.jl: https://github.com/vchuravy/MLIR.jl
-5. 
+The overall architecture design of Chopper system is demonstrated below.
 <div align=center>
 
 ![Chopper architecture](docs/source/Artifacts/Chopper Arch Figure.png)
 
 </div>
+
+# Resources
+
+## Website
+To be added
+
+## Documentations
+To be added
+
+## Presentations
+To be added
+
+# A Thanks To
+In the design stage, this project also inspired by the idea and implementation practices of some related works, including:
+
+1. mlir-npcomp: https://github.com/google/mlir-npcomp
+2. Jax: https://github.com/google/jax
+3. Swift for Tensorflow: https://github.com/tensorflow/swift
+4. MLIR.jl: https://github.com/vchuravy/MLIR.jl
+5. TVM: https://tvm.apache.org/
