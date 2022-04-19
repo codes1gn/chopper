@@ -6,11 +6,28 @@
 
 # Chopper - Composable Computing Frameworks targeting Large-scale Heterogeneous Computing
 
-Chopper is a computing framework prototype that is built with composite modularized design to achieve decoupleness between modules and ensure rapid prototyping and evolution speed. It builds with more flexible ways that allows you register new breed of frontend/backend implementations and compare with each other. It also relies on MLIR to provide fruitful manifolds and toolchains that allows you play with the IR design of the compiler part, the architecture is shown below. The runtime is built with RUST for maximal confidence in both memory and thread safety, and hence leverage the human hassles and efforts for maintainness largely.
+Chopper is an entire computing framework prototype for not only machine learning.
+We carried the design philosophy of composite modularized through the whole project,
+built with flexible way and decoupled each constituent sub-modules with others,
+which provides a natural convenience of rapid prototyping and evolution speed.
+
+In the architecture shown below:
+
+- Frontend is pluggable for easy expansion;
+- MLIR-based Compiler keeps inherited fruitful manifolds and toolchains available
+- Runtime is built with RUST for maximal confidence in both memory and thread safety and hence leverage the human hassles and efforts for maintainness largely
+
+For Users, Developers and players, you can
+
+- Simply run an end-to-end program with provided fronted
+- Register new breed of Frontend implementations and make a comparison
+- Custom IR design and conversion during the process of compiling
+- Add new Backend according to interface of the unique HAL(Hardware Abstract Level)
 
 # Status
 
 ## Key Features
+
 - [x] A whole stack textual round-trippable IR system to enable easy debug and maintain
 - [x] Decoupled build system setting, allows less-deps build and dev
 - [x] Toolchains independently set up in frontend, compiler and runtime modules
@@ -21,26 +38,31 @@ Chopper is a computing framework prototype that is built with composite modulari
 - [x] additional runtime safety by pure Rust implementation
 
 ## Support Matrix
-* Frontends
-- [x] Torch
-- [ ] Tensorflow
-- [ ] Tensorflow Eager
-- [ ] TVM
-- [x] Native Python - frontend
 
-* Compilation Specs
-- [x] TOSA
-- [ ] Spir-V
+- Frontends
 
-* Runtime
-- [x] Vulkan GPU
-- [ ] CUDA GPU
-- [ ] Rocm
-- [ ] Mali
-- [x] X86
-- [ ] Enflame DTU
+* [x] Torch
+* [ ] Tensorflow
+* [ ] Tensorflow Eager
+* [ ] TVM
+* [x] Native Python - frontend
+
+- Compilation Specs
+
+* [x] TOSA
+* [ ] Spir-V
+
+- Runtime
+
+* [x] Vulkan GPU
+* [ ] CUDA GPU
+* [ ] Rocm
+* [ ] Mali
+* [x] X86
+* [ ] Enflame DTU
 
 ## Upcoming Features
+
 - [ ] Profiling
 - [ ] Debug Info
 - [ ] Auto-parallel
@@ -53,31 +75,35 @@ Chopper is a computing framework prototype that is built with composite modulari
 
 # Getting Started
 
-## Step 1 - build and install prerequisites
-Currently, chopper is tested on Ubuntu 18.04 & 16.04, it should still work on other distribution versions of Ubuntu system, but not tested and verified yet.
+## Step 1 - Platform and Software environment
 
-Check if your develop environments fulfills:
-* Python >= 3.6.9
-* Cmake >= 3.13.4
-* Rust >= 1.42.1
-* Ninja >= 1.7.0
+### Platform
 
-Then you can go to the root directory and run
-``` sh
+Currently, chopper is developed and tested on Ubuntu 18.04 & 16.04.
+It should still work on other distribution versions of Ubuntu system, but not tested and verified yet.
+
+If you want to enable the GPU card, check this website https://vulkan.lunarg.com/doc/sdk/1.2.198.1/linux/getting_started_ubuntu.html to install the Vulkan API and its related requirements.
+Please make sure you have already installed a compatible version of driver before install the Vulkan SDK. Normally, you can find it at the GPU vendor's website, i.e., Nvidia's official websites.
+
+### Prerequisites
+
+Before proceeding to the next step, please check your develop environments fulfills:
+
+- Python >= 3.6.9
+- Cmake >= 3.13.4
+- Rust >= 1.42.1
+- Ninja >= 1.7.0
+
+If all met, then go to the root directory and run
+
+```sh
 pip3 install -r requirements.txt
 sudo apt install cmake ninja-build clang lld
 ```
+
 to install the related preliminaries.
 
-If you want to enable the GPU card, check this website https://vulkan.lunarg.com/doc/sdk/1.2.198.1/linux/getting_started_ubuntu.html to install the Vulkan API and its related requirements.
-
-Please make sure you have already installed a compatible version of driver before install the Vulkan SDK. Normally, you can find it at the GPU vendor's website, i.e., Nvidia's official websites.
-
-## Step 2 - build chopper
-It support the a simple `python-like` installation with setuptools. This will install the standalone python modules into your OS envs.
-
-To ensure that the entire project builds successfully, you need to make sure that the particular dependency version is installed correctly in advance, version requirements are available [here](https://llvm.org/docs/GettingStarted.html#requirements). Of course, you can also use clang & clang++(chosen and version is 11.1.0+) as the compiler instead of gcc/g++.
-
+You also need to make sure that the particular dependency version is installed correctly in advance, version requirements are available [here](https://llvm.org/docs/GettingStarted.html#requirements). Of course, you can also use clang & clang++(chosen and version is 11.1.0+) as the compiler instead of gcc/g++.
 For convenience, there is a all-in-one script that automatically installs the LLVM nightly toolchain packages on the different Debian and Ubuntu versions (refer [here](https://apt.llvm.org/)). If you want to install a sepcific version of LLVM, for example, install version 11 as follow
 
 ```sh
@@ -86,7 +112,11 @@ chmod +x llvm.sh
 sudo ./llvm.sh 11
 ```
 
-After ensuring that all of the environment dependencies are ready, let's start building the project as follows
+After ensuring all environment dependencies above, let's start building the project
+
+## Step 2 - Build chopper
+
+It support the a simple `python-like` installation with setuptools. This will install the standalone python modules into your OS envs.
 
 <font color=Blue>**STEP1**</font> The project depends on three externals included that llvm-project, pybind11 and pymlir, so them must be cloned firstly as follow.
 
@@ -106,12 +136,21 @@ bash script/install_all.sh
 ```
 
 After build successfully, you can check the correctness by start the test script.
+
 ```shell
 cd Chopper/
 bash script/test_all.sh
 ```
 
-Alternatively, you can also build **LLVM + MLIR** and **Chopper** seperately as shown below.
+# Seperately Build
+
+<font color=Red>**Notice**</font>:
+This part aims to a more intuitive display of the organizational structure. If you have sucessfully experienced the last part, there's no need to go through again.
+Alternatively, you can also seperately build each sub module.
+
+## Build Chopper Compiler
+
+Build **LLVM + MLIR** and **Chopper** seperately as shown below.
 
 ### Build LLVM + MLIR
 
@@ -161,7 +200,7 @@ To build the documentation from the TableGen description of the dialect operatio
 cmake --build . --target mlir-doc
 ```
 
-### Build Chopper Frontend
+## Build Chopper Frontend
 
 Chopper is a multi-frontend design with preferred support for `native python` and `numpy+scipy`, And strive to design the frontend as uniformly functional expression as possible. The **Frontend Technology Route** is shown below.
 
@@ -182,7 +221,7 @@ python3 setup.py install --record install_cache.txt
 
 Now you should be able to run arbitrary python source
 
-### Build Chopper Backend
+## Build Chopper Backend
 
 In the seperated setting, you can clone and build the Chopper rust backend/runtime from source.
 
@@ -192,30 +231,38 @@ First do the clone and build with cargo
 git clone git@git.enflame.cn:heng.shi/chopper-runtime.git
 cargo build
 ```
+
 Then you can run the regression test of Chopper-runtime by
+
 ```sh
 cargo test
 ```
 
 or run the runtime interpreter in interactive fashion by
+
 ```sh
 cargo run --bin chopper-runtime
 ```
+
 # Example
-run the follow mnist training example source by python
+
+After sucessfully built and installed, you can run the follow mnist training example source by python
+
 ```sh
 python experimental/end2end_pytorch/mnist_training_iree.py
 ```
+
 ```sh
 python experimental/end2end_pytorch/mnist_training_crt.py
 ```
+
 And you will get similar verbose prints as belows.
+
 <div align=center>
     
 ![result](docs/source/Artifacts/results.JPG)
 
 </div>
-
 
 # Design and Implementation
 
@@ -226,6 +273,7 @@ To this end, this project is the scaffolds for future research works and hence l
 To the constrast, it fully equips with modularised functionalities and toolchains to make your prototyping work delightful and straight-forward.
 
 The overall architecture design of Chopper system is demonstrated below.
+
 <div align=center>
     
 ![arch](docs/source/Artifacts/chopper_arch.png)
@@ -235,15 +283,19 @@ The overall architecture design of Chopper system is demonstrated below.
 # Resources
 
 ## Website
+
 To be added
 
 ## Documentations
+
 To be added
 
 ## Presentations
+
 To be added
 
 # A Thanks To
+
 In the design stage, this project also inspired by the idea and implementation practices of some related works, including:
 
 1. mlir-npcomp: https://github.com/google/mlir-npcomp
