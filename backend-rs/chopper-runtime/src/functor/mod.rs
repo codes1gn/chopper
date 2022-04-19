@@ -46,11 +46,11 @@ impl Functor {
     pub fn wrap_kernel_specialise_attr(
         &self,
         opcode: OpCode,
-    ) -> (Cow<[pso::SpecializationConstant]>, Cow<[u8]>) {
+    ) -> (Vec<pso::SpecializationConstant>, Vec<u8>) {
         // specialise op by opcode
         let spec_const = opcode.to_specialise_bits();
         let spec_bytes = spec_const.to_le_bytes();
-        println!("{:?}", spec_bytes);
+        // println!("{:?}", spec_bytes);
 
         let spec_const_struct = pso::SpecializationConstant {
             id: 0,
@@ -60,8 +60,9 @@ impl Functor {
             // end - start --> size
             range: std::ops::Range { start: 0, end: 4 },
         };
-        let spec_const: Cow<[pso::SpecializationConstant]> = Cow::Owned(vec![spec_const_struct]);
-        let spec_data: Cow<[u8]> = Cow::Owned(spec_bytes.to_vec());
+
+        let spec_const = vec![spec_const_struct];
+        let spec_data = spec_bytes.to_vec();
         (spec_const, spec_data)
     }
 
@@ -81,12 +82,99 @@ impl Functor {
         };
         */
 
+        /* calculate shape of output
+        For arithmetic op, shape of output should keep same as lhs operand;
+        For matmul, check value of last dimension in lhs equal to first of rhs.
+          And shape of output should calculated from lhs and rhs operand
+                lhs: k x m x n
+                rhs: n x l
+                res: k x m x l
+        */
+        let mut res_shape = Vec::new();
+        let mut res_dsize = 1;
+        let lhs_shape = Cow::from(&lhs_buffer_functor.shape[..]);
+        let rhs_shape = Cow::from(&rhs_buffer_functor.shape[..]);
+
+        let lhs_shape_size = lhs_shape.len();
+
+        let shape_transfer_to_specialization = |id: usize| {
+            let dim_const_struct = pso::SpecializationConstant {
+                id: (id + 1) as u32,
+                range: std::ops::Range {
+                    start: (id * 4 + 4) as u16,
+                    end: (id * 4 + 7) as u16,
+                },
+            };
+            dim_const_struct
+        };
+
+        let mut opcode_constant = self.wrap_kernel_specialise_attr(opcode).0;
+        let mut opcode_data = self.wrap_kernel_specialise_attr(opcode).1;
+
+        for (id, value) in lhs_shape.iter().enumerate() {
+            // println!("dim id: {}; dim value: {}", id, value);
+            let spec_shape = shape_transfer_to_specialization(id);
+            opcode_constant.push(spec_shape);
+
+            let value_bytes = (*value as u32).to_le_bytes();
+            for x in value_bytes {
+                opcode_data.push(x);
+            }
+        }
+
+        for (id, value) in rhs_shape.iter().enumerate() {
+            let spec_shape = shape_transfer_to_specialization(id + lhs_shape_size);
+            opcode_constant.push(spec_shape);
+
+            let value_bytes = (*value as u32).to_le_bytes();
+            for x in value_bytes {
+                opcode_data.push(x);
+            }
+        }
+
+        let spec_constant: Cow<[pso::SpecializationConstant]> = Cow::Owned(opcode_constant);
+        let spec_data: Cow<[u8]> = Cow::Owned(opcode_data);
+
+        match opcode {
+            OpCode::ADDI32
+            | OpCode::SUBI32
+            | OpCode::MULI32
+            | OpCode::FLOORDIVI32
+            | OpCode::ADDF32
+            | OpCode::SUBF32
+            | OpCode::MULF32
+            | OpCode::DIVF32 => {
+                res_shape = lhs_shape.to_vec();
+                res_dsize = lhs_buffer_functor.data_size;
+            }
+            OpCode::MATMULF32 => {
+                // assert_eq!(lhs_buffer_functor.shape.len(), 2);
+                assert_eq!(rhs_shape.len(), 2);
+
+                assert_eq!(lhs_shape[lhs_shape_size - 1], rhs_shape[0]);
+
+                res_shape = (lhs_shape[..lhs_shape_size - 1]).to_vec();
+                res_shape.push(rhs_shape[1]);
+                // res_shape = lhs_shape.to_vec();
+                // res_shape[0] = rhs_shape[0];
+
+                res_dsize =
+                    lhs_buffer_functor.data_size / lhs_shape[lhs_shape_size - 1] * rhs_shape[1];
+                // res_dsize = lhs_buffer_functor.data_size / lhs_shape[0] * rhs_shape[0];
+            }
+            _ => {
+                res_shape = lhs_shape.to_vec();
+                res_dsize = lhs_buffer_functor.data_size;
+            }
+        }
+        // println!("res shape: {:?}", res_shape);
+
         let mut res_buffer_functor = DataView::<concrete_backend::Backend, T>::new(
             &device_context.device,
             &device_instance_ref.memory_property().memory_types,
-            vec![Default::default(); lhs_buffer_functor.data_size],
+            vec![Default::default(); res_dsize as usize],
             ElementType::F32,
-            lhs_buffer_functor.shape,
+            res_shape,
         );
 
         // TODO refactor into BufferView
@@ -229,8 +317,10 @@ impl Functor {
             entry: "main",
             module: self.kernel.as_ref().unwrap(),
             specialization: pso::Specialization {
-                constants: self.wrap_kernel_specialise_attr(opcode).0,
-                data: self.wrap_kernel_specialise_attr(opcode).1,
+                // constants: self.wrap_kernel_specialise_attr(opcode).0,
+                constants: spec_constant,
+                // data: self.wrap_kernel_specialise_attr(opcode).1,
+                data: spec_data,
             },
         };
         let pipeline = unsafe {
@@ -349,7 +439,7 @@ impl Functor {
         }
 
         unsafe {
-            //device_context.device.destroy_shader_module(shader);
+            // device_context.device.destroy_shader_module(shader);
             device_context.device.destroy_command_pool(command_pool);
             device_context.device.destroy_fence(fence);
 

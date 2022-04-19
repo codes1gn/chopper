@@ -133,11 +133,12 @@ criterion = nn.CrossEntropyLoss()
 print(model)
 
 
-def train(epoch, log_interval=20):
+def train(epoch, log_interval=1):
     # Set model to training mode
     model.train()
 
     timer = time.time()
+    print("Init Chopper RT Instance\n")
     # Loop over each batch from the training set
     for batch_idx, (data, target) in enumerate(train_loader):
         # Copy data to GPU if needed
@@ -153,7 +154,7 @@ def train(epoch, log_interval=20):
 
         if batch_idx % log_interval == 0:
             print(
-                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                "===============================  >>>>   Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                     epoch,
                     batch_idx * len(data),
                     len(train_loader.dataset),

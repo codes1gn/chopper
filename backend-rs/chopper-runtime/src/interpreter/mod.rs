@@ -530,16 +530,28 @@ mod tests {
         let ist = DeviceInstance::new();
         let mut ipt = Interpreter::new(&ist);
         // ok
-        let status = ipt.mock_operation("%0 = crt.literal.const.tensor! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n");
-        let status = ipt.mock_operation("%1 = crt.literal.const.tensor! dense<[2.2 3.3 3.3 1.1 3.3 2.2], shape=[2 3]>\n");
+        let status = ipt.mock_operation(
+            "%0 = crt.literal.const.tensor! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n",
+        );
+        let status = ipt.mock_operation(
+            "%1 = crt.literal.const.tensor! dense<[2.2 3.3 3.3 1.1 3.3 2.2], shape=[2 3]>\n",
+        );
         assert_eq!(status.is_ok(), true);
         let status_code = status.unwrap();
         assert_eq!(status_code, 0);
 
         // inspect data valid
-        assert_float_eq!(*ipt.vm.get_fdata(0), vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6], rmax_all <= 0.00001);
+        assert_float_eq!(
+            *ipt.vm.get_fdata(0),
+            vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6],
+            rmax_all <= 0.00001
+        );
         assert_eq!(*ipt.vm.get_fshape(0), vec![2, 3]);
-        assert_float_eq!(*ipt.vm.get_fdata(1), vec![2.2, 3.3, 3.3, 1.1, 3.3, 2.2], rmax_all <= 0.00001);
+        assert_float_eq!(
+            *ipt.vm.get_fdata(1),
+            vec![2.2, 3.3, 3.3, 1.1, 3.3, 2.2],
+            rmax_all <= 0.00001
+        );
         assert_eq!(*ipt.vm.get_fshape(1), vec![2, 3]);
 
         // add
@@ -547,7 +559,11 @@ mod tests {
         assert_eq!(status.is_ok(), true);
         let status_code = status.unwrap();
         assert_eq!(status_code, 0);
-        assert_float_eq!(*ipt.vm.get_fdata(4), vec![3.3, 5.5, 6.6, 5.5, 8.8, 8.8], rmax_all <= 0.00001);
+        assert_float_eq!(
+            *ipt.vm.get_fdata(4),
+            vec![3.3, 5.5, 6.6, 5.5, 8.8, 8.8],
+            rmax_all <= 0.00001
+        );
     }
 
     #[test]
@@ -555,16 +571,28 @@ mod tests {
         let ist = DeviceInstance::new();
         let mut ipt = Interpreter::new(&ist);
         // ok
-        let status = ipt.mock_operation("%9 = crt.literal.const.tensor! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n");
-        let status = ipt.mock_operation("%7 = crt.literal.const.tensor! dense<[2.2 3.3 3.3 1.1 3.3 2.2], shape=[2 3]>\n");
+        let status = ipt.mock_operation(
+            "%9 = crt.literal.const.tensor! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n",
+        );
+        let status = ipt.mock_operation(
+            "%7 = crt.literal.const.tensor! dense<[2.2 3.3 3.3 1.1 3.3 2.2], shape=[2 3]>\n",
+        );
         assert_eq!(status.is_ok(), true);
         let status_code = status.unwrap();
         assert_eq!(status_code, 0);
 
         // inspect data valid
-        assert_float_eq!(*ipt.vm.get_fdata(9), vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6], rmax_all <= 0.00001);
+        assert_float_eq!(
+            *ipt.vm.get_fdata(9),
+            vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6],
+            rmax_all <= 0.00001
+        );
         assert_eq!(*ipt.vm.get_fshape(9), vec![2, 3]);
-        assert_float_eq!(*ipt.vm.get_fdata(7), vec![2.2, 3.3, 3.3, 1.1, 3.3, 2.2], rmax_all <= 0.00001);
+        assert_float_eq!(
+            *ipt.vm.get_fdata(7),
+            vec![2.2, 3.3, 3.3, 1.1, 3.3, 2.2],
+            rmax_all <= 0.00001
+        );
         assert_eq!(*ipt.vm.get_fshape(7), vec![2, 3]);
 
         // sub
@@ -572,7 +600,11 @@ mod tests {
         assert_eq!(status.is_ok(), true);
         let status_code = status.unwrap();
         assert_eq!(status_code, 0);
-        assert_float_eq!(*ipt.vm.get_fdata(5), vec![1.1, 1.1, 0.0, -3.3, -2.2, -4.4], rmax_all <= 0.00001);
+        assert_float_eq!(
+            *ipt.vm.get_fdata(5),
+            vec![1.1, 1.1, 0.0, -3.3, -2.2, -4.4],
+            rmax_all <= 0.00001
+        );
     }
 
     #[test]
@@ -580,23 +612,53 @@ mod tests {
         let ist = DeviceInstance::new();
         let mut ipt = Interpreter::new(&ist);
         // ok
-        let status = ipt.mock_operation("%9 = crt.literal.const.tensor! dense<[1.1 2.2 3.3 4.4 5.5 6.6], shape=[2 3]>\n");
-        let status = ipt.mock_operation("%7 = crt.literal.const.tensor! dense<[2.2 3.3 3.3 1.1 3.3 2.2], shape=[2 3]>\n");
+        // matmul(3x2, 2x3) => (3x3)
+        let status = ipt.mock_operation(
+            "%9 = crt.literal.const.tensor! dense<[1. 2. 3. 4. 5. 6.], shape=[2 3]>\n",
+        );
+        let status = ipt.mock_operation(
+            "%7 = crt.literal.const.tensor! dense<[1. 1. 1. 1. 1. 1.], shape=[3 2]>\n",
+        );
         assert_eq!(status.is_ok(), true);
         let status_code = status.unwrap();
         assert_eq!(status_code, 0);
 
         // inspect data valid
-        assert_float_eq!(*ipt.vm.get_fdata(9), vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6], rmax_all <= 0.00001);
+        assert_float_eq!(
+            *ipt.vm.get_fdata(9),
+            vec![1., 2., 3., 4., 5., 6.],
+            rmax_all <= 0.00001
+        );
         assert_eq!(*ipt.vm.get_fshape(9), vec![2, 3]);
-        assert_float_eq!(*ipt.vm.get_fdata(7), vec![2.2, 3.3, 3.3, 1.1, 3.3, 2.2], rmax_all <= 0.00001);
-        assert_eq!(*ipt.vm.get_fshape(7), vec![2, 3]);
+        assert_float_eq!(
+            *ipt.vm.get_fdata(7),
+            vec![1., 1., 1., 1., 1., 1.],
+            rmax_all <= 0.00001
+        );
+        assert_eq!(*ipt.vm.get_fshape(7), vec![3, 2]);
 
         // matmul, temparilly faked with add
         let status = ipt.mock_operation("%5 = crt.matmul.f32! %7, %9 : f32\n");
         assert_eq!(status.is_ok(), true);
         let status_code = status.unwrap();
         assert_eq!(status_code, 0);
-        assert_float_eq!(*ipt.vm.get_fdata(5), vec![3.3, 5.5, 6.6, 5.5, 8.8, 8.8], rmax_all <= 0.00001);
+        assert_float_eq!(
+            *ipt.vm.get_fdata(5),
+            vec![5., 7., 9., 5., 7., 9., 5., 7., 9.],
+            rmax_all <= 0.00001
+        );
+
+        let status = ipt.mock_operation(
+            "%9 = crt.literal.const.tensor! dense<[1. 2. 3. 4. 5. 6.], shape=[2 3]>\n",
+        );
+        let status = ipt.mock_operation(
+            "%7 = crt.literal.const.tensor! dense<[1. 1. 1. 1. 1. 1.], shape=[3 2]>\n",
+        );
+        let status = ipt.mock_operation("%6 = crt.matmul.f32! %9, %7 : f32\n");
+        assert_float_eq!(
+            *ipt.vm.get_fdata(6),
+            vec![6., 6., 15., 15.],
+            rmax_all <= 0.00001
+        );
     }
 }

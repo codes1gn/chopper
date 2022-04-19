@@ -1,5 +1,5 @@
 use nom::types::CompleteStr;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum OpCode {
@@ -15,12 +15,12 @@ pub enum OpCode {
     CONSTI32, // 6
     CONSTF32, // 7
 
-    ADDF32, // 8
-    SUBF32, // 9
-    MULF32, // 10
-    DIVF32, // 11
+    ADDF32,      // 8
+    SUBF32,      // 9
+    MULF32,      // 10
+    DIVF32,      // 11
     CONSTTENSOR, // 12
-    MATMULF32, // 13
+    MATMULF32,   // 13
 
     // ILLEGAL op always id at last index
     ILLEGAL, // rest
@@ -36,9 +36,11 @@ impl OpCode {
 
             // f32 types
             // TODO(tianyu), this file specify the kernel code file name
-            OpCode::ADDF32 | OpCode::SUBF32 | OpCode::MULF32 | OpCode::DIVF32 | OpCode::MATMULF32 => {
+            OpCode::ADDF32 | OpCode::SUBF32 | OpCode::MULF32 | OpCode::DIVF32 => {
                 String::from("binary_arithmetic_f32")
             }
+
+            OpCode::MATMULF32 => String::from("matrix_multiple_f32"),
 
             _ => panic!("not support this op for dispatch kernel"),
         }
@@ -58,9 +60,11 @@ impl OpCode {
             // floordiv
             OpCode::FLOORDIVI32 | OpCode::DIVF32 => 3_u32,
 
-            // TODO(tianyu): change matmul opcode into add opcode to fake the compute
-            OpCode::MATMULF32 => 0_u32,
+            // matrix-multiple
+            OpCode::MATMULF32 => 4_u32,
 
+            // TODO(tianyu): change matmul opcode into add opcode to fake the compute
+            // OpCode::MATMULF32 => 0_u32,
             _ => panic!("unsupported opcode for specilising kernels"),
         }
     }

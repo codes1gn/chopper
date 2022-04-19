@@ -57,7 +57,7 @@ impl<'a> VM<'a> {
     // TODO pack below functions into decode a tensor
     fn decode_two_bytes_as_vec_size(&mut self) -> u16 {
         let encoded = vec![self.command_buffer[self.program_counter], self.command_buffer[self.program_counter+1]];
-        println!("decoding data len {:?}", encoded);
+        // println!("decoding data len {:?}", encoded);
         self.program_counter += 2;
         let decoded: u16 = bincode::deserialize(&encoded).unwrap();
         decoded
@@ -69,9 +69,9 @@ impl<'a> VM<'a> {
             encoded.push(self.command_buffer[self.program_counter]);
             self.program_counter += 1;
         }
-        println!("decoding data bytes {:?}", encoded);
+        // println!("decoding data bytes {:?}", encoded);
         let decoded: Vec<f32> = bincode::deserialize(&encoded).unwrap();
-        println!("{:?}", decoded);
+        // println!("{:?}", decoded);
         decoded
     }
 
@@ -81,9 +81,9 @@ impl<'a> VM<'a> {
             encoded.push(self.command_buffer[self.program_counter]);
             self.program_counter += 1;
         }
-        println!("decoding shape bytes {:?}", encoded);
+        // println!("decoding shape bytes {:?}", encoded);
         let decoded: Vec<usize> = bincode::deserialize(&encoded).unwrap();
-        println!("{:?}", decoded);
+        // println!("{:?}", decoded);
         decoded
     }
 
@@ -115,7 +115,7 @@ impl<'a> VM<'a> {
 
     // TODO may replace status with a enum
     fn step(&mut self) -> Result<u8, RuntimeStatusError> {
-        println!("start execute step");
+        // println!("start execute step");
         match self.fetch_instruction().unwrap() {
             OpCode::HALT => {
                 println!("halt to exit");
@@ -141,8 +141,8 @@ impl<'a> VM<'a> {
                 let operand_rhs = self.get_next_byte() as usize;
                 let lhs_dataview = self.data_buffer_i32.remove(&operand_lhs).unwrap();
                 let rhs_dataview = self.data_buffer_i32.remove(&operand_rhs).unwrap();
-                println!("{:?}", lhs_dataview);
-                println!("{:?}", rhs_dataview);
+                // println!("{:?}", lhs_dataview);
+                // println!("{:?}", rhs_dataview);
                 let opcode = OpCode::ADDI32;
                 let outs = self
                     .session
@@ -389,10 +389,10 @@ impl<'a> VM<'a> {
 
     // TODO modify the return into statuscode
     pub fn run(&mut self) -> Result<u8, RuntimeStatusError> {
-        println!("start to execute");
+        // println!("start to execute");
         loop {
             if self.program_counter >= self.command_buffer.len() {
-                println!("end of execution");
+                // println!("end of execution");
                 return Ok(0);
             }
             let status = self.step();

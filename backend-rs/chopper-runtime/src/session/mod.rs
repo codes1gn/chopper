@@ -34,7 +34,7 @@ impl<'a> Session<'a> {
         // TODO get rid of path hardcode by cargo manage datafiles of kernels
         // let kernel_path = vec![kernel::KERNELPATH];
         let path = env::current_dir().unwrap();
-        println!("{}", path.display());
+        // println!("{}", path.display());
 
         self.device_context.register_kernels(
             "/root/project/glsl_src/binary_arithmetic_f32.comp",
@@ -43,6 +43,11 @@ impl<'a> Session<'a> {
         self.device_context.register_kernels(
             "/root/project/glsl_src/binary_arithmetic_i32.comp",
             String::from("binary_arithmetic_i32"),
+        );
+        self.device_context.register_kernels(
+            "/root/project/glsl_src/matrix_multiple_f32.comp",
+            //    "/root/project/chopper/backend-rs/chopper-runtime/src/kernel/glsl_src/matrix_multiple_f32.comp",
+            String::from("matrix_multiple_f32"),
         );
     }
 
@@ -83,6 +88,10 @@ impl<'a> Session<'a> {
             rhs_dataview,
             opcode,
         );
+
+        // clear shader module
+        // self.device_context.device.destroy_shader_module(shader);
+
         // update dataview with new value
         result_buffer.eval(&self.device_context.device);
         // print outs
@@ -159,5 +168,34 @@ mod tests {
         let opcode = OpCode::SUBF32;
         let mut result_buffer = se.benchmark_run(opcode, lhs_dataview, rhs_dataview);
         assert_eq!(result_buffer.raw_data, vec!(-10.0, -11.0, -14.0));
+    }
+
+    #[test]
+    fn test_e2e_matmul() {
+        let ist = DeviceInstance::new();
+        let mut se = Session::new(&ist);
+        se.init();
+        let lhs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let rhs = vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0];
+        let lhs_shape = vec![2, 3];
+        let rhs_shape = vec![3, 2];
+        //create lhs dataview
+        let mut lhs_dataview = DataView::<concrete_backend::Backend, f32>::new(
+            &se.device_context.device,
+            &se.device_instance_ref.memory_property().memory_types,
+            lhs,
+            ElementType::F32,
+            lhs_shape,
+        );
+        let mut rhs_dataview = DataView::<concrete_backend::Backend, f32>::new(
+            &se.device_context.device,
+            &se.device_instance_ref.memory_property().memory_types,
+            rhs,
+            ElementType::F32,
+            rhs_shape,
+        );
+
+        let opcode = OpCode::MATMULF32;
+        let mut result_buffer = se.benchmark_run(opcode, lhs_dataview, rhs_dataview);
     }
 }

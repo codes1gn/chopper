@@ -50,6 +50,7 @@ pub struct CallableModule {
     // We use `#[pyo3(get)]` so that python can read the count but not mutate it.
     #[pyo3(get)]
     bytecodes: String,
+    kernel_option: String,
 }
 
 // TODO hardcoded with explictiy PyArray2 types, consider PyTuple or other way to accept variadic
@@ -115,8 +116,16 @@ impl CallableModule {
     //    1. It doesn't guarantee the object can actually be called successfully
     //    2. We still need to handle any exceptions that the function might raise
     #[new]
-    fn __new__(bytecodes: String) -> Self {
-        CallableModule { bytecodes: bytecodes }
+    fn __new__(bytecodes: String, kernel_option: String) -> Self {
+        let kernel = &kernel_option[..];
+        match kernel {
+            "" => {
+                CallableModule { bytecodes: bytecodes, kernel_option: "add".to_string() }
+            }
+            _ => {
+            CallableModule { bytecodes: bytecodes, kernel_option: kernel_option }
+            }
+        }
     }
 
     // TODO hardcoded with explictiy PyArray2 types, consider PyTuple or other way to accept
@@ -132,9 +141,8 @@ impl CallableModule {
         kwargs: Option<&PyDict>,
     ) -> &'py PyArray1<f32> {
 
-        println!("Initializing Vulkan Device");
+        // println!("create interpreter");
         let mut ipt = interpreter::Interpreter::new(&ist);
-        println!("Initialized Vulkan Device");
 
         let lhs_operand = 0;
         let rhs_operand = 1;
@@ -146,14 +154,15 @@ impl CallableModule {
         let data0 = unsafe { arg0.as_slice().unwrap() };
         let shape1 = arg1.shape();
         let data1 = unsafe { arg1.as_slice().unwrap() };
-        println!("{:?}", data1);
+        // println!("{:?}", data1);
         // TODO tmp HARDCODE for demo use
         ipt.vm.push_tensor_buffer(lhs_operand, data0.to_vec(), shape0.to_vec());
         ipt.vm.push_tensor_buffer(rhs_operand, data1.to_vec(), shape1.to_vec());
 
-        let bytecode_array = get_workaround_forward_bytecodes("add");
+        // let bytecode_array = get_workaround_forward_bytecodes("add");
+        let bytecode_array = get_workaround_forward_bytecodes(&self.kernel_option[..]);
         for _bytecode_string in bytecode_array {
-            println!("Executing {}", _bytecode_string.as_str());
+            // println!("Executing {}", _bytecode_string.as_str());
             let status = ipt.run_bytecode(_bytecode_string);
         }
 
@@ -183,9 +192,8 @@ impl CallableModule {
         arg2: &PyArray2<f32>,
         kwargs: Option<&PyDict>,
     ) -> (&'py PyArray1<f32>, &'py PyArray1<f32>) {
-        println!("Initializing Vulkan Device");
+        // println!("create interpreter");
         let mut ipt = interpreter::Interpreter::new(&ist);
-        println!("Initialized Vulkan Device");
 
         let grad = 0;
         let gradworkaroundduplicate = 9;
@@ -222,9 +230,9 @@ impl CallableModule {
         //ipt.vm.push_tensor_buffer(act0, data1.to_vec(), shape1.to_vec());
         //ipt.vm.push_tensor_buffer(act1, data2.to_vec(), shape2.to_vec());
 
-        let bytecode_array = get_workaround_backward_bytecodes("add");
+        let bytecode_array = get_workaround_backward_bytecodes(&self.kernel_option[..]);
         for _bytecode_string in bytecode_array {
-            println!("Executing {}", _bytecode_string.as_str());
+            // println!("Executing {}", _bytecode_string.as_str());
             let status = ipt.run_bytecode(_bytecode_string);
         }
 
@@ -271,7 +279,7 @@ fn Runtime(py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m)]
     fn testing(operand: &PyArray2<f32>) -> Vec<f32> {
-        println!("{}", operand);
+        //println!("{}", operand);
         vec![1.1]
     }
 
@@ -279,9 +287,9 @@ fn Runtime(py: Python, m: &PyModule) -> PyResult<()> {
     fn load_and_invoke(ist: &DeviceInstance, lhs_operand: Vec<f32>, lhs_shape: Vec<usize>, rhs_operand: Vec<f32>, rhs_shape: Vec<usize>, bytecodes: &str) -> Vec<f32> {
         // TODO, accept string of bytecodes, list<f32> or operands, return list<f32>
         // TODO, maybe wrap it into callables
-        println!("lhs-operand = {:?}", lhs_operand);
-        println!("rhs-operand = {:?}", rhs_operand);
-        println!("bytecode instruction = {:?}", bytecodes);
+        //println!("lhs-operand = {:?}", lhs_operand);
+        //println!("rhs-operand = {:?}", rhs_operand);
+        //println!("bytecode instruction = {:?}", bytecodes);
 
         let lhs_register = 0;
         let rhs_register = 1;

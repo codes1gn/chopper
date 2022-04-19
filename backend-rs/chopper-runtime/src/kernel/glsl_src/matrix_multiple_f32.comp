@@ -1,0 +1,71 @@
+#version 450
+
+layout(constant_id = 0) const uint entry_id = 0;
+layout(constant_id = 1) const uint lstride = 1;
+layout(constant_id = 2) const uint ldim = 1;
+layout(constant_id = 3) const uint rstride = 1;
+layout(constant_id = 4) const uint rdim = 1;
+
+layout(local_size_x = 3) in;
+
+layout(set = 0, binding = 0) buffer lhs
+{
+    float[] lhs_operand;
+};
+
+layout(set = 1, binding = 0) buffer rhs
+{
+    float[] rhs_operand;
+};
+
+layout(set = 2, binding = 0) buffer outs
+{
+    float[] outputs;
+};
+
+// layout(set = 0, binding = 0) buffer lhs
+// {
+//     mat2 lhs_operand;
+// };
+
+// layout(set = 1, binding = 0) buffer rhs
+// {
+//     mat2 rhs_operand;
+// };
+
+// layout(set = 2, binding = 0) buffer outs
+// {
+//     mat2 outputs;
+// };
+
+// mat2 kernel_mat(mat2 lhs, mat2 rhs) {
+//     return lhs * rhs;
+// }
+
+// float add_sum(vec lhs, vec rhs)
+// {
+//     return lhs * rhs;
+// };
+
+void main() {
+    const uint index = gl_GlobalInvocationID.x;
+
+    if (ldim != rstride) {
+        return;
+    }
+
+    const uint row = uint(floor(index / rdim));
+    const uint col = uint(mod(index, rdim));
+
+    // value at point
+    float sum = 0;
+    for(uint i = 0; i < ldim; i++) {
+        sum += lhs_operand[row * ldim + i] * rhs_operand[i * rdim + col];
+    }
+
+    // outputs[0] = dim;
+    // outputs[1] = stride;
+    // outputs[2] = rdim;
+    // outputs[3] = rstride;
+    outputs[index] = sum;
+}

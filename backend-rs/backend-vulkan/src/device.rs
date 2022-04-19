@@ -446,10 +446,10 @@ impl<'a> ComputePipelineInfoBuf<'a> {
                 size: (c.range.end - c.range.start) as _,
             })
             .collect();
-        println!("{:?}", this.entries.len());
-        println!("{:?}", this.entries.as_ptr());
-        println!("{:?}", desc.shader.specialization.data.len());
-        println!("{:?}", desc.shader.specialization.data.as_ptr());
+        // println!("{:?}", this.entries.len());
+        // println!("{:?}", this.entries.as_ptr());
+        // println!("{:?}", desc.shader.specialization.data.len());
+        // println!("{:?}", desc.shader.specialization.data.as_ptr());
         this.specialization = vk::SpecializationInfo {
             map_entry_count: this.entries.len() as _,
             p_map_entries: this.entries.as_ptr(),
@@ -817,7 +817,6 @@ impl d::Device<B> for super::Device {
         cache: Option<&n::PipelineCache>,
     ) -> Result<n::ComputePipeline, pso::CreationError> {
         debug!("create_compute_pipeline {:?}", desc);
-        println!("llllll create_compute_pipeline {:?}", desc);
         let buf = ComputePipelineInfoBuf::new(desc);
 
         let info = {

@@ -671,7 +671,7 @@ impl hal::Instance<Backend> for Instance {
                 vec![]
             }
         };
-        println!("WIP enumerate_adapter -> Vec<adapter::Adapter<Backend>>");
+        // println!("WIP enumerate_adapter -> Vec<adapter::Adapter<Backend>>");
 
         devices
             .into_iter()

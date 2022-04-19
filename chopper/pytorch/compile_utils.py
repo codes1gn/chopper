@@ -147,8 +147,13 @@ def backend(backend_name: str):
         tosa_file.close()
 
         if backend_name == "CRT":
-            _forward_callable = CRT.CallableModule(textual_tosa).forward
-            _backward_callable = CRT.CallableModule(textual_tosa_ad).backward
+            if "tosa.matmul" in textual_tosa:
+                _forward_callable = CRT.CallableModule(textual_tosa, "matmul").forward
+                _backward_callable = CRT.CallableModule(textual_tosa_ad, "matmul").backward
+            else:
+                _forward_callable = CRT.CallableModule(textual_tosa).forward
+                _backward_callable = CRT.CallableModule(textual_tosa_ad).backward
+
         elif backend_name == "IREE":
             # STAGE 2 :: mlir atir dialects => TOSA
 
@@ -211,10 +216,10 @@ def backend(backend_name: str):
                         outputs = _forward_callable(*_inputs)
                     elif backend_name == "CRT":
                         # TODO this reshape is a workaround, since CRT sends out the flatbuffer now
-                        print(_inputs[0].shape)
-                        print(_inputs[1].shape)
-                        # single_outputs = _forward_callable(DINST, *_inputs)
-                        single_outputs = np.matmul(_inputs[0], _inputs[1])
+                        # print(_inputs[0].shape)
+                        # print(_inputs[1].shape)
+                        single_outputs = _forward_callable(DINST, *_inputs)
+                        # single_outputs = np.matmul(_inputs[0], _inputs[1])
                         single_outputs = single_outputs.reshape((_inputs[0].shape[0], _inputs[1].shape[1]))
                         outputs = [single_outputs, _inputs[0], _inputs[1]]
                         # outputs = _forward_callable(DINST, *_inputs).reshape((3, 3))
