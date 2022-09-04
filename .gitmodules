@@ -11,3 +11,12 @@
 	path = external/iree
 	url = git@github.com:google/iree.git
     ignore = dirty
+[submodule "CRT"]
+	path = CRT
+	url = git@git.enflame.cn:heng.shi/CRT.git
+[submodule "Raptors"]
+	path = Raptors
+	url = git@git.enflame.cn:heng.shi/Raptors.git
+[submodule "UHHI"]
+	path = UHHI
+	url = git@git.enflame.cn:heng.shi/UHHI.git
