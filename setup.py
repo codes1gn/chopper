@@ -144,7 +144,7 @@ setup(
     rust_extensions=[
         RustExtension(
             "chopper.crt.Runtime",
-            path="./backend-rs/chopper-runtime/Cargo.toml",
+            path="./CRT/chopper-runtime/Cargo.toml",
             binding=Binding.PyO3,
             debug=True,
         )

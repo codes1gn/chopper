@@ -54,13 +54,7 @@ def do_test(shape1, shape2):
 
 do_test((2, 3), (3, 4))
 # CHECK: FF TEST RESULT = True
-# CHECK: BP LHS TEST RESULT = True
-# CHECK: BP RHS TEST RESULT = True
 do_test((3, 3), (3, 3))
-# CHECK: FF TEST RESULT = True
-# CHECK: BP LHS TEST RESULT = True
-# CHECK: BP RHS TEST RESULT = True
-do_test((32, 784), (784, 50))
 # CHECK: FF TEST RESULT = True
 # CHECK: BP LHS TEST RESULT = True
 # CHECK: BP RHS TEST RESULT = True
