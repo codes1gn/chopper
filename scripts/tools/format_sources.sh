@@ -25,4 +25,14 @@ yapf --recursive -i "$td/chopper"
 yapf --recursive -i "$td/experimental"
 
 # Rust sources.
+cd CRT
 cargo fmt
+cd -
+
+cd Raptors 
+cargo fmt
+cd -
+
+cd UHHI 
+# cargo fmt
+cd -
