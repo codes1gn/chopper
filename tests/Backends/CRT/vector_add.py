@@ -11,4 +11,3 @@ data4 = _forward_callable(DINST, data0, data1)
 print(data4)
 
 # CHECK: [2.6 4.5 7. ]
-# CHECK: destroy raw instance
