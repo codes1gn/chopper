@@ -1,0 +1,266 @@
+------ PYTHON SRC -------
+[91m
+*****dumping python ast****
+Module(
+  body=[FunctionDef(
+    name='forward',
+    args=arguments(
+      posonlyargs=[],
+      args=[
+        arg(
+          arg='self',
+          annotation=None,
+          type_comment=None),
+        arg(
+          arg='a',
+          annotation=None,
+          type_comment=None),
+        arg(
+          arg='b',
+          annotation=None,
+          type_comment=None)],
+      vararg=None,
+      kwonlyargs=[],
+      kw_defaults=[],
+      kwarg=None,
+      defaults=[]),
+    body=[
+      Assign(
+        targets=[Name(
+          id='c',
+          ctx=Store())],
+        value=Call(
+          func=Attribute(
+            value=Attribute(
+              value=Attribute(
+                value=Name(
+                  id='torch',
+                  ctx=Load()),
+                attr='nn',
+                ctx=Load()),
+              attr='functional',
+              ctx=Load()),
+            attr='conv2d',
+            ctx=Load()),
+          args=[
+            Name(
+              id='a',
+              ctx=Load()),
+            Name(
+              id='b',
+              ctx=Load())],
+          keywords=[]),
+        type_comment=None),
+      Return(value=Name(
+        id='c',
+        ctx=Load()))],
+    decorator_list=[
+      Call(
+        func=Name(
+          id='backend',
+          ctx=Load()),
+        args=[Constant(
+          value='IREE',
+          kind=None)],
+        keywords=[]),
+      Call(
+        func=Name(
+          id='annotate_arguments',
+          ctx=Load()),
+        args=[List(
+          elts=[
+            Constant(
+              value=None,
+              kind=None),
+            Tuple(
+              elts=[
+                Name(
+                  id='shape1',
+                  ctx=Load()),
+                Attribute(
+                  value=Name(
+                    id='torch',
+                    ctx=Load()),
+                  attr='float32',
+                  ctx=Load())],
+              ctx=Load()),
+            Tuple(
+              elts=[
+                Name(
+                  id='shape2',
+                  ctx=Load()),
+                Attribute(
+                  value=Name(
+                    id='torch',
+                    ctx=Load()),
+                  attr='float32',
+                  ctx=Load())],
+              ctx=Load())],
+          ctx=Load())],
+        keywords=[])],
+    returns=None,
+    type_comment=None)],
+  type_ignores=[])[0m[95m
+*****dumping python code*****
+
+
+@backend('IREE')
+@annotate_arguments([None, (shape1, torch.float32), (shape2, torch.float32)])
+def forward(self, a, b):
+    c = torch.nn.functional.conv2d(a, b)
+    return c
+[0m
+*******************
+
+_pass_table == >  {'IdenticalPastPass': '0', 'StatementConversionPass': '1', 'AnnotateCompletionPass': '2'}
+pass_manager_base::schedule_passes
+
+====== enter AnnotateCompletionPass =====
+
+<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7fe69fc294f0> ::visit_FunctionDef
+
+{}
+{'shape': (4, 4, 4, 4), 'dtype': 'f32'}
+a
+{'shape': (1, 1, 4, 4), 'dtype': 'f32'}
+b
+<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7fe69fc294f0> ::visit_Assign
+
+Call(
+  func=Attribute(
+    value=Attribute(
+      value=Attribute(
+        value=Name(
+          id='torch',
+          ctx=Load()),
+        attr='nn',
+        ctx=Load()),
+      attr='functional',
+      ctx=Load()),
+    attr='conv2d',
+    ctx=Load()),
+  args=[
+    Name(
+      id='a',
+      ctx=Load()),
+    Name(
+      id='b',
+      ctx=Load())],
+  keywords=[])
+warning: redefine of value a with, newtype = RankedTensorType(dimensions=[Dimension(value=4), Dimension(value=4), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+warning: redefine of value b with, newtype = RankedTensorType(dimensions=[Dimension(value=1), Dimension(value=1), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+{'from_lhs_tensor': RankedTensorType(dimensions=[Dimension(value=4), Dimension(value=4), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>)), 'from_rhs_tensor': RankedTensorType(dimensions=[Dimension(value=1), Dimension(value=1), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>)), 'bin_op': 'conv-nhwc-hwco'}
+c
+<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7fe69fc294f0> ::visit_Return
+
+>=============================<
+>==== Forward ValueSymbolTable Summary ====<
+>=============================<
+
+Count of Symbol Entries = 3
+Listing Symbol Entries ...
+
+
+Symbol #0 
+=> SsaId(value='a', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=4), Dimension(value=4), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+Symbol #1 
+=> SsaId(value='b', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=1), Dimension(value=1), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+Symbol #2 
+=> SsaId(value='c', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=4), Dimension(value=4), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+
+>=============================<
+>== End Forward ValueSymbolTable Summary ==<
+>=============================<
+
+>=============================<
+>==== Autodiff ValueSymbolTable Summary ====<
+>=============================<
+
+Count of Symbol Entries = 3
+Listing Symbol Entries ...
+
+
+Symbol #0 
+=> SsaId(value='a', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=4), Dimension(value=4), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+Symbol #1 
+=> SsaId(value='b', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=1), Dimension(value=1), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+Symbol #2 
+=> SsaId(value='c', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=4), Dimension(value=4), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+
+>=============================<
+>== End Autodiff ValueSymbolTable Summary ==<
+>=============================<
+
+>=============================<
+>==== Saved Activation Table Summary ====<
+>=============================<
+
+Count of Symbol Entries = 2
+Listing Symbol Entries ...
+
+
+Symbol #0 
+=> SsaId(value='a-act', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=4), Dimension(value=4), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+Symbol #1 
+=> SsaId(value='b-act', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=1), Dimension(value=1), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+
+>=============================<
+>== End Saved Activation Table Summary ==<
+>=============================<
+
+>=============================<
+>==== Autodiff Func Args Table Summary ====<
+>=============================<
+
+Count of Symbol Entries = 1
+Listing Symbol Entries ...
+
+
+Symbol #0 
+=> SsaId(value='c', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=4), Dimension(value=4), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+
+>=============================<
+>== End Autodiff Func Args Table Summary ==<
+>=============================<
+
+>=============================<
+>==== Autodiff Func Rets Table Summary ====<
+>=============================<
+
+Count of Symbol Entries = 2
+Listing Symbol Entries ...
+
+
+Symbol #0 
+=> SsaId(value='a', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=4), Dimension(value=4), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+Symbol #1 
+=> SsaId(value='b', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=1), Dimension(value=1), Dimension(value=4), Dimension(value=4)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+
+>=============================<
+>== End Autodiff Func Rets Table Summary ==<
+>=============================<
+
+pass_manager_base::schedule_passes
+runrun pass pass

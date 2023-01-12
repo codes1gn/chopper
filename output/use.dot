@@ -1,0 +1,93 @@
+digraph G {
+    graph [rankdir=TB, clusterrank="local"];
+    subgraph cluster_G {
+
+        graph [style="filled,rounded",fillcolor="#80808018", label=""];
+        mnist_training_iree [label="mnist_training_iree", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="0"];
+        subgraph cluster_mnist_training_iree {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree"];
+            mnist_training_iree__MLP_Layer1 [label="MLP_Layer1\n(experimental/end2end_pytorch/mnist_training_iree.py:42)", style="filled", fillcolor="#feccccb2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree"];
+            mnist_training_iree__MLP_Layer2 [label="MLP_Layer2\n(experimental/end2end_pytorch/mnist_training_iree.py:65)", style="filled", fillcolor="#feccccb2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree"];
+            mnist_training_iree__MLP_Layer3 [label="MLP_Layer3\n(experimental/end2end_pytorch/mnist_training_iree.py:88)", style="filled", fillcolor="#feccccb2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree"];
+            mnist_training_iree__Net [label="Net\n(experimental/end2end_pytorch/mnist_training_iree.py:111)", style="filled", fillcolor="#feccccb2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree"];
+            mnist_training_iree__train [label="train\n(experimental/end2end_pytorch/mnist_training_iree.py:139)", style="filled", fillcolor="#feccccb2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree"];
+            mnist_training_iree__validate [label="validate\n(experimental/end2end_pytorch/mnist_training_iree.py:173)", style="filled", fillcolor="#feccccb2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree__MLP_Layer1 {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree.MLP_Layer1"];
+            mnist_training_iree__MLP_Layer1____init__ [label="__init__\n(experimental/end2end_pytorch/mnist_training_iree.py:43)", style="filled", fillcolor="#ff9999b2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree__MLP_Layer1 {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree.MLP_Layer1"];
+            mnist_training_iree__MLP_Layer1__forward [label="forward\n(experimental/end2end_pytorch/mnist_training_iree.py:59)", style="filled", fillcolor="#ff9999b2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree__MLP_Layer2 {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree.MLP_Layer2"];
+            mnist_training_iree__MLP_Layer2____init__ [label="__init__\n(experimental/end2end_pytorch/mnist_training_iree.py:66)", style="filled", fillcolor="#ff9999b2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree__MLP_Layer2 {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree.MLP_Layer2"];
+            mnist_training_iree__MLP_Layer2__forward [label="forward\n(experimental/end2end_pytorch/mnist_training_iree.py:82)", style="filled", fillcolor="#ff9999b2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree__MLP_Layer3 {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree.MLP_Layer3"];
+            mnist_training_iree__MLP_Layer3____init__ [label="__init__\n(experimental/end2end_pytorch/mnist_training_iree.py:89)", style="filled", fillcolor="#ff9999b2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree__MLP_Layer3 {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree.MLP_Layer3"];
+            mnist_training_iree__MLP_Layer3__forward [label="forward\n(experimental/end2end_pytorch/mnist_training_iree.py:105)", style="filled", fillcolor="#ff9999b2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree__Net {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree.Net"];
+            mnist_training_iree__Net____init__ [label="__init__\n(experimental/end2end_pytorch/mnist_training_iree.py:112)", style="filled", fillcolor="#ff9999b2", fontcolor="#000000", group="0"];
+        }
+        subgraph cluster_mnist_training_iree__Net {
+
+            graph [style="filled,rounded",fillcolor="#80808018", label="mnist_training_iree.Net"];
+            mnist_training_iree__Net__forward [label="forward\n(experimental/end2end_pytorch/mnist_training_iree.py:124)", style="filled", fillcolor="#ff9999b2", fontcolor="#000000", group="0"];
+        }
+    }
+        mnist_training_iree -> mnist_training_iree__train [style="solid", color="#000000"];
+        mnist_training_iree -> mnist_training_iree__validate [style="solid", color="#000000"];
+        mnist_training_iree__Net____init__ -> mnist_training_iree__MLP_Layer3 [style="solid", color="#000000"];
+        mnist_training_iree__Net____init__ -> mnist_training_iree__MLP_Layer2____init__ [style="solid", color="#000000"];
+        mnist_training_iree__Net____init__ -> mnist_training_iree__MLP_Layer1 [style="solid", color="#000000"];
+        mnist_training_iree__Net____init__ -> mnist_training_iree__MLP_Layer1____init__ [style="solid", color="#000000"];
+        mnist_training_iree__Net____init__ -> mnist_training_iree__MLP_Layer3____init__ [style="solid", color="#000000"];
+        mnist_training_iree__Net____init__ -> mnist_training_iree__MLP_Layer2 [style="solid", color="#000000"];
+        mnist_training_iree__Net__forward -> mnist_training_iree__MLP_Layer3 [style="solid", color="#000000"];
+        mnist_training_iree__Net__forward -> mnist_training_iree__MLP_Layer2____init__ [style="solid", color="#000000"];
+        mnist_training_iree__Net__forward -> mnist_training_iree__MLP_Layer1 [style="solid", color="#000000"];
+        mnist_training_iree__Net__forward -> mnist_training_iree__MLP_Layer1____init__ [style="solid", color="#000000"];
+        mnist_training_iree__Net__forward -> mnist_training_iree__MLP_Layer3____init__ [style="solid", color="#000000"];
+        mnist_training_iree__Net__forward -> mnist_training_iree__MLP_Layer2 [style="solid", color="#000000"];
+        mnist_training_iree__train -> mnist_training_iree__train [style="solid", color="#000000"];
+    }
