@@ -29,24 +29,24 @@ Module(body=[FunctionDef(
         left=Name(
           id='a',
           ctx=Load()),
-        op=Add(),
+        op=Mult(),
         right=Name(
           id='b',
           ctx=Load()))),
     Assign(
       targets=[Name(
-        id='d',
+        id='e',
         ctx=Store())],
       value=BinOp(
         left=Name(
-          id='a',
-          ctx=Load()),
-        op=Add(),
-        right=Name(
           id='c',
+          ctx=Load()),
+        op=Mult(),
+        right=Name(
+          id='b',
           ctx=Load()))),
     Return(value=Name(
-      id='d',
+      id='e',
       ctx=Load()))],
   decorator_list=[
     Call(
@@ -95,9 +95,9 @@ Module(body=[FunctionDef(
 @backend('IREE')
 @annotate_arguments([None, (shape, torch.float32), (shape, torch.float32)])
 def forward(self, a, b):
-    c = (a + b)
-    d = (a + c)
-    return d
+    c = (a * b)
+    e = (c * b)
+    return e
 [0m
 *******************
 
@@ -106,18 +106,35 @@ pass_manager_base::schedule_passes
 
 ====== enter AnnotateCompletionPass =====
 
-<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7f9e5db152b0> ::visit_FunctionDef
+<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7fbf41ee72b0> ::visit_FunctionDef
 
+ValueBuilder.create forward symbol: name = a, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 insert symbol into autodiff_symbol_table :  a
+ValueBuilder.create backward symbol: name = a, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+ValueBuilder.create savedact symbol: name = a, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+ValueBuilder.create funret symbol: name = a, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+ValueBuilder.create forward symbol: name = b, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 insert symbol into autodiff_symbol_table :  b
-<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7f9e5db152b0> ::visit_Assign
+ValueBuilder.create backward symbol: name = b, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+ValueBuilder.create savedact symbol: name = b, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+ValueBuilder.create funret symbol: name = b, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7fbf41ee72b0> ::visit_Assign
 
+warning: redefine of value a with, newtype = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+warning: redefine of value b with, newtype = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+ValueBuilder.create forward symbol: name = c, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 insert symbol into autodiff_symbol_table :  c
-<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7f9e5db152b0> ::visit_Assign
+ValueBuilder.create backward symbol: name = c, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7fbf41ee72b0> ::visit_Assign
 
-insert symbol into autodiff_symbol_table :  d
-<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7f9e5db152b0> ::visit_Return
+ValueBuilder.create savedact symbol: name = c, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+warning: redefine of value b with, newtype = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+ValueBuilder.create forward symbol: name = e, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+insert symbol into autodiff_symbol_table :  e
+ValueBuilder.create backward symbol: name = e, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+<chopper.pass_manager.transformers.annotate_types_visitor.AnnotateTypesVisitor object at 0x7fbf41ee72b0> ::visit_Return
 
+ValueBuilder.create funarg symbol: name = e, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 >=============================<
 >==== Forward ValueSymbolTable Summary ====<
 >=============================<
@@ -139,7 +156,7 @@ Symbol #2
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 Symbol #3 
-=> SsaId(value='d', op_no=None) 
+=> SsaId(value='e', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 
@@ -168,7 +185,7 @@ Symbol #2
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 Symbol #3 
-=> SsaId(value='d', op_no=None) 
+=> SsaId(value='e', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 
@@ -180,7 +197,7 @@ Symbol #3
 >==== Saved Activation Table Summary ====<
 >=============================<
 
-Count of Symbol Entries = 2
+Count of Symbol Entries = 3
 Listing Symbol Entries ...
 
 
@@ -190,6 +207,10 @@ Symbol #0
 
 Symbol #1 
 => SsaId(value='b-act', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+Symbol #2 
+=> SsaId(value='c-act', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 
@@ -206,7 +227,7 @@ Listing Symbol Entries ...
 
 
 Symbol #0 
-=> SsaId(value='d', op_no=None) 
+=> SsaId(value='e', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 
@@ -242,28 +263,32 @@ pass_manager_base::schedule_passes
 
 ====== enter StatementConversionPass - Transformer = <class 'chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer'> =====
 
-<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7f9e5db152b0> ::visit_Module
+<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7fbf41ee73c8> ::visit_Module
 
-<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7f9e5db152b0> ::visit_FunctionDef
+<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7fbf41ee73c8> ::visit_FunctionDef
 
-<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7f9e5db152b0> ::visit_Assign
+<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7fbf41ee73c8> ::visit_Assign
 
 insert symbol into autodiff_symbol_table :  a-0
+ValueBuilder.create backward symbol: name = a-0, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 insert symbol into autodiff_symbol_table :  b-0
-<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7f9e5db152b0> ::visit_Assign
+ValueBuilder.create backward symbol: name = b-0, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7fbf41ee73c8> ::visit_Assign
 
-insert symbol into autodiff_symbol_table :  a-1
 insert symbol into autodiff_symbol_table :  c-0
-<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7f9e5db152b0> ::visit_Return
+ValueBuilder.create backward symbol: name = c-0, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+insert symbol into autodiff_symbol_table :  b-1
+ValueBuilder.create backward symbol: name = b-1, type = RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+<chopper.pass_manager.transformers.stmt_node_mapping_transformer.StmtNodeMappingTransformer object at 0x7fbf41ee73c8> ::visit_Return
 
 
 ====== enter StatementConversionPass - Transformer = <class 'chopper.pass_manager.transformers.autodiff_merge_replicas.AutodiffMergeReplicas'> =====
 
-<chopper.pass_manager.transformers.autodiff_merge_replicas.AutodiffMergeReplicas object at 0x7f9e5db152b0> ::visit_FunctionDef.
+<chopper.pass_manager.transformers.autodiff_merge_replicas.AutodiffMergeReplicas object at 0x7fbf41ee73c8> ::visit_FunctionDef.
 
-<chopper.pass_manager.transformers.autodiff_merge_replicas.AutodiffMergeReplicas object at 0x7f9e5db152b0> ::visit_Assign.
+<chopper.pass_manager.transformers.autodiff_merge_replicas.AutodiffMergeReplicas object at 0x7fbf41ee73c8> ::visit_Assign.
 
-<chopper.pass_manager.transformers.autodiff_merge_replicas.AutodiffMergeReplicas object at 0x7f9e5db152b0> ::visit_Assign.
+<chopper.pass_manager.transformers.autodiff_merge_replicas.AutodiffMergeReplicas object at 0x7fbf41ee73c8> ::visit_Assign.
 
 
 ====== enter StatementConversionPass - Transformer = <class 'chopper.pass_manager.transformers.stmt_conversion_ready_check_visitor.StmtConversionReadyCheckVisitor'> =====
@@ -271,9 +296,9 @@ insert symbol into autodiff_symbol_table :  c-0
 
 ====== enter StatementConversionPass - Transformer = <class 'chopper.pass_manager.transformers.stmt_fix_dependency_transformer.StmtFixDependencyTransformer'> =====
 
-<chopper.pass_manager.transformers.stmt_fix_dependency_transformer.StmtFixDependencyTransformer object at 0x7f9e5db152b0> Fix Transformer::handling visit_FunctionDef on node
+<chopper.pass_manager.transformers.stmt_fix_dependency_transformer.StmtFixDependencyTransformer object at 0x7fbf41ee73c8> Fix Transformer::handling visit_FunctionDef on node
 
-<chopper.pass_manager.transformers.stmt_fix_dependency_transformer.StmtFixDependencyTransformer object at 0x7f9e5db152b0> Fix handling visit_Module on node
+<chopper.pass_manager.transformers.stmt_fix_dependency_transformer.StmtFixDependencyTransformer object at 0x7fbf41ee73c8> Fix handling visit_Module on node
 
 Finally Symbol Table 
 >=============================<
@@ -297,7 +322,7 @@ Symbol #2
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 Symbol #3 
-=> SsaId(value='d', op_no=None) 
+=> SsaId(value='e', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 
@@ -326,7 +351,7 @@ Symbol #2
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 Symbol #3 
-=> SsaId(value='d', op_no=None) 
+=> SsaId(value='e', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 Symbol #4 
@@ -338,11 +363,11 @@ Symbol #5
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 Symbol #6 
-=> SsaId(value='a-1', op_no=None) 
+=> SsaId(value='c-0', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 Symbol #7 
-=> SsaId(value='c-0', op_no=None) 
+=> SsaId(value='b-1', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 
@@ -354,7 +379,7 @@ Symbol #7
 >==== Saved Activation Table Summary ====<
 >=============================<
 
-Count of Symbol Entries = 2
+Count of Symbol Entries = 3
 Listing Symbol Entries ...
 
 
@@ -364,6 +389,10 @@ Symbol #0
 
 Symbol #1 
 => SsaId(value='b-act', op_no=None) 
+=> RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
+
+Symbol #2 
+=> SsaId(value='c-act', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 
@@ -380,7 +409,7 @@ Listing Symbol Entries ...
 
 
 Symbol #0 
-=> SsaId(value='d', op_no=None) 
+=> SsaId(value='e', op_no=None) 
 => RankedTensorType(dimensions=[Dimension(value=2), Dimension(value=3)], element_type=FloatType(type=<FloatTypeEnum.f32: 'f32'>))
 
 
@@ -410,49 +439,51 @@ Symbol #1
 >=============================<
 
 ------ ATIR IR -------
-module @forward_0072494cb92e44cea27cd50c81f0e7f4 {
-  func @forward(%a: tensor<2x3xf32>, %b: tensor<2x3xf32>) -> (tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>) {
-    %c = atir.add %a , %b : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
-    %d = atir.add %a , %c : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+module @forward_3aadccec829346bba932f5de1578565f {
+  func @forward(%a: tensor<2x3xf32>, %b: tensor<2x3xf32>) -> (tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>) {
+    %c = atir.mul %a , %b : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+    %e = atir.mul %c , %b : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
     %a-act = atir.identity %a : (tensor<2x3xf32>) -> tensor<2x3xf32>
     %b-act = atir.identity %b : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    return %d, %a-act, %b-act : tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>
+    %c-act = atir.identity %c : (tensor<2x3xf32>) -> tensor<2x3xf32>
+    return %e, %a-act, %b-act, %c-act : tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>
   }
 }
-module @backward_0072494cb92e44cea27cd50c81f0e7f4 {
-  func @bpfunction(%d: tensor<2x3xf32>, %a-act: tensor<2x3xf32>, %b-act: tensor<2x3xf32>) -> (tensor<2x3xf32>, tensor<2x3xf32>) {
-    %c-0 = atir.identity %d : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    %a-1 = atir.identity %d : (tensor<2x3xf32>) -> tensor<2x3xf32>
+module @backward_3aadccec829346bba932f5de1578565f {
+  func @bpfunction(%e: tensor<2x3xf32>, %a-act: tensor<2x3xf32>, %b-act: tensor<2x3xf32>, %c-act: tensor<2x3xf32>) -> (tensor<2x3xf32>, tensor<2x3xf32>) {
+    %b-1 = atir.mul %c-act , %e : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+    %c-0 = atir.mul %e , %b-act : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
     %c = atir.identity %c-0 : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    %b-0 = atir.identity %c : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    %a-0 = atir.identity %c : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    %a = atir.add %a-1 , %a-0 : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
-    %b = atir.identity %b-0 : (tensor<2x3xf32>) -> tensor<2x3xf32>
+    %b-0 = atir.mul %a-act , %c : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+    %a-0 = atir.mul %c , %b-act : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+    %a = atir.identity %a-0 : (tensor<2x3xf32>) -> tensor<2x3xf32>
+    %b = atir.add %b-1 , %b-0 : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
     return %a, %b : tensor<2x3xf32>, tensor<2x3xf32>
   }
 }
 ------ TOSA IR -------
-module @forward_0072494cb92e44cea27cd50c81f0e7f4  {
-  func @forward(%arg0: tensor<2x3xf32>, %arg1: tensor<2x3xf32>) -> (tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>) {
-    %0 = "tosa.add"(%arg0, %arg1) : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
-    %1 = "tosa.add"(%arg0, %0) : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+module @forward_3aadccec829346bba932f5de1578565f  {
+  func @forward(%arg0: tensor<2x3xf32>, %arg1: tensor<2x3xf32>) -> (tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>) {
+    %0 = "tosa.mul"(%arg0, %arg1) {shift = 0 : i32} : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+    %1 = "tosa.mul"(%0, %arg1) {shift = 0 : i32} : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
     %2 = "tosa.identity"(%arg0) : (tensor<2x3xf32>) -> tensor<2x3xf32>
     %3 = "tosa.identity"(%arg1) : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    return %1, %2, %3 : tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>
+    %4 = "tosa.identity"(%0) : (tensor<2x3xf32>) -> tensor<2x3xf32>
+    return %1, %2, %3, %4 : tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>
   }
 }
 
 
 ------ TOSA IR -------
-module @backward_0072494cb92e44cea27cd50c81f0e7f4  {
-  func @bpfunction(%arg0: tensor<2x3xf32>, %arg1: tensor<2x3xf32>, %arg2: tensor<2x3xf32>) -> (tensor<2x3xf32>, tensor<2x3xf32>) {
-    %0 = "tosa.identity"(%arg0) : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    %1 = "tosa.identity"(%arg0) : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    %2 = "tosa.identity"(%0) : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    %3 = "tosa.identity"(%2) : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    %4 = "tosa.identity"(%2) : (tensor<2x3xf32>) -> tensor<2x3xf32>
-    %5 = "tosa.add"(%1, %4) : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
-    %6 = "tosa.identity"(%3) : (tensor<2x3xf32>) -> tensor<2x3xf32>
+module @backward_3aadccec829346bba932f5de1578565f  {
+  func @bpfunction(%arg0: tensor<2x3xf32>, %arg1: tensor<2x3xf32>, %arg2: tensor<2x3xf32>, %arg3: tensor<2x3xf32>) -> (tensor<2x3xf32>, tensor<2x3xf32>) {
+    %0 = "tosa.mul"(%arg3, %arg0) {shift = 0 : i32} : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+    %1 = "tosa.mul"(%arg0, %arg2) {shift = 0 : i32} : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+    %2 = "tosa.identity"(%1) : (tensor<2x3xf32>) -> tensor<2x3xf32>
+    %3 = "tosa.mul"(%arg1, %2) {shift = 0 : i32} : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+    %4 = "tosa.mul"(%2, %arg2) {shift = 0 : i32} : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
+    %5 = "tosa.identity"(%4) : (tensor<2x3xf32>) -> tensor<2x3xf32>
+    %6 = "tosa.add"(%0, %3) : (tensor<2x3xf32>, tensor<2x3xf32>) -> tensor<2x3xf32>
     return %5, %6 : tensor<2x3xf32>, tensor<2x3xf32>
   }
 }
@@ -460,42 +491,45 @@ module @backward_0072494cb92e44cea27cd50c81f0e7f4  {
 
 ------ RESULTS in VULKAN GPU -------
 vulkan backend inited
-<built-in method items of BoundModules object at 0x7f9e5db873b8>
+<built-in method items of BoundModules object at 0x7fbf41f593b8>
 <class 'chopper.iree.runtime.system_api.BoundModule'>
-<BoundModule <VmModule forward_0072494cb92e44cea27cd50c81f0e7f4 : [forward, __init]>>
-_Callable_Func.apply args = (tensor([[0.7519, 0.1548, 0.5565],
-        [0.2651, 0.1867, 0.5288]], requires_grad=True), tensor([[0.0803, 0.7148, 0.4492],
-        [0.4889, 0.5334, 0.0712]], requires_grad=True)), kwargs = {}
-execute forward, and inputs =  (tensor([[0.7519, 0.1548, 0.5565],
-        [0.2651, 0.1867, 0.5288]], requires_grad=True), tensor([[0.0803, 0.7148, 0.4492],
-        [0.4889, 0.5334, 0.0712]], requires_grad=True))
-execute forward, and outputs =  [tensor([[1.5841, 1.0245, 1.5621],
-        [1.0191, 0.9068, 1.1289]]), tensor([[0.7519, 0.1548, 0.5565],
-        [0.2651, 0.1867, 0.5288]]), tensor([[0.0803, 0.7148, 0.4492],
-        [0.4889, 0.5334, 0.0712]])]
-save for backwards =  tensor([[0.7519, 0.1548, 0.5565],
-        [0.2651, 0.1867, 0.5288]]) tensor([[0.0803, 0.7148, 0.4492],
-        [0.4889, 0.5334, 0.0712]])
-forward return =  tensor([[1.5841, 1.0245, 1.5621],
-        [1.0191, 0.9068, 1.1289]])
+<BoundModule <VmModule forward_3aadccec829346bba932f5de1578565f : [forward, __init]>>
+_Callable_Func.apply args = (tensor([[0.5716, 0.3323, 0.4277],
+        [0.5606, 0.0400, 0.1030]], requires_grad=True), tensor([[0.5578, 0.9599, 0.9025],
+        [0.1396, 0.4644, 0.8907]], requires_grad=True)), kwargs = {}
+execute forward, and inputs =  (tensor([[0.5716, 0.3323, 0.4277],
+        [0.5606, 0.0400, 0.1030]], requires_grad=True), tensor([[0.5578, 0.9599, 0.9025],
+        [0.1396, 0.4644, 0.8907]], requires_grad=True))
+execute forward, and outputs =  [tensor([[0.1778, 0.3062, 0.3484],
+        [0.0109, 0.0086, 0.0817]]), tensor([[0.5716, 0.3323, 0.4277],
+        [0.5606, 0.0400, 0.1030]]), tensor([[0.5578, 0.9599, 0.9025],
+        [0.1396, 0.4644, 0.8907]]), tensor([[0.3188, 0.3190, 0.3860],
+        [0.0783, 0.0186, 0.0918]])]
+save for backwards =  tensor([[0.5716, 0.3323, 0.4277],
+        [0.5606, 0.0400, 0.1030]]) tensor([[0.5578, 0.9599, 0.9025],
+        [0.1396, 0.4644, 0.8907]]) tensor([[0.3188, 0.3190, 0.3860],
+        [0.0783, 0.0186, 0.0918]])
+forward return =  tensor([[0.1778, 0.3062, 0.3484],
+        [0.0109, 0.0086, 0.0817]])
 reference result =
- tensor([[1.5841, 1.0245, 1.5621],
-        [1.0191, 0.9068, 1.1289]], grad_fn=<AddBackward0>)
+ tensor([[0.1778, 0.3062, 0.3484],
+        [0.0109, 0.0086, 0.0817]], grad_fn=<MulBackward0>)
 actual result =
- tensor([[1.5841, 1.0245, 1.5621],
-        [1.0191, 0.9068, 1.1289]], grad_fn=<_Callable_FuncBackward>)
+ tensor([[0.1778, 0.3062, 0.3484],
+        [0.0109, 0.0086, 0.0817]], grad_fn=<_Callable_FuncBackward>)
 FF TEST RESULT = True
 execute backward, and inputs =  tensor([[1., 1., 1.],
         [1., 1., 1.]])
-ctx.saved_tensors =  (tensor([[0.7519, 0.1548, 0.5565],
-        [0.2651, 0.1867, 0.5288]]), tensor([[0.0803, 0.7148, 0.4492],
-        [0.4889, 0.5334, 0.0712]]))
-execute backward, and outputs =  (array([[2., 2., 2.],
-       [2., 2., 2.]], dtype=float32), array([[1., 1., 1.],
-       [1., 1., 1.]], dtype=float32))
-reference grad =  tensor([[2., 2., 2.],
-        [2., 2., 2.]])
-actual grad =  tensor([[2., 2., 2.],
-        [2., 2., 2.]])
+ctx.saved_tensors =  (tensor([[0.5716, 0.3323, 0.4277],
+        [0.5606, 0.0400, 0.1030]]), tensor([[0.5578, 0.9599, 0.9025],
+        [0.1396, 0.4644, 0.8907]]), tensor([[0.3188, 0.3190, 0.3860],
+        [0.0783, 0.0186, 0.0918]]))
+execute backward, and outputs =  (array([[0.31110325, 0.9213654 , 0.8145207 ],
+       [0.01949772, 0.21569392, 0.7933386 ]], dtype=float32), array([[0.6376842 , 0.63793916, 0.7719964 ],
+       [0.15655449, 0.03719788, 0.18350545]], dtype=float32))
+reference grad =  tensor([[0.3111, 0.9214, 0.8145],
+        [0.0195, 0.2157, 0.7933]])
+actual grad =  tensor([[0.3111, 0.9214, 0.8145],
+        [0.0195, 0.2157, 0.7933]])
 BP LHS TEST RESULT = True
 BP RHS TEST RESULT = True

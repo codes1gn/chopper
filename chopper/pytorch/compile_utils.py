@@ -11,12 +11,13 @@ import chopper_compiler
 import chopper.iree.compiler as ireecc
 import chopper.iree.runtime as ireert
 
-import chopper.crt.Runtime as CRT
+# import chopper.crt.Runtime as CRT
 
 from .torch_jit_compiler import *
 from chopper.scaffold.utils import *
 from chopper.pass_manager.symbol_table import feed_forward_symbol_table
 import time
+from chopper.scaffold.utils.builders import *
 
 __all__ = [
     "annotate_arguments",
@@ -24,7 +25,7 @@ __all__ = [
 ]
 
 VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
-DINST = CRT.DeviceInstance()
+# DINST = CRT.DeviceInstance()
 
 # todo(albert) refactoring
 # this part of code snippets are borrows from torch-mlir to ensure the util
@@ -82,6 +83,9 @@ def backend(backend_name: str):
 
         ast_source = tjcompiler.annotate_function(ast_source, fn._torch_dsl_arg_annotations)
         mlir_dialect, mlir_dialect_autodiff = tjcompiler.to_mlir_dialect(ast_source)
+        print("Finally Symbol Table ")
+        ValueBuilder.verbose_symbol_table()
+        
         print("------ ATIR IR -------")
         textual_atir = mlir_dialect.dump()
         textual_atir_autodiff = mlir_dialect_autodiff.dump()
@@ -147,12 +151,13 @@ def backend(backend_name: str):
         tosa_file.close()
 
         if backend_name == "CRT":
-            if "tosa.matmul" in textual_tosa:
-                _forward_callable = CRT.CallableModule(textual_tosa, "matmul").forward
-                _backward_callable = CRT.CallableModule(textual_tosa_ad, "matmul").backward
-            else:
-                _forward_callable = CRT.CallableModule(textual_tosa).forward
-                _backward_callable = CRT.CallableModule(textual_tosa_ad).backward
+            pass
+            # if "tosa.matmul" in textual_tosa:
+            #     _forward_callable = CRT.CallableModule(textual_tosa, "matmul").forward
+            #     _backward_callable = CRT.CallableModule(textual_tosa_ad, "matmul").backward
+            # else:
+            #     _forward_callable = CRT.CallableModule(textual_tosa).forward
+            #     _backward_callable = CRT.CallableModule(textual_tosa_ad).backward
 
         elif backend_name == "IREE":
             # STAGE 2 :: mlir atir dialects => TOSA
@@ -216,12 +221,13 @@ def backend(backend_name: str):
                         outputs = _forward_callable(*_inputs)
                     elif backend_name == "CRT":
                         # TODO this reshape is a workaround, since CRT sends out the flatbuffer now
+                        pass
                         # print(_inputs[0].shape)
                         # print(_inputs[1].shape)
-                        single_outputs = _forward_callable(DINST, *_inputs)
+                        # single_outputs = _forward_callable(DINST, *_inputs)
                         # single_outputs = np.matmul(_inputs[0], _inputs[1])
-                        single_outputs = single_outputs.reshape((_inputs[0].shape[0], _inputs[1].shape[1]))
-                        outputs = [single_outputs, _inputs[0], _inputs[1]]
+                        # single_outputs = single_outputs.reshape((_inputs[0].shape[0], _inputs[1].shape[1]))
+                        # outputs = [single_outputs, _inputs[0], _inputs[1]]
                         # outputs = _forward_callable(DINST, *_inputs).reshape((3, 3))
 
                     out_tensors = [torch.tensor(grad_output) for grad_output in outputs]
@@ -242,10 +248,11 @@ def backend(backend_name: str):
                     if backend_name == "IREE":
                         outputs = _backward_callable(_grad, *_inputs_activation_to_numpy)
                     elif backend_name == "CRT":
-                        _ = _backward_callable(DINST, _grad, *_inputs_activation_to_numpy)
-                        lhs_grad = _[0].reshape(_inputs_activation_to_numpy[0].shape)
-                        rhs_grad = _[1].reshape(_inputs_activation_to_numpy[1].shape)
-                        outputs = (lhs_grad, rhs_grad)
+                        pass
+                        # _ = _backward_callable(DINST, _grad, *_inputs_activation_to_numpy)
+                        # lhs_grad = _[0].reshape(_inputs_activation_to_numpy[0].shape)
+                        # rhs_grad = _[1].reshape(_inputs_activation_to_numpy[1].shape)
+                        # outputs = (lhs_grad, rhs_grad)
 
                     if ctx.arg_count == 1:
                         return torch.tensor(outputs)

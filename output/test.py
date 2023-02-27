@@ -8,7 +8,11 @@ VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
 
 TMP_FILE_TOSA = "/home/zp/chopper/output/add_tosa.mlir"
 # TMP_FILE_MHLO = "/home/zp/chopper/output/stateless_random_uniform_mhlo.mlir"
-TMP_FILE_MHLO = "/home/zp/chopper/output/mhlo_preprocess_by_iree.mlir"
+BERT_MHLO = "/home/zp/code/torch-mlir/bert_tiny_mhlo.mlir"
+RANDOM_NORMAL_MHLO = "random_normal/random_normal_mhlo.mlir"
+STATELESS_RANDOM_NORMAL_MHLO = "random_normal/stateless_random_normal_mhlo.mlir"
+IREE_PROCESS_RANDOM_MHLO = "/home/zp/chopper/output/random_normal/mhlo_preprocess_by_iree.mlir"
+TMP_FILE_MHLO = RANDOM_NORMAL_MHLO
 
 #llvm-cpu
 #vulkan-spirv
@@ -24,24 +28,21 @@ callable_binary = ireecc.tools.compile_file(TMP_FILE_MHLO, input_type="mhlo", ta
 
 vm_module = ireert.VmModule.from_flatbuffer(callable_binary)
 VKCTX.add_vm_module(vm_module)
-print(vm_module)
-#forward_57e61f4343a64aed8f54e69d11d27266
-# _forward_callable = VKCTX.modules["forward_57e61f4343a64aed8f54e69d11d27266"]["forward"]
-# a_inference_random_normal_494__.23
-_forward_callable = VKCTX.modules["module"]["rng_normal"]
+# print(vm_module)
+_forward_callable = VKCTX.modules["module"]["main"]
 
 
-print(_forward_callable)
+# print(_forward_callable)
 
-lhs = torch.empty(7, 5).uniform_()
-rhs = torch.empty(7, 5).uniform_()
+# lhs = torch.empty(2, 3).uniform_()
+# rhs = torch.empty(2, 3).uniform_()
                     
-a = lhs.detach().numpy()
-b = rhs.detach().numpy()
-print("lhs is:", a)
-print("rhs is", b)
-print("========================")
-c = torch.tensor(0.).detach().numpy()
-d = torch.tensor(1.).detach().numpy()
-outputs = _forward_callable(c, d)
-print("result is ",outputs)
+# a = lhs.detach().numpy()
+# b = rhs.detach().numpy()
+# print("lhs is:", a)
+# print("rhs is", b)
+# print("========================")
+for _ in range(10):
+    res = _forward_callable() #torch.tensor(0.0).numpy(), torch.tensor(1.0).numpy())
+    print(res, "\n")
+    

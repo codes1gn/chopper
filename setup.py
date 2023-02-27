@@ -6,7 +6,7 @@ import subprocess
 
 from setuptools import setup, Extension, find_packages, find_namespace_packages
 from setuptools.command.build_ext import build_ext
-from setuptools_rust import Binding, RustExtension
+# from setuptools_rust import Binding, RustExtension
 
 __TOP_DIR_PATH__ = os.path.abspath(os.path.dirname(__file__))
 if not __TOP_DIR_PATH__.endswith(os.path.sep):
@@ -141,14 +141,14 @@ setup(
     zip_safe=False,
     packages=find_packages(),
     python_requires=">=3.6.12",
-    rust_extensions=[
-        RustExtension(
-            "chopper.crt.Runtime",
-            path="./backend-rs/chopper-runtime/Cargo.toml",
-            binding=Binding.PyO3,
-            debug=True,
-        )
-    ],
+    # rust_extensions=[
+    #     RustExtension(
+    #         "chopper.crt.Runtime",
+    #         path="./backend-rs/chopper-runtime/Cargo.toml",
+    #         binding=Binding.PyO3,
+    #         debug=True,
+    #     )
+    # ],
     entry_points={
         # "console_scripts": [
         #     "chopper_runner=chopper.bin.chopper_runner:main",

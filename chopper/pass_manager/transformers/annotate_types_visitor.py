@@ -113,11 +113,19 @@ class AnnotateTypesVisitor(NodeVisitorBase):
             # TODO change this way of matching into String Utils
             # e.g. torch.nn.functional.linear and
             # torch.matmul can be explored equally
-            # _call_lib = _rhs_stmt.func.value.id  # torch
+            _call_lib = _rhs_stmt.func.value.id  # torch
             # assert _rhs_stmt.func.value.id == "torch", "Found function call other than Torch DSL"
 
-            _call_method = _rhs_stmt.func.attr  # exp or add
-            _args = _rhs_stmt.args  # ast.Name, ast.Name
+            _call_method = _rhs_stmt.func.attr  # exp or add or sample
+            _args = _rhs_stmt.args  # ast.Name, ast.Name, sample(name, dist_fn, others)
+            
+            # handle sample
+            if _call_lib == "pyro" and _call_method == "sample":
+                # print(f"handle pyro.sample, args = {_args}")
+                assert isinstance(_args[0], ast.Str), "pyro.sample expect a string as 1st parameter"
+                assert isinstance(_args[1], ast.Call), "pyro.sample expect a call to distribution as 2nd parameter"
+                _args = _args[1].args # shape of pyro.sample depends on loc and scale of distribution
+            
             _arg_type_list = [ValueBuilder.get_type_or_retry(_argname.id) for _argname in _args]
 
             # if any arg types are not inferred, means the infer of this call op is not ready
@@ -142,9 +150,9 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 for _ret_op_element in _ret_op:
                     ValueBuilder.create(_ret_op_element.id, _result_type)
 
-            elif _call_method == "add" or _call_method == "sub":
+            elif _call_method == "add" or _call_method == "sub" or _call_method == "sample":
 
-                assert len(_arg_type_list) == 2, "expected binary, too long of arguments for unaryop call"
+                assert len(_arg_type_list) == 2, "expected binary, too long of arguments for call"
                 _lhs_type = _arg_type_list[0]
                 _rhs_type = _arg_type_list[1]
                 assert _lhs_type.element_type == _rhs_type.element_type

@@ -18,3 +18,4 @@ mlir_build
 iree_build
 build
 /target
+.vscode
