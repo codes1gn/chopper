@@ -2,6 +2,7 @@ from typing import Tuple, List, Optional, Union
 import ast
 import astunparse
 import numpy as np
+import logging
 
 from mlir import astnodes
 from mlir.astnodes import (
@@ -28,6 +29,8 @@ from chopper.scaffold.mlir_dialects.dialect_atir import (
     ATIR_ConstShapeOp,
     ATIR_TransposeOp,
     UnitTensorType,
+    ATIR_RandomNormalOp,
+    ATIR_RandomUniformOp
 )
 
 
@@ -62,8 +65,8 @@ class OpBuilder(object):
                 return _operations
             else:
                 _, _ret = cls.create_binary_with_retval("add", "backward", operand, _lhs_operand, _rhs_operand)
-                print(_)
-                print(_ret)
+                # print(_)
+                # print(_ret)
                 assert 0
                 _replicas.append(_ret)
                 _operations.append(_)
@@ -230,6 +233,37 @@ class OpBuilder(object):
 
         return astnodes.Operation(result_list=_result, op=_op, location=None), retval_new
 
+    @classmethod
+    def create_random(cls, func: str, graph: str, retval: astnodes.SsaId, **kwargs: astnodes.SsaId) -> astnodes.Operation:
+        if graph == "forward":
+            restype = ValueBuilder.get_type(retval.value)
+            args_type = [ValueBuilder.get_type(kwargs[arg].value) for arg in kwargs]
+        elif graph == "backward":
+            assert 0, "Not support backward of sample random"
+        
+        if func == "normal":
+            _result = [astnodes.OpResult(value=retval, count=None)]
+            _op = ATIR_RandomNormalOp(
+                match=0,
+                mu=kwargs["mu"],
+                sigma=kwargs["sigma"],
+                shape=kwargs["shape"],
+                dtype=FunctionType(argument_types=args_type, result_types=[restype])
+            )
+            return astnodes.Operation(result_list=_result, op = _op, location=None)
+        elif func == "uniform":
+            _result = [astnodes.OpResult(value=retval, count=None)]
+            _op = ATIR_RandomUniformOp(
+                match=0,
+                minval=kwargs[0],
+                maxval=kwargs[1],
+                shape=kwargs[2],
+                dtype=FunctionType(argument_types=args_type, result_types=[restype])
+            )
+            return astnodes.Operation(result_list=_result, op = _op, location=None)
+        else:
+            assert 0, "Not support other sampling other than Normal and Uniform Distribution"
+    
     @classmethod
     def create_unary(cls, func: str, graph: str, retval: astnodes.SsaId, operand: astnodes.SsaId) -> astnodes.Operation:
         if graph == "backward":
@@ -495,6 +529,8 @@ class ValueBuilder(object):
         if _type is None:
             # by default, run the passes again if this value is not created
             feed_forward_symbol_table.pass_again = True
+            errorstr = "\'" + value_name + " \'is not defined"
+            assert 0, errorstr
         return _type
 
     @classmethod
@@ -590,24 +626,28 @@ class ValueBuilder(object):
             if feed_forward_symbol_table.lookup(value_name, "type"):
                 assert 0, "error: redefine of value {} with newtype = {}".format(value_name, value_type)
             feed_forward_symbol_table.insert(value_name, value_type)
+            logging.debug(f"ValueBuilder.create forward symbol: name = { value_name}, type = {value_type}")
         if "backward" in mode:
-            print(value_name)
             if autodiff_symbol_table.lookup(value_name, "type"):
                 assert 0, "error: redefine of value {} with, newtype = {}".format(value_name, value_type)
             autodiff_symbol_table.insert(value_name, value_type)
+            logging.debug(f"ValueBuilder.create backward symbol: name = { value_name}, type = {value_type}")
         if "savedact" in mode:
             if autodiff_saved_activation_table.lookup(value_name + postfix, "type"):
                 print("warning: redefine of value {} with, newtype = {}".format(value_name, value_type))
                 return
             autodiff_saved_activation_table.insert(value_name + "-act", value_type)
+            logging.debug(f"ValueBuilder.create savedact symbol: name = { value_name}, type = {value_type}")
         if "funcarg" in mode:
             if autodiff_func_arguments_table.lookup(value_name, "type"):
                 assert 0, "error: redefine of value {} with, newtype = {}".format(value_name, value_type)
             autodiff_func_arguments_table.insert(value_name, value_type)
+            logging.debug(f"ValueBuilder.create funarg symbol: name = { value_name}, type = {value_type}")
         if "funcret" in mode:
             if autodiff_func_returns_table.lookup(value_name, "type"):
                 assert 0, "error: redefine of value {} with, newtype = {}".format(value_name, value_type)
             autodiff_func_returns_table.insert(value_name, value_type)
+            logging.debug(f"ValueBuilder.create funret symbol: name = { value_name}, type = {value_type}")
         return
 
     @classmethod
@@ -696,7 +736,7 @@ class TypeBuilder(object):
 
     @classmethod
     def create(cls, op: str, **kwattr) -> astnodes.Type:
-        print(kwattr)
+        logging.debug(cls.__name__, " TypeBuilder::create kwattr is: ", kwattr)
         if op == "none":
             return cls.build_none()
         elif op == "numeric":

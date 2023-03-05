@@ -1,6 +1,8 @@
 import ast
 import torch
 import astunparse
+import numpy as np
+import logging
 
 from chopper.scaffold.utils import *
 from mlir import astnodes
@@ -42,7 +44,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         Returns:
             ast.AST: FunctionDef with corresponding mlir astnode attribution.
         """
-        print(self.__str__(), "::visit_FunctionDef\n")
+        logging.debug(self.__str__(), "::visit_FunctionDef\n")
         # only handles arguments > 0
         assert len(node.args.args) > 0
         # WORKAROUND
@@ -79,7 +81,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         Returns:
             ast.AST: same type as input.
         """
-        print(self.__str__(), "::visit_Assign\n")
+        logging.debug(self.__str__(), "::visit_Assign\n")
         _ret_op = node.targets
         _rhs_stmt = node.value
         if isinstance(_rhs_stmt, ast.BinOp):
@@ -109,7 +111,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 ValueBuilder.create(_ret_op_element.id, _lhs_type, mode="forward+backward")
 
         elif isinstance(_rhs_stmt, ast.Call):
-            print(astunparse.dump(_rhs_stmt))
+            # print(astunparse.dump(_rhs_stmt))
             # TODO change this way of matching into String Utils
             # e.g. torch.nn.functional.linear and
             # torch.matmul can be explored equally
@@ -124,9 +126,10 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 # print(f"handle pyro.sample, args = {_args}")
                 assert isinstance(_args[0], ast.Str), "pyro.sample expect a string as 1st parameter"
                 assert isinstance(_args[1], ast.Call), "pyro.sample expect a call to distribution as 2nd parameter"
-                _args = _args[1].args # shape of pyro.sample depends on loc and scale of distribution
-            
-            _arg_type_list = [ValueBuilder.get_type_or_retry(_argname.id) for _argname in _args]
+                # _args = _args[1].args # shape of pyro.sample depends on loc and scale of distribution
+                _arg_type_list = [ValueBuilder.get_type_or_retry(_argname.id) for _argname in _args[1].args]
+            else:
+                _arg_type_list = [ValueBuilder.get_type_or_retry(_argname.id) for _argname in _args]
 
             # if any arg types are not inferred, means the infer of this call op is not ready
             # run the pass again
@@ -150,7 +153,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
                 for _ret_op_element in _ret_op:
                     ValueBuilder.create(_ret_op_element.id, _result_type)
 
-            elif _call_method == "add" or _call_method == "sub" or _call_method == "sample":
+            elif _call_method == "add" or _call_method == "sub":
 
                 assert len(_arg_type_list) == 2, "expected binary, too long of arguments for call"
                 _lhs_type = _arg_type_list[0]
@@ -200,7 +203,19 @@ class AnnotateTypesVisitor(NodeVisitorBase):
 
                 for _ret_op_element in _ret_op:
                     ValueBuilder.create(_ret_op_element.id, _ret_type)
-
+            elif _call_method == "sample":
+                # _call_keywords = _rhs_stmt.keywords
+                # for keyword in _call_keywords:
+                #     if keyword.arg == "sample_shape":
+                #         _sample_shape = keyword.value
+                _lhs_type = _arg_type_list[0]
+                _rhs_type = _arg_type_list[1]
+                _shape_type = TypeBuilder.create("tensor", shape = np.array(_lhs_type.dimensions).shape, dtype = "i32")
+                sample_name = _args[0].s
+                ValueBuilder.create(sample_name + "_shape", _shape_type, mode="forward")
+                assert _lhs_type.dimensions == _rhs_type.dimensions, "expected same shape of lhs and rhs arguments"
+                for _ret_op_element in _ret_op:
+                    ValueBuilder.create(_ret_op_element.id, _lhs_type)
             else:
                 assert 0, "found unsupported call method, please check <annotate_type_visitor>"
 
@@ -221,7 +236,7 @@ class AnnotateTypesVisitor(NodeVisitorBase):
         Returns:
             ast.AST: same type as input.
         """
-        print(self.__str__(), "::visit_Return\n")
+        logging.debug(self.__str__(), "::visit_Return\n")
         assert isinstance(node.value, ast.Name), "Not handle this type rhs value for AssignOp"
         _argname = node.value.id
         _func_ret_type = ValueBuilder.get_type_or_retry(_argname)

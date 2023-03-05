@@ -127,7 +127,25 @@ class ATIR_AddOp(DialectOp):
     _syntax_ = [
         "atir.add {operand_a.ssa_use} , {operand_b.ssa_use} : {dtype.function_type}",
     ]
+@dataclass
+class ATIR_RandomNormalOp(DialectOp):
+    mu: SsaUse 
+    sigma: SsaUse
+    shape: SsaUse
+    dtype: mast.FunctionType
+    
+    _opname_ = "atir.rng_normal"
+    _syntax_ = ["atir.rng_normal {mu.ssa_use} , {sigma.ssa_use} , {shape.ssa_use} : {dtype.function_type}"]
 
+@dataclass
+class ATIR_RandomUniformOp(DialectOp):
+    minval: SsaUse
+    maxval: SsaUse
+    shape: SsaUse
+    dtype: mast.FunctionType
+    
+    _opname_ = "atir.rng_uniform"
+    _syntax_ = ["atir.rng_uniform {minval.ssa_use} , {maxval.ssa_use} , {shape.ssa_use} : {dtype.function_type}"]
 
 @dataclass
 class ATIR_SubOp(DialectOp):

@@ -3,6 +3,7 @@ import astunparse
 from astunparse import printer
 from typing import Tuple, List, Optional
 import torch
+import logging
 from chopper.scaffold.utils.builders import *
 
 from chopper.scaffold.utils import *
@@ -70,6 +71,8 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         Returns:
             ast.AST: FunctionDef node with corresponding MLIR ast node.
         """
+        
+        logging.debug(self.__str__(), "::visit_FunctionDef\n")
         super().generic_visit(node)
         # arguments = forward outs + forward saved-acts
         _arguments = []
@@ -92,7 +95,6 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 ValueBuilder.get_func_rets_autodiff(mode="value"), ValueBuilder.get_func_rets_autodiff(mode="type")
             ),
         ]
-
         setattr(node, "mast_node", _function_wrapper)
         setattr(node, "mast_node_autodiff", _autodiff_wrapper)
 
@@ -109,11 +111,26 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         Returns:
             ast.AST: Module node with corresponding MLIR ast node.
         """
+        
+        logging.debug(self.__str__(), "::visit_Module\n")
         super().generic_visit(node)
         _block = astnodes.Block(label=None, body=[None])
         _region = astnodes.Region(body=[_block])
         _module = astnodes.Module(name=astnodes.SymbolRefId(value=unique_module_name.get_forward()), attributes=None, region=_region, location=None)
         _mlirfile = astnodes.MLIRFile(definitions=[], modules=[_module])
+        """
+        Now region.boby is None, so dump operation will throw AttributeError:"NoneType" object has no attribute dump
+        MLIRFile(
+            definitions=[], 
+            modules=[
+                Module(
+                    name=SymbolRefId(value='forward_6ae71d0ed986480fadc32fcaf62d6d30'), 
+                    attributes=None, 
+                    region=Region(body=[Block(label=None, body=[None])]), 
+                    location=None)
+            ]
+        )
+        """
 
         _block_bp = astnodes.Block(label=None, body=[None])
         _region_bp = astnodes.Region(body=[_block_bp])
@@ -136,6 +153,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
             ast.AST: Module node with corresponding MLIR ast node.
         """
 
+        logging.debug(self.__str__(), "::visit_Return\n")
         super().generic_visit(node)
         assert isinstance(node.value, ast.Name), "no outs vars"
 
@@ -197,7 +215,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
         Returns:
             ast.AST: Assign astnode of python with mast_node attributions.
         """
-
+        logging.debug(self.__str__(), "::visit_Assign\n")
         super().generic_visit(node)
         # print(self.__str__(),
         #       "Map transformer::handling visit_Assign on node.\n")
@@ -268,9 +286,9 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         func="negate", graph="backward", retval=_SsaId_rhs_operand, operand=_SsaId_outs
                     ),
                 ]
-                print(_op_wrapper[0].dump())
-                print(_autodiff_wrapper[0].dump())
-                print(_autodiff_wrapper[1].dump())
+                logging.debug(_op_wrapper[0].dump())
+                logging.debug(_autodiff_wrapper[0].dump())
+                logging.debug(_autodiff_wrapper[1].dump())
                 setattr(node, "mast_node", _op_wrapper)
                 setattr(node, "mast_node_autodiff", _autodiff_wrapper)
                 return node
@@ -463,9 +481,9 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                             func="negate", graph="backward", retval=_SsaId_rhs_operand, operand=_SsaId_outs
                         ),
                     ]
-                    print(_op_wrapper[0].dump())
-                    print(_autodiff_wrapper[0].dump())
-                    print(_autodiff_wrapper[1].dump())
+                    logging.debug(_op_wrapper[0].dump())
+                    logging.debug(_autodiff_wrapper[0].dump())
+                    logging.debug(_autodiff_wrapper[1].dump())
                     setattr(node, "mast_node", _op_wrapper)
                     setattr(node, "mast_node_autodiff", _autodiff_wrapper)
                     return node
@@ -515,7 +533,7 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                         )
                     ]
                     setattr(node, "mast_node", _op_wrapper)
-                    print(node.mast_node[0].dump())
+                    logging.debug(node.mast_node[0].dump())
                     _const_op, _transpose_const = OpBuilder.create_const(retval=_SsaId_lhs_operand, literal=[1, 0])
                     _lhs_transpose_op, _tmp_lhs_act_transposed = OpBuilder.create_binary_with_retval(
                         func="transpose",
@@ -569,6 +587,42 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                 else:
                     assert 0, "unsupported binary op"
                 """
+            
+            elif _call_method == "sample":
+                sample_name = node.value.args[0].s
+                sample_fn = node.value.args[1]
+                assert isinstance(sample_fn, ast.Call), "sample expects Distribution at 2nd arguments"
+                actual_call_method = sample_fn.func.attr
+                if actual_call_method == "Normal" or actual_call_method == "Uniform":
+                    arg0 = sample_fn.args[0].id  # loc in Normal, minval in Uniform
+                    arg1 = sample_fn.args[1].id # scale in Normal, maxval in Uniform
+                    _SsaId_operand0 = ValueBuilder.get_value(arg0)
+                    _SsaId_operand1 = ValueBuilder.get_value(arg1)
+                    _res_argnames_list = [target.id for target in node.targets]
+                    _res_argname = _res_argnames_list[0]
+                    _SsaId_outs = ValueBuilder.get_value(_res_argname)
+                    _SsaId_shape = ValueBuilder.get_value(sample_name + "_shape")
+                    
+                    sample_shape = ValueBuilder.get_type(arg0).dimensions  
+                    literal = [dim.value for dim in sample_shape]
+                    _op_wrapper = [
+                        OpBuilder.create_const(_SsaId_shape, literal)[0],
+                        OpBuilder.create_random(
+                            func="normal",
+                            graph="forward",
+                            retval=MlirSsaId(value=_res_argname),
+                            mu=_SsaId_operand0,
+                            sigma=_SsaId_operand1,
+                            shape=_SsaId_shape
+                        )
+                    ]
+                    # Not Support
+                    _autodiff_wrapper = []
+                    setattr(node, "mast_node", _op_wrapper)
+                    setattr(node, "mast_node_autodiff", _autodiff_wrapper)
+                    return node
+                else:
+                    assert 0, "Not Support this op conversion from ast.AST -> mlir.astnodes.Node" 
             else:
                 assert 0, "Not Support this op conversion from ast.AST -> mlir.astnodes.Node"
 

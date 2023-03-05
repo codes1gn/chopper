@@ -1,16 +1,19 @@
 from typing import Callable, List, Optional, Tuple, NamedTuple
 import torch
+import logging
 
 
 __all__ = [
     "TORCH_MLIR_ARG_ANNOTATIONS_ATTR_NAME",
     "unique_module_name",
     "ArgAnnotation",
+    "LOGGING_LEVEL"
 ]
 
 # TODO move this hardcode into base
 TORCH_MLIR_ARG_ANNOTATIONS_ATTR_NAME = "_torch_dsl_arg_annotations"
 ArgAnnotation = Tuple[List[int], torch.dtype]
+LOGGING_LEVEL=logging.ERROR
 
 # compile name prefix of module names
 class UniqueModuleName:
@@ -32,3 +35,4 @@ class UniqueModuleName:
 
 
 unique_module_name = UniqueModuleName()
+logging.basicConfig(level=LOGGING_LEVEL)

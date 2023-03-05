@@ -148,7 +148,10 @@ class AutodiffMergeReplicas(NodeTransformerBase):
 
                 setattr(node, "mast_node_autodiff", _autodiff_wrapper + extra_autodiff_ops)
                 return node
-
+            elif _call_method == "sample":
+                return node
+            else:
+                assert 0, "Not support op type in Autodiff_merger_replicas pass"
         else:
             assert 0
 
