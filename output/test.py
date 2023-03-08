@@ -6,43 +6,32 @@ VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
 # VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vmvx"))
 # VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="dylib"))
 
-TMP_FILE_TOSA = "/home/zp/chopper/output/add_tosa.mlir"
-# TMP_FILE_MHLO = "/home/zp/chopper/output/stateless_random_uniform_mhlo.mlir"
-BERT_MHLO = "/home/zp/code/torch-mlir/bert_tiny_mhlo.mlir"
 RANDOM_NORMAL_MHLO = "random_normal/random_normal_mhlo.mlir"
 STATELESS_RANDOM_NORMAL_MHLO = "random_normal/stateless_random_normal_mhlo.mlir"
 IREE_PROCESS_RANDOM_MHLO = "/home/zp/chopper/output/random_normal/mhlo_preprocess_by_iree.mlir"
-TMP_FILE_MHLO = RANDOM_NORMAL_MHLO
+STATELESS_RANDOM_UNIFORM_MHLO="/home/zp/chopper/output/random_uniform/stateless_random_uniform_mhlo.mlir"
+TOSA_RANDOM_NORMAL = "/home/zp/chopper/output/random_normal/random_normal_tosa.mlir"
+MY_TOSA_RANDOM_NORMAL = "/home/zp/chopper/tmp/tosa.6ae71d0ed986480fadc32fcaf62d6d30"
 
-#llvm-cpu
-#vulkan-spirv
-#dylib-llvm-aot
-#vmvx
+TMP_FILE_MHLO = IREE_PROCESS_RANDOM_MHLO
+TMP_FILE_TOSA = MY_TOSA_RANDOM_NORMAL
+
 
 target_backends_vulkan = "vulkan-spirv"
 target_backends_cpu = "vmvx"
 target_backends_dylib = "dylib"
-# callable_binary = ireecc.tools.compile_file(TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"])
-callable_binary = ireecc.tools.compile_file(TMP_FILE_MHLO, input_type="mhlo", target_backends=[target_backends_vulkan])
 
-
-vm_module = ireert.VmModule.from_flatbuffer(callable_binary)
-VKCTX.add_vm_module(vm_module)
-# print(vm_module)
-_forward_callable = VKCTX.modules["module"]["main"]
-
-
-# print(_forward_callable)
-
-# lhs = torch.empty(2, 3).uniform_()
-# rhs = torch.empty(2, 3).uniform_()
+def init_iree_vm(file: str, type: str):
+    callable_binary = ireecc.tools.compile_file(file, input_type=type, target_backends=[target_backends_vulkan])
+    vm_module = ireert.VmModule.from_flatbuffer(callable_binary)
+    VKCTX.add_vm_module(vm_module)
+    _forward_callable = VKCTX.modules["module"]["main"]
+    return _forward_callable
                     
-# a = lhs.detach().numpy()
-# b = rhs.detach().numpy()
-# print("lhs is:", a)
-# print("rhs is", b)
-# print("========================")
-for _ in range(10):
-    res = _forward_callable() #torch.tensor(0.0).numpy(), torch.tensor(1.0).numpy())
-    print(res, "\n")
-    
+
+mu = torch.zeros(3,5).detach().numpy()
+sigma = torch.ones(3,5).detach().numpy()
+
+_forward_callable = init_iree_vm(TMP_FILE_TOSA, "tosa")
+res = _forward_callable(mu, sigma)[0]
+print(res)
