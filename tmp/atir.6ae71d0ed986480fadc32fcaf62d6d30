@@ -1,0 +1,9 @@
+module @forward_6ae71d0ed986480fadc32fcaf62d6d30 {
+  func @forward(%loc: tensor<3x5xf32>, %scale: tensor<3x5xf32>) -> (tensor<3x5xf32>, tensor<3x5xf32>, tensor<3x5xf32>) {
+    %my_sample_shape = "tosa.const"() {value = dense<[3, 5]> : tensor<2xi32>} : () -> tensor<2xi32>
+    %x = atir.rng_normal %loc , %scale , %my_sample_shape : (tensor<3x5xf32>, tensor<3x5xf32>, tensor<2xi32>) -> tensor<3x5xf32>
+    %loc-act = atir.identity %loc : (tensor<3x5xf32>) -> tensor<3x5xf32>
+    %scale-act = atir.identity %scale : (tensor<3x5xf32>) -> tensor<3x5xf32>
+    return %x, %loc-act, %scale-act : tensor<3x5xf32>, tensor<3x5xf32>, tensor<3x5xf32>
+  }
+}

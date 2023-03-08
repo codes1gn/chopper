@@ -18,6 +18,7 @@ from chopper.scaffold.utils import *
 from chopper.pass_manager.symbol_table import feed_forward_symbol_table
 import time
 from chopper.scaffold.utils.builders import *
+import logging
 
 __all__ = [
     "annotate_arguments",
@@ -65,8 +66,10 @@ def backend(backend_name: str):
         # STAGE 1 :: python src => mlir atir dialects
         tjcompiler = TorchJitCompiler()
         ast_source = tjcompiler.parse_callable(fn)
-        print("------ PYTHON SRC -------")
-        print(tjcompiler.dump_python(ast_source))
+        logging.debug("------ PYTHON SRC -------")
+        logging.debug(tjcompiler.dump_python(ast_source))
+        # print("------ PYTHON SRC -------")
+        # print(tjcompiler.dump_python(ast_source))
 
         uid = uuid.uuid4().hex
         TMP_FILE_ATIR = "/tmp/atir." + uid

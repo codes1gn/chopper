@@ -18,6 +18,11 @@
 #include "mlir/Dialect/Traits.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+#include "mlir/IR/ImplicitLocOpBuilder.h"
+
+#include <random>
+#include <numeric>
+#include <iostream>
 
 using namespace mlir;
 using namespace mlir::CHOPPER;
@@ -102,7 +107,7 @@ public:
     return success();
   }
 };
-
+  
 class ConvertAddOp : public OpRewritePattern<atir::AddOp> {
 public:
   using OpRewritePattern<atir::AddOp>::OpRewritePattern;
@@ -422,6 +427,85 @@ public:
 };
 */
 
+
+// static Value createConstantF32(PatternRewriter &rewriter, ArrayRef<int64_t> shapes, ArrayRef<float> values) {
+//   RankedTensorType tensorType =  RankedTensorType::get(shapes, b.getF32Type());
+//   return rewriter.create<tosa::ConstOp>(DenseFPElementsAttr::get(tensorType, values)).getResult();
+// }
+class ConvertRngNormalOp : public OpRewritePattern<atir::RngNormalOp> {
+public:
+  using OpRewritePattern<atir::RngNormalOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(atir::RngNormalOp op, PatternRewriter &rewriter) const override{
+    // std::string s;
+    // llvm::raw_string_ostream stream(s);
+    // op.print(stream);
+    // std::cout << s <<"\n";
+    
+    Value mu = op.mu();
+    Value sigma = op.sigma();
+    Location loc = op->getLoc();
+
+    auto resTy = op.getType().dyn_cast<RankedTensorType>();
+    auto resElementNums = resTy.getNumElements();
+    std::cout << "resElementNums = " << resElementNums << "\n";
+    bool needEven = false;
+    if (resElementNums & 1) {
+      resElementNums++; //generate even nums
+      needEven = true;
+    }
+    auto halfNum = resElementNums >> 1;
+    SmallVector<float> sqrtVec(halfNum), cosVec(halfNum), sinVec(halfNum);
+    
+    constexpr float epsilon = std::numeric_limits<float>::epsilon();
+    constexpr float two_pi = static_cast<float>(2.0 * M_PI);
+    std::mt19937 rng{0};
+    // std::mt19937 rng;
+    // rng.seed(std::random_device()());
+    std::uniform_real_distribution<> runif(0.0, 1.0);
+    for (int i = 0;i < halfNum;i++) {
+      float u1, u2;
+      do {
+        u1 = runif(rng);
+        u2 = runif(rng);
+      } while (u1 <= epsilon);
+      sqrtVec[i] = sqrt(-2.0 * log(u1));
+      cosVec[i] = cos(two_pi * u2);
+      sinVec[i] = sin(two_pi * u2);
+    }
+    
+    SmallVector<int64_t> const_shape = {halfNum};
+    RankedTensorType const_tensorType =  RankedTensorType::get(const_shape, resTy.getElementType());
+    Value sqrt = rewriter.create<tosa::ConstOp>(loc, const_tensorType, DenseFPElementsAttr::get(const_tensorType, sqrtVec));
+    Value cos = rewriter.create<tosa::ConstOp>(loc, const_tensorType, DenseFPElementsAttr::get(const_tensorType, cosVec));
+    Value sin = rewriter.create<tosa::ConstOp>(loc, const_tensorType, DenseFPElementsAttr::get(const_tensorType, sinVec));
+
+    auto shiftAttr = rewriter.getI32IntegerAttr(0);
+    Value z0 = rewriter.create<tosa::MulOp>(loc, const_tensorType, sqrt, cos, shiftAttr);
+    Value z1 = rewriter.create<tosa::MulOp>(loc, const_tensorType, sqrt, sin, shiftAttr);
+
+    RankedTensorType tmp_result_tensorType = RankedTensorType::get(resElementNums, resTy.getElementType());
+    Value concatVec = rewriter.create<tosa::ConcatOp>(loc, tmp_result_tensorType, ValueRange{z0, z1}, rewriter.getI64IntegerAttr(0));
+
+    RankedTensorType result_type_before_slice = RankedTensorType::get(resTy.getNumElements(), resTy.getElementType());
+    if(needEven) {
+      /*sliceop(input, start, size)*/
+      auto startArrayAttr = rewriter.getI64ArrayAttr({0});
+      auto sizeArrayAttr = rewriter.getI64ArrayAttr({resTy.getNumElements()});
+      concatVec = rewriter.create<tosa::SliceOp>(loc, result_type_before_slice, concatVec, startArrayAttr, sizeArrayAttr);
+    }
+    Value res = concatVec;
+    if (resTy.getRank() != 1) {
+      res = rewriter.create<tosa::ReshapeOp>(loc, resTy, concatVec, rewriter.getI64ArrayAttr(resTy.getShape()));
+    }
+    res = rewriter.create<tosa::MulOp>(loc, resTy, res, sigma, shiftAttr);
+    res = rewriter.create<tosa::AddOp>(loc, resTy, res, mu);
+    rewriter.replaceOp(op, res);
+    return success();
+  }
+};
+
+
 // PUT ALL CONVERT PASSES ABOVE
 } // namespace
 
@@ -453,6 +537,7 @@ public:
     patterns.add<ConvertMulOp>(context);
     patterns.add<ConvertMatmulOp>(context);
     patterns.add<ConvertConv2DOp>(context);
+    patterns.add<ConvertRngNormalOp>(context);
     return std::move(patterns);
   }
 };

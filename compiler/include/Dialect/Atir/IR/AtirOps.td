@@ -172,4 +172,33 @@ def Atir_Conv2DCFirstOp : Atir_Op<"conv_2d_cfirst"> {
 }
 
 
+def Atir_RngNormalOp : Atir_Op<"rng_normal", [NoSideEffect]> {
+  let summary = "RNG with normal distribution";
+  let description = [{
+    Generate random values from Normal Distribution.
+  }];
+  let arguments = (ins
+    AnyTensor:$mu,
+    AnyTensor:$sigma,
+    1DTensorOf<[I32]>:$shape
+  );
+
+  let results = (outs AnyTensor:$output);
+  let assemblyFormat = "$mu `,` $sigma `,` $shape attr-dict `:` functional-type(operands, results)";
+}
+
+def Atir_RngUniformOp : Atir_Op<"rng_uniform", [NoSideEffect]> {
+  let summary = "RNG with uniform distribution";
+  let description = [{
+    Generate random values from Uniform Distribution.
+  }];
+  let arguments = (ins
+    AnyTensor:$minval,
+    AnyTensor:$maxval,
+    1DTensorOf<[I32]>:$shape
+  );
+
+  let results = (outs AnyTensor:$output);
+  let assemblyFormat = "$minval `,` $maxval `,` $shape attr-dict `:` functional-type(operands, results)";
+}
 #endif // #ifndef ATIR_OPS
