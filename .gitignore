@@ -19,3 +19,4 @@ iree_build
 build
 /target
 .vscode
+data/
