@@ -427,11 +427,7 @@ public:
 };
 */
 
-
-// static Value createConstantF32(PatternRewriter &rewriter, ArrayRef<int64_t> shapes, ArrayRef<float> values) {
-//   RankedTensorType tensorType =  RankedTensorType::get(shapes, b.getF32Type());
-//   return rewriter.create<tosa::ConstOp>(DenseFPElementsAttr::get(tensorType, values)).getResult();
-// }
+// Use Box-Muller algorithm to random from Normal Distribution
 class ConvertRngNormalOp : public OpRewritePattern<atir::RngNormalOp> {
 public:
   using OpRewritePattern<atir::RngNormalOp>::OpRewritePattern;
@@ -448,7 +444,6 @@ public:
 
     auto resTy = op.getType().dyn_cast<RankedTensorType>();
     auto resElementNums = resTy.getNumElements();
-    std::cout << "resElementNums = " << resElementNums << "\n";
     bool needEven = false;
     if (resElementNums & 1) {
       resElementNums++; //generate even nums

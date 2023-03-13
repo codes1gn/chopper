@@ -608,11 +608,11 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                     _op_wrapper = [
                         OpBuilder.create_const(_SsaId_shape, literal)[0],
                         OpBuilder.create_random(
-                            func="normal",
+                            func=actual_call_method,
                             graph="forward",
                             retval=MlirSsaId(value=_res_argname),
-                            mu=_SsaId_operand0,
-                            sigma=_SsaId_operand1,
+                            operand0=_SsaId_operand0,
+                            operand1=_SsaId_operand1,
                             shape=_SsaId_shape
                         )
                     ]

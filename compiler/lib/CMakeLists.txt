@@ -28,11 +28,13 @@ add_chopper_library(CHOPPERInit
   CHOPPERDialectCtir
   CHOPPERDialectRefback
   CHOPPERDialectRefbackrt
+  CHOPPERDialectMhlo
 
   CHOPPERBasicpyPasses
   CHOPPERNumpyPasses
   CHOPPERAtirPasses
   CHOPPERCtirPasses
+  CHOPPERMhloPasses
 
   CHOPPERConversionPasses
   CHOPPERRefBackend

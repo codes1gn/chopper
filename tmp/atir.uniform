@@ -1,0 +1,9 @@
+module @forward_uniform {
+  func @forward(%minval: tensor<2x3xf32>, %maxval: tensor<2x3xf32>) -> (tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>) {
+    %my_sample_shape = "tosa.const"() {value = dense<[2, 3]> : tensor<2xi32>} : () -> tensor<2xi32>
+    %x = atir.rng_uniform %minval , %maxval , %my_sample_shape : (tensor<2x3xf32>, tensor<2x3xf32>, tensor<2xi32>) -> tensor<2x3xf32>
+    %maxval-act = atir.identity %maxval : (tensor<2x3xf32>) -> tensor<2x3xf32>
+    %minval-act = atir.identity %minval : (tensor<2x3xf32>) -> tensor<2x3xf32>
+    return %x, %maxval-act, %minval-act : tensor<2x3xf32>, tensor<2x3xf32>, tensor<2x3xf32>
+  }
+}

@@ -6,15 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Conversion/Passes.h"
-
-#include "Conversion/AtirToCtir/AtirToCtir.h"
-#include "Conversion/AtirToLinalg/AtirToLinalg.h"
-#include "Conversion/AtirToStd/AtirToStd.h"
-#include "Conversion/AtirToTosa/AtirToTosa.h"
-#include "Conversion/BasicpyToStd/Passes.h"
-#include "Conversion/NumpyToAtir/Passes.h"
-#include "Conversion/AtirToMhlo/AtirToMhlo.h"
+#include "Dialect/Mhlo/Transforms/Passes.h"
 
 //===----------------------------------------------------------------------===//
 // Pass registration
@@ -22,7 +14,7 @@
 
 namespace {
 #define GEN_PASS_REGISTRATION
-#include "Conversion/Passes.h.inc"
+#include "Dialect/Mhlo/Transforms/Passes.h.inc"
 } // end namespace
 
-void mlir::CHOPPER::registerConversionPasses() { ::registerPasses(); }
+void mlir::CHOPPER::registerMhloPasses() { ::registerPasses(); }

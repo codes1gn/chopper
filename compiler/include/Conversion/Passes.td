@@ -81,4 +81,19 @@ def ConvertAtirToTosa : Pass<"convert-atir-to-tosa", "FuncOp"> {
   let constructor = "mlir::CHOPPER::createConvertAtirToTosaPass()";
 }
 
+//===----------------------------------------------------------------------===//
+// AtirToMhlo
+//===----------------------------------------------------------------------===//
+
+def ConvertAtirToMhlo : Pass<"convert-atir-to-mhlo", "FuncOp"> {
+  let summary = "Convert Atir to Mhlo";
+  let description = [{
+    This conversion pass is to lowering the abstract tensor
+    operation IR downstream to MHLO dialects, which is the interface
+    for temporal use until we refactor the compilation flow to
+    a better design
+  }];
+  let constructor = "mlir::CHOPPER::createConvertAtirToMhloPass()";
+}
+
 #endif // CHOPPER_CONVERSION_PASSES

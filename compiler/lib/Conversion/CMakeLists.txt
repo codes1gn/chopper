@@ -4,6 +4,7 @@ add_subdirectory(AtirToLinalg)
 add_subdirectory(AtirToStd)
 add_subdirectory(AtirToCtir)
 add_subdirectory(AtirToTosa)
+add_subdirectory(AtirToMhlo)
 
 add_chopper_library(CHOPPERConversionPasses
   Passes.cpp
@@ -19,4 +20,5 @@ add_chopper_library(CHOPPERConversionPasses
   CHOPPERNumpyToAtir
   CHOPPERAtirToCtir
   CHOPPERAtirToTosa
+  CHOPPERAtirToMhlo
 )

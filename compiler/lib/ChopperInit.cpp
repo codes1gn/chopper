@@ -21,6 +21,8 @@
 #include "Dialect/Numpy/Transforms/Passes.h"
 #include "Dialect/Refback/IR/RefbackDialect.h"
 #include "Dialect/Refbackrt/IR/RefbackrtDialect.h"
+#include "Dialect/Mhlo/IR/MhloDialect.h"
+#include "Dialect/Mhlo/Transforms/Passes.h"
 
 #include "Conversion/Passes.h"
 #include "RefBackend/RefBackend.h"
@@ -33,6 +35,7 @@ void mlir::CHOPPER::registerAllDialects(mlir::DialectRegistry &registry) {
   registry.insert<ctir::CtirDialect>();
   registry.insert<refback::RefbackDialect>();
   registry.insert<refbackrt::RefbackrtDialect>();
+  registry.insert<mhlo::MhloDialect>();
   // clang-format on
 }
 
@@ -43,4 +46,5 @@ void mlir::CHOPPER::registerAllPasses() {
   mlir::CHOPPER::registerCtirPasses();
   mlir::CHOPPER::registerConversionPasses();
   mlir::CHOPPER::registerRefBackendPasses();
+  mlir::CHOPPER::registerMhloPasses();
 }

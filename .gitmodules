@@ -11,3 +11,6 @@
 	path = external/iree
 	url = git@github.com:google/iree.git
     ignore = dirty
+[submodule "external/mlir-hlo"]
+	path = external/mlir-hlo
+	url = git@github.com:tensorflow/mlir-hlo.git

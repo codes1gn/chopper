@@ -241,12 +241,13 @@ class OpBuilder(object):
         elif graph == "backward":
             assert 0, "Not support backward of sample random"
         
+        func = func.lower()
         if func == "normal":
             _result = [astnodes.OpResult(value=retval, count=None)]
             _op = ATIR_RandomNormalOp(
                 match=0,
-                mu=kwargs["mu"],
-                sigma=kwargs["sigma"],
+                mu=kwargs["operand0"],
+                sigma=kwargs["operand1"],
                 shape=kwargs["shape"],
                 dtype=FunctionType(argument_types=args_type, result_types=[restype])
             )
@@ -255,9 +256,9 @@ class OpBuilder(object):
             _result = [astnodes.OpResult(value=retval, count=None)]
             _op = ATIR_RandomUniformOp(
                 match=0,
-                minval=kwargs[0],
-                maxval=kwargs[1],
-                shape=kwargs[2],
+                minval=kwargs["operand0"],
+                maxval=kwargs["operand1"],
+                shape=kwargs["shape"],
                 dtype=FunctionType(argument_types=args_type, result_types=[restype])
             )
             return astnodes.Operation(result_list=_result, op = _op, location=None)
