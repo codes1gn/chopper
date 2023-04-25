@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 import chopper.iree.compiler as ireecc
 import chopper.iree.runtime as ireert
@@ -21,36 +22,26 @@ def init_iree_vm(file: str, type: str):
     return _forward_callable
 
 
-# ireecc.tools.compile_file can accept linalg dialect, when input_type="none"
-# input = torch.empty(1, 3, 224, 224).uniform_(-1, 1).detach().numpy()
-mu = torch.empty(2,3).uniform_(1, 10).detach().numpy()
-sigma = torch.empty(2,3).uniform_(1, 10).detach().numpy()
-_forward_callable = init_iree_vm("/home/zp/chopper/output/random_normal/random_normal_mhlo.mlir", "mhlo")
+# _forward_callable = init_iree_vm("/home/zp/chopper/output/random_normal/random_normal_mhlo.mlir", "mhlo")
 
-res = _forward_callable()
+# res = _forward_callable()
+
+exp = torch.distributions.Exponential(torch.tensor(1.0))
+shape = (128, 128)
+normal = np.random.random(shape)
+normal_tensor = torch.from_numpy(normal)
+res = exp.icdf(normal_tensor)
 print(res)
 
 
 import matplotlib.pyplot as plt
+import seaborn as sns
 plt.style.use('default')
 
-res = torch.from_numpy(res)
-res = torch.mul(res, 100)
-res = res.int()
+data = np.array(res).flatten().tolist()
 
-cnt = [0] * 10000
-
-for i in range(len(res)):
-    for j in range(len(res[i])):
-            cnt[res[i][j]] += 1
-            
-axis_x = list(range(1,10001))
-plt.plot(axis_x, cnt)
-# plt.margins(y=0)
-# plt.ylim([0,700])
-# for i in range(100):
-    # plt.bar(i, cnt[i])
-    
-    
+sns.distplot(data, hist=True, kde=False, bins=100, color='darkblue',
+                 hist_kws={'edgecolor': 'black'},
+                 kde_kws={'linewidth': 4})
 plt.show()
 

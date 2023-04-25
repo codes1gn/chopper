@@ -42,10 +42,18 @@ def Mhlo_MulOp : Mhlo_BinaryElementwiseOp<"multiply",
 }
 
 def Mhlo_AddOp : Mhlo_BinaryElementwiseOp<"add",
-        [Commutative, NoSideEffect, SameOperandsAndResultType]> {
+        [Commutative, NoSideEffect, SameOperandsAndResultType, Elementwise]> {
   let summary = "Addition operator";
   let description = [{
     Returns `lhs + rhs` element-wise.
+  }];
+}
+
+def Mhlo_SubOp : Mhlo_BinaryElementwiseOp<"subtract", 
+        [Commutative, NoSideEffect, SameOperandsAndResultType, Elementwise]> {
+  let summary = "Subtraction operator";
+  let description = [{
+    Returns `lhs - rhs` element-wise.
   }];
 }
 
@@ -100,8 +108,6 @@ def MHLO_RngUniformOp : Mhlo_Op<"rng_uniform", [NoSideEffect]> {
     following the uniform distribution over the interval `[a,b)`. The parameters
     and output element type have to be a boolean type, an integral type or a
     floating point types, and the types have to be consistent.
-
-    See https://www.tensorflow.org/xla/operation_semantics#rnguniform.
   }];
   let arguments = (ins
     MHLO_PredIntOrFpTensor:$a,
@@ -110,10 +116,7 @@ def MHLO_RngUniformOp : Mhlo_Op<"rng_uniform", [NoSideEffect]> {
   );
 
   let results = (outs TensorOf<[AnyFloat]>:$output);
-  let assemblyFormat = "$a `,` $b `,` $shape attr-dict `:` functional-type(operands, results)";
-
-//   let hasCustomHLOConverter = 1;
-
+  // let assemblyFormat = "$a `,` $b `,` $shape attr-dict `:` functional-type(operands, results)";
 }
 
 def MHLO_RngNormalOp : Mhlo_Op<"rng_normal", [NoSideEffect]> {

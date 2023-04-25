@@ -23,10 +23,24 @@ import logging
 __all__ = [
     "annotate_arguments",
     "backend",
+    "set_target_ir"
 ]
 
 VKCTX = ireert.SystemContext(config=ireert.Config(driver_name="vulkan"))
 # DINST = CRT.DeviceInstance()
+
+PASS_DICTIONARY = {
+    "mhlo": "-convert-atir-to-mhlo",
+    "tosa": "-convert-atir-to-tosa",
+    "linalg": "-convert-atir-to-linalg"
+}
+
+def set_target_ir(target_ir : str):
+    def config_target_ir(fn: callable) -> callable:
+        setattr(fn, "target_ir", target_ir.lower())
+        return fn
+    
+    return config_target_ir
 
 # todo(albert) refactoring
 # this part of code snippets are borrows from torch-mlir to ensure the util
@@ -72,10 +86,13 @@ def backend(backend_name: str):
         # print(tjcompiler.dump_python(ast_source))
 
         uid = uuid.uuid4().hex
-        TMP_FILE_ATIR = "/tmp/atir." + uid
-        TMP_FILE_ATIR_AD = "/tmp/atir_ad." + uid
-        TMP_FILE_TOSA = "/tmp/tosa." + uid
-        TMP_FILE_TOSA_AD = "/tmp/tosa_ad." + uid
+        TMP_FILE_PATH = "/home/zp/chopper/tmp/"
+        TMP_FILE_ATIR = TMP_FILE_PATH + "atir." + uid
+        TMP_FILE_ATIR_AD = TMP_FILE_PATH + "atir_ad." + uid
+        TMP_FILE_TOSA = TMP_FILE_PATH + "tosa." + uid
+        TMP_FILE_TOSA_AD = TMP_FILE_PATH + "tosa_ad." + uid
+        TMP_FILE_MHLO = TMP_FILE_PATH + "mhlo." + uid
+        TMP_FILE_MHLO_AD = TMP_FILE_PATH + "mhlo_ad." + uid
         unique_module_name.set_forward("forward_" + uid)
         unique_module_name.set_backward("backward_" + uid)
 
@@ -121,13 +138,21 @@ def backend(backend_name: str):
 
         # subprocess.run("tool-opt " + TMP_FILE_ATIR + " -convert-atir-to-tosa " + "-o " + TMP_FILE_TOSA)
         # TODO + HARDCODE, change it into capi invoke
+        ir_type = getattr(fn, "target_ir", "tosa")
+        # ir_type = fn.target_ir if fn.target_ir else "tosa"
+        pass_name = PASS_DICTIONARY.get(ir_type, "-convert-atir-to-tosa")
+        FILE_DICTIONARY = {
+            "mhlo": [TMP_FILE_MHLO, TMP_FILE_MHLO_AD],
+            "tosa": [TMP_FILE_TOSA, TMP_FILE_TOSA_AD],
+        }
+        target_files = FILE_DICTIONARY.get(ir_type, FILE_DICTIONARY.get("tosa"))
         subprocess.run(
             [
                 "tool-opt",
                 TMP_FILE_ATIR,
-                "-convert-atir-to-tosa",
+                pass_name,
                 "-o",
-                TMP_FILE_TOSA,
+                target_files[0],
             ]
         )
 
@@ -135,19 +160,19 @@ def backend(backend_name: str):
             [
                 "tool-opt",
                 TMP_FILE_ATIR_AD,
-                "-convert-atir-to-tosa",
+                pass_name,
                 "-o",
-                TMP_FILE_TOSA_AD,
+                target_files[1],
             ]
         )
 
-        tosa_file = open(TMP_FILE_TOSA, "r")
+        tosa_file = open(target_files[0], "r")
         print("------ TOSA IR -------")
         textual_tosa = tosa_file.read()
         print(textual_tosa)
         tosa_file.close()
 
-        tosa_file = open(TMP_FILE_TOSA_AD, "r")
+        tosa_file = open(target_files[1], "r")
         print("------ TOSA IR -------")
         textual_tosa_ad = tosa_file.read()
         print(textual_tosa_ad)
@@ -169,6 +194,8 @@ def backend(backend_name: str):
             print("------ RESULTS in VULKAN GPU -------")
             print("vulkan backend inited")
             # test scalar on vulkan
+            # gpu:vulkan-spirv
+            print("invoke ireecc.compile file, return VMFunction")
             callable_binary = ireecc.tools.compile_file(
                 TMP_FILE_TOSA, input_type="tosa", target_backends=["vulkan-spirv"]
             )
@@ -179,9 +206,9 @@ def backend(backend_name: str):
             vm_module_ad = ireert.VmModule.from_flatbuffer(callable_binary_ad)
             # clean up the tmp files after all compilation done
             subprocess.run(["rm", TMP_FILE_ATIR])
-            subprocess.run(["rm", TMP_FILE_TOSA])
             subprocess.run(["rm", TMP_FILE_ATIR_AD])
-            subprocess.run(["rm", TMP_FILE_TOSA_AD])
+            subprocess.run(["rm", target_files[0]])
+            subprocess.run(["rm", target_files[1]])
             # anchor
             # assert 0
             VKCTX.add_vm_module(vm_module)

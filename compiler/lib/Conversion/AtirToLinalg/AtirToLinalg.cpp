@@ -211,6 +211,12 @@ public:
 };
 } // namespace
 
+
+namespace {
+class ConvertRngNormal : public OpRewritePattern<atir::
+    
+} // namespace
+
 namespace {
 class ConvertAtirToLinalg
     : public ConvertAtirToLinalgBase<ConvertAtirToLinalg> {

@@ -1,66 +1,47 @@
 import pyro
 import torch
-import uuid
-import subprocess
-
-import chopper.iree.compiler as ireecc
-import chopper.iree.runtime as ireert
 
 from chopper.pytorch import *
-from chopper.scaffold.utils import *
-from chopper.pass_manager.symbol_table import feed_forward_symbol_table
 
-
-uid = "6ae71d0ed986480fadc32fcaf62d6d30"
-TMP_FILE_ATIR = "/home/zp/chopper/tmp/atir." + uid
-TMP_FILE_TOSA = "/home/zp/chopper/tmp/tosa." + uid
-    
-    
 def random_normal_test(shape):
     class Test(torch.nn.Module):
+        
+        @backend("IREE")
+        @set_target_ir("mhlo")
         @annotate_arguments([
             None,
             (shape, torch.float32),
+            (shape, torch.float32),
+            (shape, torch.float32),
             (shape, torch.float32)
         ])
-        def forward(self, loc, scale):
-            x = pyro.sample("my_sample", pyro.distributions.Normal(loc, scale), sample_shape = [2])
+        def forward(self, a, b, c, d):
+            x = pyro.sample("my_sample", pyro.distributions.Normal(a, b))#, sample_shape = [2])
+            y = pyro.sample("my_sample2", pyro.distributions.Normal(c, d))#, sample_shape = [2])
+            
+            z = x + y
+            return z
+        
+        def ref_forward(self, loc, scale):
+            x = pyro.sample("my_sample", pyro.distributions.Normal(loc, scale)) #)
             return x
-
-    fn = Test.forward
-    # STAGE 1 :: python src => mlir atir dialects
-    torch_jit_compiler = TorchJitCompiler()
-    src_ast = torch_jit_compiler.parse_callable(fn)
-    # print(torch_jit_compiler.dump_python(src_ast))
-
-    unique_module_name.set_forward("forward_" + uid)
-    unique_module_name.set_backward("backward_" + uid)
-    feed_forward_symbol_table.reset_symbol_table()
-
-    ast_source = torch_jit_compiler.annotate_function(src_ast, fn._torch_dsl_arg_annotations)
-    mlir_dialect, autodiff_mlir_dialect = torch_jit_compiler.to_mlir_dialect(ast_source)
-    print(mlir_dialect.dump())
-    print(autodiff_mlir_dialect.dump())
-    # print(torch_jit_compiler.dump_mlir(mlir_dialect))
+        
+        
+    test = Test()
+    loc = torch.zeros(shape).detach()
+    scale = torch.ones(shape).detach()
     
-    #STAGE2 :: mlir atir dialects to tosa dialect
-    subprocess.run(
-        [
-            "tool-opt",
-            TMP_FILE_ATIR,
-            "-convert-atir-to-tosa",
-            "-o",
-            TMP_FILE_TOSA,
-        ]
-    )
+    a = c = torch.zeros(shape).detach()
+    b = d = torch.ones(shape).detach()
+    print("loc = ", loc)
+    print("scale = ", scale)
+    act_res = test(a, b, c, d)
+    ref_res = test.ref_forward(loc, scale)
     
-    tosa_file = open(TMP_FILE_TOSA, "r")
-    print("------ TOSA IR -------")
-    textual_tosa = tosa_file.read()
-    print(textual_tosa)
-    tosa_file.close()
+    print("act_res = ", act_res)
+    print("ref_res = ", ref_res)
     
-random_normal_test((3,5))
+random_normal_test((2,3))
     
 
 def sample_grad():

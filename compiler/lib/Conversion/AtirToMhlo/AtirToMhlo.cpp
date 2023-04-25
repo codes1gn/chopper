@@ -81,7 +81,45 @@ class ConvertRngUniformOp: public OpRewritePattern<atir::RngUniformOp> {
 public:
   using OpRewritePattern<atir::RngUniformOp>::OpRewritePattern;
 
+  /**
+   * %x = atir.rng_uniform %minval , %maxval , %my_sample_shape : (tensor<2x3xf32>, tensor<2x3xf32>, tensor<2xi32>) -> tensor<2x3xf32>
+   *    |
+   *    |
+   *   \ /
+   * %0 = mhlo.constant 0.0 : tensor<f32>
+   * %1 = mhlo.constant 1.0 : tensor<f32>
+   * %2 = mhlo.constant shape : tensor<?xi64>
+   * %3 = mhlo.rng_uniform(%0, %1, %2)
+   * %4 = mhlo.sub %maxval, %minval
+   * %5 = mhlo.multiply %3, %5
+   * %6 = mhlo.add %5, %minval
+   * return %6
+  */
   LogicalResult matchAndRewrite(atir::RngUniformOp op, PatternRewriter &rewriter) const override {
+    Value minval = op.minval();
+    Value maxval = op.maxval();
+    Value result = op.getResult();
+    Location loc = op.getLoc();
+
+    RankedTensorType rngArgType = RankedTensorType::get({}, rewriter.getF32Type());
+    Value origin_min = rewriter.create<mhlo::ConstOp>(
+      loc, rngArgType, 
+      DenseElementsAttr::get(rngArgType, rewriter.getF32FloatAttr(0.0)));
+    Value origin_max = rewriter.create<mhlo::ConstOp>(
+      loc, rngArgType, 
+      DenseElementsAttr::get(rngArgType, rewriter.getF32FloatAttr(1.0)));
+    auto shapeType = RankedTensorType::get({op.getType().dyn_cast<RankedTensorType>().getRank()}, rewriter.getI64Type());
+    auto shapeVal = result.getType().dyn_cast<RankedTensorType>().getShape();
+    Value shapeArg = rewriter.create<mhlo::ConstOp>(
+      loc,shapeType,
+      DenseElementsAttr::get(shapeType, shapeVal));
+    
+    Value res = rewriter.create<mhlo::RngUniformOp>(loc, result.getType(), origin_min, origin_max, shapeArg);
+    Value scale = rewriter.create<mhlo::SubOp>(loc, result.getType(), maxval, minval);
+
+    res = rewriter.create<mhlo::MulOp>(loc, result.getType().dyn_cast<RankedTensorType>(), res, scale);
+    res = rewriter.create<mhlo::AddOp>(loc, result.getType().dyn_cast<RankedTensorType>(), res, minval);
+    rewriter.replaceOp(op, res);
     return success();
   }
 };

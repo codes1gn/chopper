@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 import chopper.iree.compiler as ireecc
 import chopper.iree.runtime as ireert
@@ -32,25 +33,22 @@ print(res)
 
 
 import matplotlib.pyplot as plt
+import seaborn as sns
 plt.style.use('default')
 
-res = torch.from_numpy(res)
-res = torch.mul(res, 100)
-res = res.int()
-
-cnt = [0] * 10000
-
-for i in range(len(res)):
-    for j in range(len(res[i])):
-            cnt[res[i][j]] += 1
-            
-axis_x = list(range(1,10001))
-plt.plot(axis_x, cnt)
-# plt.margins(y=0)
 # plt.ylim([0,700])
-# for i in range(100):
-    # plt.bar(i, cnt[i])
-    
-    
+data = np.array(res).flatten().tolist()
+
+data1 = np.array(res[0:64,:]).flatten().tolist()
+data2 = np.array(res[64:128,:]).flatten().tolist()
+
+# plt.hist(data, bins=50)
+# plt.hist(data1,bins=50)
+# plt.hist(data2,bins=50)
+
+sns.distplot(data2, hist=True, kde=True, bins=100, color='darkblue',
+                 hist_kws={'edgecolor': 'black'},
+                 kde_kws={'linewidth': 4})
+
 plt.show()
 

@@ -616,8 +616,41 @@ class StmtNodeMappingTransformer(NodeTransformerBase):
                             shape=_SsaId_shape
                         )
                     ]
-                    # Not Support
-                    _autodiff_wrapper = []
+                    # _autodiff_wrapper = []
+                    # _SsaId_operand0_act = ValueBuilder.get_value(arg0 + "-act", mode="savedact")
+                    # _SsaId_operand1_act = ValueBuilder.get_value(arg1 + "-act", mode="savedact")
+                    
+                    _autodiff_wrapper = [
+                        OpBuilder.create_unary(
+                            func="identity",
+                            graph="backward",
+                            retval=_SsaId_operand0,
+                            operand=_SsaId_outs
+                        ),
+                        OpBuilder.create_unary(
+                            func="identity",
+                            graph="backward",
+                            retval=_SsaId_operand1,
+                            operand=_SsaId_outs
+                        )
+                    ]
+                    # if actual_call_method == "Normal":
+                    #     autodiff_scale = OpBuilder.create_unary(
+                    #         func="identity", 
+                    #         graph="backward", 
+                    #         retval=_SsaId_operand1, 
+                    #         operand=_SsaId_outs
+                    #     )
+                    #     _autodiff_wrapper.append(autodiff_scale)
+                    # else:
+                    #     autodiff_maxval = OpBuilder.create_unary(
+                    #         func="identity",
+                    #         graph="backward", 
+                    #         retval=_SsaId_operand1,
+                    #         operand=_SsaId_outs
+                    #     )
+                    #     _autodiff_wrapper.append(autodiff_maxval)
+
                     setattr(node, "mast_node", _op_wrapper)
                     setattr(node, "mast_node_autodiff", _autodiff_wrapper)
                     return node

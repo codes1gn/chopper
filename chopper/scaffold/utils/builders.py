@@ -47,7 +47,7 @@ __all__ = [
 class OpBuilder(object):
     @classmethod
     def create_replica_merges(cls, operand: astnodes.SsaId) -> List[astnodes.Operation]:
-        ValueBuilder.verbose_symbol_table()
+        # ValueBuilder.verbose_symbol_table()
         _replicas = ValueBuilder.get_replicas(operand)
         _operations = []
         if len(_replicas) == 0:
@@ -264,6 +264,18 @@ class OpBuilder(object):
             return astnodes.Operation(result_list=_result, op = _op, location=None)
         else:
             assert 0, "Not support other sampling other than Normal and Uniform Distribution"
+    
+    @classmethod
+    def create_unary_for_random(cls, func: str, retval: astnodes.SsaId, operand: astnodes.SsaId) -> astnodes.Operation:
+        _types = ValueBuilder.get_type(operand.value, mode="forward+backward+savedact")
+        _result = [astnodes.OpResult(value=retval, count=None)]
+        _op = ATIR_IdentityOp(
+                match=0,
+                operand=operand,
+                type=FunctionType(argument_types=[_types], result_types=[_types]),
+            )
+        return astnodes.Operation(result_list=_result, op=_op, location=None)
+    
     
     @classmethod
     def create_unary(cls, func: str, graph: str, retval: astnodes.SsaId, operand: astnodes.SsaId) -> astnodes.Operation:
@@ -627,28 +639,28 @@ class ValueBuilder(object):
             if feed_forward_symbol_table.lookup(value_name, "type"):
                 assert 0, "error: redefine of value {} with newtype = {}".format(value_name, value_type)
             feed_forward_symbol_table.insert(value_name, value_type)
-            logging.debug(f"ValueBuilder.create forward symbol: name = { value_name}, type = {value_type}")
+            print(f"ValueBuilder.create forward symbol: name = { value_name}, type = {value_type}")
         if "backward" in mode:
             if autodiff_symbol_table.lookup(value_name, "type"):
                 assert 0, "error: redefine of value {} with, newtype = {}".format(value_name, value_type)
             autodiff_symbol_table.insert(value_name, value_type)
-            logging.debug(f"ValueBuilder.create backward symbol: name = { value_name}, type = {value_type}")
+            print(f"ValueBuilder.create backward symbol: name = { value_name}, type = {value_type}")
         if "savedact" in mode:
             if autodiff_saved_activation_table.lookup(value_name + postfix, "type"):
                 print("warning: redefine of value {} with, newtype = {}".format(value_name, value_type))
                 return
             autodiff_saved_activation_table.insert(value_name + "-act", value_type)
-            logging.debug(f"ValueBuilder.create savedact symbol: name = { value_name}, type = {value_type}")
+            print(f"ValueBuilder.create savedact symbol: name = { value_name}, type = {value_type}")
         if "funcarg" in mode:
             if autodiff_func_arguments_table.lookup(value_name, "type"):
                 assert 0, "error: redefine of value {} with, newtype = {}".format(value_name, value_type)
             autodiff_func_arguments_table.insert(value_name, value_type)
-            logging.debug(f"ValueBuilder.create funarg symbol: name = { value_name}, type = {value_type}")
+            print(f"ValueBuilder.create funarg symbol: name = { value_name}, type = {value_type}")
         if "funcret" in mode:
             if autodiff_func_returns_table.lookup(value_name, "type"):
                 assert 0, "error: redefine of value {} with, newtype = {}".format(value_name, value_type)
             autodiff_func_returns_table.insert(value_name, value_type)
-            logging.debug(f"ValueBuilder.create funret symbol: name = { value_name}, type = {value_type}")
+            print(f"ValueBuilder.create funret symbol: name = { value_name}, type = {value_type}")
         return
 
     @classmethod
@@ -737,7 +749,7 @@ class TypeBuilder(object):
 
     @classmethod
     def create(cls, op: str, **kwattr) -> astnodes.Type:
-        logging.debug(cls.__name__, " TypeBuilder::create kwattr is: ", kwattr)
+        print(cls.__name__, " TypeBuilder::create kwattr is: ", kwattr)
         if op == "none":
             return cls.build_none()
         elif op == "numeric":

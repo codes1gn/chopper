@@ -149,6 +149,17 @@ class AutodiffMergeReplicas(NodeTransformerBase):
                 setattr(node, "mast_node_autodiff", _autodiff_wrapper + extra_autodiff_ops)
                 return node
             elif _call_method == "sample":
+                sample_fn = node.value.args[1]
+                arg0 = sample_fn.args[0].id  # loc in Normal, minval in Uniform
+                arg1 = sample_fn.args[1].id # scale in Normal, maxval in Uniform
+                _SsaId_operand0 = ValueBuilder.get_value(arg0)
+                _SsaId_operand1 = ValueBuilder.get_value(arg1)
+                _res_argnames_list = [target.id for target in node.targets]
+                _res_argname = _res_argnames_list[0]
+                _SsaId_outs = ValueBuilder.get_value(_res_argname)
+                _autodiff_wrapper = node.mast_node_autodiff
+                extra_autodiff_ops = OpBuilder.create_replica_merges(operand=_SsaId_outs)
+                setattr(node, "mast_node_autodiff", _autodiff_wrapper + extra_autodiff_ops)
                 return node
             else:
                 assert 0, "Not support op type in Autodiff_merger_replicas pass"
